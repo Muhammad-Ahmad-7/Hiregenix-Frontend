@@ -1,19 +1,57 @@
 "use client";
 import UiButton from "@/component/common/CustomButton";
 import LabelInput from "@/component/common/LabelInput";
-import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
-import { Button, Col, Flex, Input, Row, Select, Typography } from "antd";
+import PlusIcon from "@/icons/PlusIcon";
+import {
+  EyeInvisibleOutlined,
+  EyeTwoTone,
+  PlusCircleOutlined,
+} from "@ant-design/icons";
+import {
+  Button,
+  Col,
+  DatePicker,
+  Flex,
+  Input,
+  Row,
+  Select,
+  Typography,
+} from "antd";
+import PhoneInput from "antd-phone-input";
+import FormItem from "antd/es/form/FormItem";
 import Link from "next/link";
 import React from "react";
 const { Title, Text } = Typography;
 
 export default function Step1() {
+  const options = [
+    {
+      value: "1",
+      label: "Not Identified",
+    },
+    {
+      value: "2",
+      label: "Closed",
+    },
+    {
+      value: "3",
+      label: "Communicated",
+    },
+    {
+      value: "4",
+      label: "Identified",
+    },
+    {
+      value: "5",
+      label: "Resolved",
+    },
+    {
+      value: "6",
+      label: "Cancelled",
+    },
+  ];
   return (
-    <Col
-      xs={24}
-      md={12}
-      className="!flex !flex-col !justify-center !items-center p-4 lg:p-32"
-    >
+    <Col xs={24} md={12} className=" p-4 lg:px-32 lg:py-16">
       {/* Logo Circle */}
       <Text className="w-full !text-[#1677FF] font-semibold">STEP 1 OF 4</Text>
 
@@ -23,100 +61,167 @@ export default function Step1() {
           Personal Information
         </Title>
         <div className="flex flex-col gap-5">
-          <LabelInput
-            label="Email Address"
-            placeholder="Enter your email"
-            required
-          />
+          <Col span={24}>
+            <LabelInput
+              name="email"
+              label="Email Address"
+              placeholder="Enter your email"
+              required
+            />
+          </Col>
+
           <Row gutter={24}>
             <Col span={12}>
-              <LabelInput
-                label="Email Address"
-                placeholder="Enter your email"
-                required
-              />
+              <div className="flex flex-col gap-2 w-full">
+                <Text className="font-normal text-[#000000D9]">
+                  Date of Birth <span className="text-red-500">*</span>
+                </Text>
+                <DatePicker className="w-full" />
+              </div>
             </Col>
             <Col span={12}>
-              <LabelInput
-                label="Email Address"
-                placeholder="Enter your email"
-                required
-              />
+              <div className="flex flex-col gap-2 w-full">
+                <Text className="font-normal text-[#000000D9]">
+                  Gender <span className="text-red-500">*</span>
+                </Text>
+                <Select
+                  className="!w-full"
+                  showSearch
+                  style={{ width: 200 }}
+                  placeholder="Search to Select"
+                  optionFilterProp="label"
+                  filterSort={(optionA, optionB) =>
+                    (optionA?.label ?? "")
+                      .toLowerCase()
+                      .localeCompare((optionB?.label ?? "").toLowerCase())
+                  }
+                  options={[
+                    {
+                      value: "1",
+                      label: "Not Identified",
+                    },
+                    {
+                      value: "2",
+                      label: "Closed",
+                    },
+                    {
+                      value: "3",
+                      label: "Communicated",
+                    },
+                    {
+                      value: "4",
+                      label: "Identified",
+                    },
+                    {
+                      value: "5",
+                      label: "Resolved",
+                    },
+                    {
+                      value: "6",
+                      label: "Cancelled",
+                    },
+                  ]}
+                />
+              </div>
             </Col>
           </Row>
           <Row gutter={24}>
             <Col span={12}>
-              <Select
-                showSearch
-                style={{ width: 200 }}
-                placeholder="Search to Select"
-                optionFilterProp="label"
-                filterSort={(optionA, optionB) =>
-                  (optionA?.label ?? "")
-                    .toLowerCase()
-                    .localeCompare((optionB?.label ?? "").toLowerCase())
-                }
-                options={[
-                  {
-                    value: "1",
-                    label: "Not Identified",
-                  },
-                  {
-                    value: "2",
-                    label: "Closed",
-                  },
-                  {
-                    value: "3",
-                    label: "Communicated",
-                  },
-                  {
-                    value: "4",
-                    label: "Identified",
-                  },
-                  {
-                    value: "5",
-                    label: "Resolved",
-                  },
-                  {
-                    value: "6",
-                    label: "Cancelled",
-                  },
-                ]}
-              />
+              <div className="flex flex-col gap-2 w-full">
+                <Text className="font-normal text-[#000000D9]">
+                  Location <span className="text-red-500">*</span>
+                </Text>
+                <Select
+                  className="!w-full"
+                  showSearch
+                  style={{ width: 200 }}
+                  placeholder="Search to Select"
+                  optionFilterProp="label"
+                  filterSort={(optionA, optionB) =>
+                    (optionA?.label ?? "")
+                      .toLowerCase()
+                      .localeCompare((optionB?.label ?? "").toLowerCase())
+                  }
+                  options={options}
+                />{" "}
+              </div>
             </Col>
             <Col span={12}>
-              <LabelInput
-                label="Email Address"
-                placeholder="Enter your email"
-                required
-              />
+              <div className="flex flex-col gap-2 w-full">
+                <Text className="font-normal text-[#000000D9]">
+                  City <span className="text-red-500">*</span>
+                </Text>
+                <Select
+                  className="!w-full"
+                  showSearch
+                  style={{ width: 200 }}
+                  placeholder="Search to Select"
+                  optionFilterProp="label"
+                  filterSort={(optionA, optionB) =>
+                    (optionA?.label ?? "")
+                      .toLowerCase()
+                      .localeCompare((optionB?.label ?? "").toLowerCase())
+                  }
+                  options={[
+                    {
+                      value: "1",
+                      label: "Not Identified",
+                    },
+                    {
+                      value: "2",
+                      label: "Closed",
+                    },
+                    {
+                      value: "3",
+                      label: "Communicated",
+                    },
+                    {
+                      value: "4",
+                      label: "Identified",
+                    },
+                    {
+                      value: "5",
+                      label: "Resolved",
+                    },
+                    {
+                      value: "6",
+                      label: "Cancelled",
+                    },
+                  ]}
+                />
+              </div>
             </Col>
           </Row>
-        </div>
-        <div className="mt-8 gap-2 flex flex-col">
-          <Input placeholder="Email" className="!rounded-xl" />
-          <Input.Password
-            className="!rounded-xl"
-            placeholder="Password"
-            iconRender={(visible) =>
-              visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
-            }
-          />
-          <div className="w-full flex justify-end">
-            <UiButton type="link">Forget Password</UiButton>
+          <div className="flex flex-col gap-2 w-full">
+            <Text className="font-normal text-[#000000D9]">
+              Contact Number <span className="text-red-500">*</span>
+            </Text>
+            <FormItem name="phone">
+              <PhoneInput enableSearch />
+            </FormItem>
+          </div>
+          <div className="flex  justify-between w-full">
+            <div className="flex flex-col">
+              <Text className="font-semibold">Upload profile picture</Text>
+              <Text type="secondary">5MB Limit (JPEG, PNG, SVG)</Text>
+            </div>
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-lg border border-gray-200 mb-4">
+              <PlusIcon />
+            </div>
           </div>
         </div>
         <div className="mt-4 gap-2 flex flex-col item-center">
-          <Flex wrap>
-            <UiButton type="primary" size="large">
-              Primary
+          <Col span={6}>
+            <UiButton
+              type="primary"
+              onClick={() => {}}
+              block
+              size="large"
+              className="!rounded-xl"
+            >
+              Next
             </UiButton>
-          </Flex>
-          <div className="flex justify-center mt-2">
-            <Text className="!mb-0 inline-block font-normal">
-              Don have an account ? <Link href={"/"}>Sign Up</Link>
-            </Text>
-          </div>
+          </Col>
         </div>
       </div>
     </Col>

@@ -10,7 +10,7 @@ export default function Left1() {
     <Col
       xs={24}
       md={12}
-      className="!flex !flex-col !justify-center !items-center p-4 lg:p-32"
+      className="!flex !flex-col !justify-center !items-center  p-4 lg:p-32"
     >
       {/* Logo Circle */}
       <div className="flex w-full">

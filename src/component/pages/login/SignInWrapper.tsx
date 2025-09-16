@@ -21,7 +21,7 @@ export default function SignInWrapper({
         <LoginHeader />
 
         {/* Content Section */}
-        <Row className="bg-white h-[calc(100vh-5rem)]">
+        <Row className="bg-white h-[calc(100vh-5rem)] ">
           {/* Left Section */}
           {/* <Left1 /> */}
           {childArray[0]}
