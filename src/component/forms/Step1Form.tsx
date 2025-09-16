@@ -9,7 +9,11 @@ import {
 } from "../common";
 import UiButton from "../common/CustomButton";
 const { Text } = Typography;
-export default function Step1Form() {
+type Step1FormProps = {
+  onNext: () => void;
+};
+
+export default function Step1Form({ onNext }: Step1FormProps) {
   const options = [
     {
       value: "1",
@@ -39,10 +43,9 @@ export default function Step1Form() {
   const [form] = Form.useForm();
 
   const onFinish = (values: any) => {
-    console.log("Form Values:", values);
-    form.resetFields();
+    console.log("Step 1 Values:", values);
+    onNext(); // move to next step only if valid
   };
-
   return (
     <Form
       form={form}

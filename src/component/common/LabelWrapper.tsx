@@ -6,7 +6,7 @@ import type { FormItemProps } from "antd";
 import type { Rule } from "antd/es/form";
 
 type LabelWrapperProps = {
-  label: string | React.ReactNode;
+  label?: string | React.ReactNode;
   name: string;
   required?: boolean;
   fullLabel?: boolean;
@@ -16,7 +16,7 @@ type LabelWrapperProps = {
 };
 
 const LabelWrapper: React.FC<LabelWrapperProps> = ({
-  label,
+  label = "",
   name,
   required = false,
   fullLabel = true,
