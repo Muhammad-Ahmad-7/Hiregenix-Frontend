@@ -3,6 +3,7 @@ import UiButton from "@/component/common/CustomButton";
 import LabelDatePicker from "@/component/common/LabelDatePicker";
 import LabelInput from "@/component/common/LabelInput";
 import Step1Form from "@/component/forms/Step1Form";
+import Step2Form from "@/component/forms/Step2Form";
 import PlusIcon from "@/icons/PlusIcon";
 import {
   EyeInvisibleOutlined,
@@ -63,7 +64,8 @@ export default function Step1() {
         <Title level={1} className="!mb-2">
           Personal Information
         </Title>
-        <Step1Form />
+        {/* <Step1Form /> */}
+        <Step2Form />
       </div>
     </Col>
   );

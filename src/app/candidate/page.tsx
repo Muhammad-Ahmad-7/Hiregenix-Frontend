@@ -16,6 +16,7 @@ export default function page() {
       <Step1 />
       {/* <Step2 /> */}
       {/* <MyForm /> */}
+      {/* <Step2Form /> */}
     </SignInWrapper>
   );
 }

@@ -1,21 +1,20 @@
 "use client";
 
 import React from "react";
-import { DatePicker, DatePickerProps } from "antd";
-import type { Rule } from "antd/es/form";
-import type { FormItemProps } from "antd";
+import { FormItemProps } from "antd";
+import PhoneInput, { PhoneInputProps } from "antd-phone-input";
 import LabelWrapper from "./LabelWrapper";
 
-type LabelDatePickerProps = DatePickerProps & {
+type LabelPhoneNumberProps = PhoneInputProps & {
   label: string | React.ReactNode;
   name: string;
   required?: boolean;
-  rules?: Rule[];
+  rules?: FormItemProps["rules"];
   fullLabel?: boolean;
   itemProps?: FormItemProps;
 };
 
-const LabelDatePicker: React.FC<LabelDatePickerProps> = ({
+const LabelPhoneNumber: React.FC<LabelPhoneNumberProps> = ({
   label,
   name,
   required,
@@ -33,9 +32,9 @@ const LabelDatePicker: React.FC<LabelDatePickerProps> = ({
       fullLabel={fullLabel}
       itemProps={itemProps}
     >
-      <DatePicker className="w-full" {...rest} />
+      <PhoneInput enableSearch {...rest} />
     </LabelWrapper>
   );
 };
 
-export default LabelDatePicker;
+export default LabelPhoneNumber;
