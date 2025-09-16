@@ -62,36 +62,25 @@
 "use client";
 
 import React from "react";
-import { Form, Input, InputProps } from "antd";
+import { Input, InputProps } from "antd";
+import LabelWrapper from "./LabelWrapper";
 
 type LabelInputProps = InputProps & {
   label: string;
   name: string;
   required?: boolean;
-  fullLabel?: boolean; // optional prop to force full-width label
 };
 
 const LabelInput: React.FC<LabelInputProps> = ({
   label,
   name,
-  required = false,
-  fullLabel = true,
+  required,
   ...rest
 }) => {
   return (
-    <Form.Item
-      label={label}
-      name={name}
-      labelCol={fullLabel ? { span: 24 } : undefined}
-      wrapperCol={fullLabel ? { span: 24 } : undefined}
-      rules={
-        required
-          ? [{ required: true, message: `${label} is required` }]
-          : undefined
-      }
-    >
+    <LabelWrapper label={label} name={name} required={required}>
       <Input {...rest} />
-    </Form.Item>
+    </LabelWrapper>
   );
 };
 

@@ -1,4 +1,5 @@
 "use client";
+import MyForm from "@/component/forms/MyForm";
 import Step2Form from "@/component/forms/Step2Form";
 import Left2 from "@/component/pages/login/Left2";
 import Left3 from "@/component/pages/login/Left3";
@@ -14,6 +15,7 @@ export default function page() {
       <Left3 /> */}
       <Step1 />
       {/* <Step2 /> */}
+      {/* <MyForm /> */}
     </SignInWrapper>
   );
 }
