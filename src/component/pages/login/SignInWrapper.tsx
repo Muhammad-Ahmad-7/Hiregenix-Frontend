@@ -1,21 +1,16 @@
-import { ROUTES } from "@/constants/routes";
-import { Button, Col, Row, Typography } from "antd";
+import { Col, Row } from "antd";
 import Image, { StaticImageData } from "next/image";
-import Link from "next/link";
 import React from "react";
 import LoginHeader from "./LoginHeader";
-import Fire from "@/icons/Fire";
 
 import sign_in from "../../../../public/main.png";
-import Left1 from "./Left1";
-const { Title, Text } = Typography;
 
 export default function SignInWrapper({
   children,
-  img,
+  img = sign_in,
 }: {
   children: React.ReactNode;
-  img: StaticImageData | string;
+  img?: StaticImageData | string;
 }) {
   const childArray = React.Children.toArray(children);
   return (

@@ -9,7 +9,7 @@ export default function LoginHeader() {
     <Row className="h-20 px-6 flex items-center bg-white">
       <Col span={12} className="!flex items-center gap-2">
         <Image width={36} height={36} src={"/logo/logo.png"} alt="Logo" />
-        <Text className="font-semibold">HIREGENX</Text>
+        <Text className="font-semibold">{INFO.CompanyName}</Text>
       </Col>
       <Col span={12} className="!flex !justify-end">
         <Select

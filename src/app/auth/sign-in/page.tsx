@@ -1,16 +1,8 @@
 "use client";
 import React from "react";
-import { Row, Col, Button, Typography, Card, Select } from "antd";
-import Fire from "@/icons/Fire";
-import Image from "next/image";
-import Link from "next/link";
-import { ROUTES } from "@/constants/routes";
-import LoginHeader from "@/component/pages/login/LoginHeader";
-
 import sign_in from "../../../../public/main.png";
 import SignInWrapper from "@/component/pages/login/SignInWrapper";
 import Left1 from "@/component/pages/login/Left1";
-const { Title, Text } = Typography;
 
 const Page: React.FC = () => {
   return (
