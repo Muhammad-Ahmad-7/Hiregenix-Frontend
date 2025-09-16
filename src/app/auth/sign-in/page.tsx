@@ -1,59 +1,86 @@
 "use client";
+import React from "react";
+import { Row, Col, Button, Typography, Card, Select } from "antd";
+import Fire from "@/icons/Fire";
+import Image from "next/image";
+import Link from "next/link";
+import { ROUTES } from "@/constants/routes";
+import LoginHeader from "@/component/pages/login/LoginHeader";
 
-import { Button, Select } from "antd";
-import { FireOutlined, GlobalOutlined } from "@ant-design/icons";
+import sign_in from "../../../../public/main.png";
+import SignInWrapper from "@/component/pages/login/SignInWrapper";
+import Left1 from "@/component/pages/login/Left1";
+const { Title, Text } = Typography;
 
-export default function Page() {
+const Page: React.FC = () => {
   return (
-    <div className="flex h-screen">
-      {/* Left Section */}
-      <div className="w-full md:w-1/2 flex flex-col justify-center px-8 lg:px-16">
-        {/* Logo */}
-        <div className="flex items-center mb-12">
-          <FireOutlined className="text-2xl text-black mr-2" />
-          <span className="text-lg font-semibold">RecruiterAI</span>
-        </div>
+    <SignInWrapper img={sign_in}>
+      <Left1 />
+    </SignInWrapper>
+    // <div className="bg-white">
+    //   <div className="px-4 bg-white h-screen max-w-[1500px] mx-auto">
+    //     {/* Header */}
 
-        {/* Heading */}
-        <h1 className="text-3xl font-bold mb-2">
-          Let’s get you what you are looking for
-        </h1>
-        <p className="text-gray-500 mb-8">
-          Select your role for joining our platform
-        </p>
+    //     <LoginHeader />
 
-        {/* Buttons */}
-        <div className="space-y-4 max-w-sm">
-          <Button
-            block
-            className="rounded-full h-12 text-base flex items-center justify-center"
-          >
-            Join as <span className="text-blue-600 ml-1">recruiter</span>
-          </Button>
-          <Button
-            block
-            className="rounded-full h-12 text-base flex items-center justify-center"
-          >
-            Join as <span className="text-blue-600 ml-1">candidate</span>
-          </Button>
-        </div>
-      </div>
+    //     {/* Content Section */}
+    //     <Row className="bg-white h-[calc(100vh-5rem)]">
+    //       {/* Left Section */}
+    //       <Col
+    //         xs={24}
+    //         md={12}
+    //         className="!flex !flex-col !justify-center !items-center p-4 lg:p-32"
+    //       >
+    //         {/* Logo Circle */}
+    //         <div className="flex w-full">
+    //           <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg border border-gray-200 mb-4">
+    //             <Fire />
+    //           </div>
+    //         </div>
 
-      {/* Right Section */}
-      <div className="hidden md:flex w-1/2 bg-blue-500 rounded-l-3xl relative">
-        {/* Language Selector */}
-        <div className="absolute top-4 right-4">
-          <Select
-            defaultValue="en"
-            suffixIcon={<GlobalOutlined />}
-            options={[
-              { value: "en", label: "English" },
-              { value: "ur", label: "Urdu" },
-            ]}
-            className="w-28"
-          />
-        </div>
-      </div>
-    </div>
+    //         {/* Text & Buttons */}
+    //         <div className="w-full shadow-none">
+    //           <Title level={1} className="!mb-2">
+    //             Let’s get you what you are looking for
+    //           </Title>
+
+    //           <Text type="secondary">
+    //             Select your role for joining our platform
+    //           </Text>
+
+    //           <div className="mt-8 gap-2 flex flex-col">
+    //             <Link href={ROUTES.company}>
+    //               <Button block size="large" className="!rounded-full mb-4">
+    //                 Join as recruiter
+    //               </Button>
+    //             </Link>
+    //             <Link href={ROUTES.candidate}>
+    //               <Button block size="large" className="!rounded-full">
+    //                 Join as candidate
+    //               </Button>
+    //             </Link>
+    //           </div>
+    //         </div>
+    //       </Col>
+
+    //       {/* Right Section */}
+    //       <Col
+    //         xs={0}
+    //         md={12}
+    //         className="!flex !justify-center !items-center rounded-4xl"
+    //       >
+    //         <Image
+    //           width={550}
+    //           height={500}
+    //           src={sign_in}
+    //           alt="sign in"
+    //           className="rounded-4xl"
+    //         />
+    //       </Col>
+    //     </Row>
+    //   </div>
+    // </div>
   );
-}
+};
+
+export default Page;
