@@ -1,4 +1,4 @@
-import { Col, Form, Row, Typography } from "antd";
+import { Col, Flex, Form, Row, Typography } from "antd";
 import React from "react";
 import PlusIcon from "@/icons/PlusIcon";
 import {
@@ -8,6 +8,7 @@ import {
   LabelSelect,
 } from "../common";
 import UiButton from "../common/CustomButton";
+import LeftArrow from "@/icons/LeftArrow";
 const { Text } = Typography;
 export default function Step2Form() {
   const [form] = Form.useForm();
@@ -74,20 +75,37 @@ export default function Step2Form() {
             // type="email"
           />
         </Col>
+        {/* <Col span={24} className="bg-red-600 flex justify-start"> */}
+        <UiButton type="link" className=" !justify-start !px-0">
+          Add Addition Link +
+        </UiButton>
+        {/* </Col> */}
       </div>
       <div className="mt-4 gap-2 flex flex-col item-center">
-        <Col span={6}>
-          <UiButton
-            htmlType="submit"
-            type="primary"
-            onClick={() => {}}
-            block
-            size="large"
-            className="!rounded-xl"
-          >
-            Next
-          </UiButton>
-        </Col>
+        <Flex gap="small" wrap>
+          <Col span={2}>
+            <UiButton
+              onClick={() => {}}
+              block
+              size="large"
+              className="!rounded-xl"
+            >
+              <LeftArrow />
+            </UiButton>
+          </Col>
+          <Col span={6}>
+            <UiButton
+              htmlType="submit"
+              type="primary"
+              onClick={() => {}}
+              block
+              size="large"
+              className="!rounded-xl"
+            >
+              Next
+            </UiButton>
+          </Col>
+        </Flex>
       </div>
     </Form>
   );
