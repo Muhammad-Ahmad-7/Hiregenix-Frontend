@@ -43,9 +43,7 @@ export default function StepperForm() {
         <Title level={1} className="!mb-2">
           {currentStep === 1 && "Personal Information"}
           {currentStep === 2 && "Education Information"}
-
           {currentStep === 3 && "Expertise Description"}
-
           {currentStep === 4 && "Permissions Required"}
         </Title>
 
