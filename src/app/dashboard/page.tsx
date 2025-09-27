@@ -12,6 +12,7 @@ import {
   Row,
   Col,
   Select,
+  Badge,
 } from "antd";
 import {
   BankOutlined,
@@ -22,7 +23,14 @@ import {
   MoreOutlined,
   RiseOutlined,
   ArrowUpOutlined,
+  ProfileOutlined,
+  ProfileFilled,
+  ContainerFilled,
+  StarFilled,
 } from "@ant-design/icons";
+import ArrowRightUp from "@/icons/ArrowRightUp";
+import StatsCard from "@/component/pages/dashboard/StatsCard";
+import Star from "@/icons/Star";
 
 const { Option } = Select;
 
@@ -177,30 +185,13 @@ export default function Dashboard() {
         {/* (1,1) nested 2x2 grid */}
         <Col span={12}>
           <Row gutter={[16, 16]}>
-            <Col span={12}>
-              <Card className="h-32">
-                <div className="flex items-center justify-between h-full">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <BankOutlined
-                        className="text-purple-500"
-                        style={{ fontSize: "16px" }}
-                      />
-                      <span className="text-xs text-gray-600">Jobs Posted</span>
-                    </div>
-                    <div className="text-2xl font-bold">142</div>
-                    <div className="text-xs text-green-500 flex items-center gap-1">
-                      <ArrowUpOutlined style={{ fontSize: "10px" }} />
-                      +35% in last 30 days
-                    </div>
-                  </div>
-                  <RiseOutlined
-                    className="text-gray-200"
-                    style={{ fontSize: "20px" }}
-                  />
-                </div>
-              </Card>
-            </Col>
+            <StatsCard
+              icon={<ContainerFilled style={{ color: "white" }} />}
+              title="Jobs Posted"
+              number={142}
+              badgeText="45%+ in last 30 days"
+              badgeColor="green"
+            />
             <Col span={12}>
               <Card className="h-32">
                 <div className="flex items-center justify-between h-full">
@@ -224,51 +215,14 @@ export default function Dashboard() {
                 </div>
               </Card>
             </Col>
-            <Col span={12}>
-              <Card className="h-32">
-                <div className="flex items-center justify-between h-full">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <TeamOutlined
-                        className="text-orange-500"
-                        style={{ fontSize: "16px" }}
-                      />
-                      <span className="text-xs text-gray-600">Applicants</span>
-                    </div>
-                    <div className="text-2xl font-bold">23</div>
-                    <div className="text-xs text-orange-500">
-                      4 under review
-                    </div>
-                  </div>
-                  <RiseOutlined
-                    className="text-gray-200"
-                    style={{ fontSize: "20px" }}
-                  />
-                </div>
-              </Card>
-            </Col>
-            <Col span={12}>
-              <Card className="h-32">
-                <div className="flex items-center justify-between h-full">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <StarOutlined
-                        className="text-green-500"
-                        style={{ fontSize: "16px" }}
-                      />
-                      <span className="text-xs text-gray-600">
-                        Avg. profile score
-                      </span>
-                    </div>
-                    <div className="text-2xl font-bold">95</div>
-                  </div>
-                  <RiseOutlined
-                    className="text-gray-200"
-                    style={{ fontSize: "20px" }}
-                  />
-                </div>
-              </Card>
-            </Col>
+            <StatsCard />
+            <StatsCard
+              icon={<StarFilled className="!text-white" />}
+              title="Jobs Posted"
+              number={142}
+              badgeText="45%+ in last 30 days"
+              badgeColor="orange"
+            />
           </Row>
         </Col>
 
@@ -341,18 +295,20 @@ export default function Dashboard() {
                   renderItem={(item) => (
                     <List.Item
                       className="hover:bg-gray-50 px-2 rounded"
-                      actions={[
-                        <div className="flex items-center gap-2">
-                          {item.time && (
-                            <span className="text-xs text-gray-400">
-                              {item.time}
-                            </span>
-                          )}
-                          <Dropdown overlay={menu} trigger={["click"]}>
-                            <MoreOutlined className="text-gray-400 cursor-pointer" />
-                          </Dropdown>
-                        </div>,
-                      ]}
+                      actions={
+                        [
+                          // <div className="flex items-center gap-2">
+                          //   {item.time && (
+                          //     <span className="text-xs text-gray-400">
+                          //       {item.time}
+                          //     </span>
+                          //   )}
+                          //   <Dropdown overlay={menu} trigger={["click"]}>
+                          //     <MoreOutlined className="text-gray-400 cursor-pointer" />
+                          //   </Dropdown>
+                          // </div>,
+                        ]
+                      }
                     >
                       <List.Item.Meta
                         avatar={
