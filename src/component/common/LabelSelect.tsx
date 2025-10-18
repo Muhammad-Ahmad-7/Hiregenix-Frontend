@@ -7,8 +7,8 @@ import type { FormItemProps } from "antd";
 import LabelWrapper from "./LabelWrapper";
 
 type LabelSelectProps = SelectProps & {
-  label: string | React.ReactNode;
-  name: string;
+  label?: string | React.ReactNode;
+  name?: string;
   required?: boolean;
   rules?: Rule[];
   fullLabel?: boolean;
@@ -24,27 +24,36 @@ const LabelSelect: React.FC<LabelSelectProps> = ({
   itemProps,
   ...rest
 }) => {
-  return (
-    <LabelWrapper
-      label={label}
-      name={name}
-      required={required}
-      rules={rules}
-      fullLabel={fullLabel}
-      itemProps={itemProps}
-    >
-      <Select
-        {...rest}
-        showSearch
-        optionFilterProp="label"
-        filterSort={(optionA, optionB) =>
-          (optionA?.label ?? "")
-            .toLowerCase()
-            .localeCompare((optionB?.label ?? "").toLowerCase())
-        }
-      />
-    </LabelWrapper>
+  const selectNode = (
+    <Select
+      {...rest}
+      style={{ width: "100%", ...((rest as any).style ?? {}) }}
+      showSearch
+      optionFilterProp="label"
+      filterSort={(optionA, optionB) =>
+        (optionA?.label ?? "")
+          .toLowerCase()
+          .localeCompare((optionB?.label ?? "").toLowerCase())
+      }
+    />
   );
+
+  if (label) {
+    return (
+      <LabelWrapper
+        label={label}
+        name={name}
+        required={required}
+        rules={rules}
+        fullLabel={fullLabel}
+        itemProps={itemProps}
+      >
+        {selectNode}
+      </LabelWrapper>
+    );
+  }
+
+  return selectNode;
 };
 
 export default LabelSelect;

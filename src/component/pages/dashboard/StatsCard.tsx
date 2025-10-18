@@ -46,7 +46,7 @@ export default function StatsCard({
 
   return (
     <Col span={12}>
-      <div className="h-40 p-4 bg-goldenPurple-5 rounded-xl">
+      <div className="h-40 p-4 bg-white rounded-xl">
         <div className="flex flex-col justify-between w-full h-full">
           {/* Top Section */}
           <TopIconAndNavigation
