@@ -26,6 +26,7 @@ export default function StatsCard({
     shown: true,
     href: "",
   },
+  bgColorIcon = "#1890FF",
 }: StatsCardProps) {
   // color map logic
   const colorMap = {
@@ -45,10 +46,14 @@ export default function StatsCard({
 
   return (
     <Col span={12}>
-      <div className="h-40 p-4 bg-white rounded-xl">
+      <div className="h-40 p-4 bg-goldenPurple-5 rounded-xl">
         <div className="flex flex-col justify-between w-full h-full">
           {/* Top Section */}
-          <TopIconAndNavigation icon={icon} arrow={arrow} />
+          <TopIconAndNavigation
+            icon={icon}
+            arrow={arrow}
+            bgColorIcon={bgColorIcon}
+          />
           {/* Bottom Section */}
           <div>
             <div className="text-sm text-[#8C8C8C]">{title}</div>

@@ -448,6 +448,7 @@ export const TopIconAndNavigation = ({
     shown: true,
     href: "",
   },
+  bgColorIcon = "#1890FF",
 }: {
   icon: React.ReactNode;
   title?: string;
@@ -455,25 +456,27 @@ export const TopIconAndNavigation = ({
     shown?: boolean;
     href?: string;
   };
+  bgColorIcon?: string;
 }) => {
   return (
-    <div className="flex  items-center justify-between w-full mb-2">
+    <div className="flex items-center justify-between w-full mb-2">
       <div className="flex gap-3 items-center">
-        <div className="bg-orange-300 w-8 h-8 flex justify-center items-center rounded-full">
+        <div
+          className="w-8 h-8 flex justify-center items-center rounded-full"
+          style={{ backgroundColor: bgColorIcon }}
+        >
           {icon}
         </div>
         <div className="text-black font-semibold">{title}</div>
       </div>
+
       {arrow.shown && (
-        // <div className="w-8 h-8 flex justify-center items-center rounded-full border border-gray-300">
         <UiButton
           href={arrow.href}
           className="group !w-8 !h-8 !rounded-full flex items-center justify-center bg-white border border-gray-300 transition-all duration-300 hover:!bg-blue-500"
         >
-          <ArrowUpOutlined className="text-gray-600 transform rotate-45 transition-all duration-300 ease-in-out group-hover:!text-white  group-hover:rotate-90" />
+          <ArrowUpOutlined className="text-gray-600 transform rotate-45 transition-all duration-300 ease-in-out group-hover:!text-white group-hover:rotate-90" />
         </UiButton>
-
-        // </div>
       )}
     </div>
   );
