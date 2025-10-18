@@ -19,11 +19,15 @@ import {
   ClockCircleOutlined,
   LaptopOutlined,
   EllipsisOutlined,
+  NotificationFilled,
+  BuildFilled,
+  CalendarFilled,
 } from "@ant-design/icons";
 import { LabelInput, LabelSelect } from "@/component/common";
 import Search from "antd/es/input/Search";
 import UiButton from "@/component/common/CustomButton";
 import { TopIconAndNavigation } from "../dashboard/page";
+import IconWrapper from "@/icons/IconWrapper";
 
 const { Title, Paragraph } = Typography;
 
@@ -109,95 +113,101 @@ export default function JobDashboard() {
   const [selectedJob, setSelectedJob] = useState(jobs[0]);
 
   return (
-    <div className="p-4 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 min-h-screen">
       <Row gutter={[16, 16]}>
         {/* Sidebar */}
-        <Col xs={24} md={12} lg={12} className=" bg-amber-400 ">
-          <div className="h-full  rounded-2xl">
-            <div className="flex justify-between">
-              <Col span={19}>
-                <Search
-                  placeholder="input search text"
-                  allowClear
-                  onSearch={() => {}}
-                />
-              </Col>
-              <Col span={5}>
-                {" "}
-                <LabelSelect
-                  name="country"
-                  placeholder="Country"
-                  options={[
-                    { label: "USA", value: "us" },
-                    { label: "UK", value: "uk" },
-                  ]}
-                />
-              </Col>
+        <Col xs={24} md={12} lg={12} className="  ">
+          <div>
+            <div className="h-full bg-white rounded-2xl ">
+              <div className="p-4 ">
+                <div className="flex justify-between  !m-0  ">
+                  <Col span={18} className="!m-0 !p-0">
+                    <Search
+                      className="!m-0 !p-0 "
+                      placeholder="input search text"
+                      allowClear
+                      onSearch={() => {}}
+                    />
+                  </Col>
+                  <Col span={5} className="!m-0 !p-0">
+                    <LabelSelect
+                      name="country"
+                      placeholder="Country"
+                      options={[
+                        { label: "USA", value: "us" },
+                        { label: "UK", value: "uk" },
+                      ]}
+                    />
+                  </Col>
+                </div>
+                <div className="flex gap-3 my-2 justify-between ">
+                  <LabelSelect
+                    name="remote"
+                    placeholder="Remote"
+                    options={[
+                      { label: "USA", value: "us" },
+                      { label: "UK", value: "uk" },
+                    ]}
+                  />{" "}
+                  <LabelSelect
+                    name="experience"
+                    placeholder="Experience"
+                    options={[
+                      { label: "USA", value: "us" },
+                      { label: "UK", value: "uk" },
+                    ]}
+                  />{" "}
+                  <LabelSelect
+                    name="datePosted"
+                    placeholder="Date Posted"
+                    options={[
+                      { label: "USA", value: "us" },
+                      { label: "UK", value: "uk" },
+                    ]}
+                  />{" "}
+                  <UiButton
+                    name="saved"
+                    title="Saved"
+                    className="!text-gray-400"
+                  >
+                    Saved
+                  </UiButton>
+                  <UiButton
+                    name="recommended"
+                    title="Recommended"
+                    className="!text-gray-400"
+                  >
+                    Recommended
+                  </UiButton>{" "}
+                </div>
+              </div>
+              <List
+                itemLayout="horizontal"
+                dataSource={jobs}
+                renderItem={(item) => (
+                  <List.Item
+                    className={`cursor-pointer   hover:bg-gray-100 transition ${
+                      selectedJob.id === item.id ? "bg-gray-100" : ""
+                    }`}
+                    onClick={() => setSelectedJob(item)}
+                  >
+                    <List.Item.Meta
+                      avatar={
+                        <div className="px-4">
+                          <Avatar src={item.logo} size={50} />{" "}
+                          <span className="text-blue-600 font-semibold">
+                            {item.title}
+                          </span>{" "}
+                          <span className="text-gray-500">{item.company}</span>
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
             </div>
-            <div className="flex gap-3 px-2 my-2 justify-between ">
-              <LabelSelect
-                name="remote"
-                placeholder="Remote"
-                options={[
-                  { label: "USA", value: "us" },
-                  { label: "UK", value: "uk" },
-                ]}
-              />{" "}
-              <LabelSelect
-                name="experience"
-                placeholder="Experience"
-                options={[
-                  { label: "USA", value: "us" },
-                  { label: "UK", value: "uk" },
-                ]}
-              />{" "}
-              <LabelSelect
-                name="datePosted"
-                placeholder="Date Posted"
-                options={[
-                  { label: "USA", value: "us" },
-                  { label: "UK", value: "uk" },
-                ]}
-              />{" "}
-              <UiButton name="saved" title="Saved" className="!text-gray-400">
-                Saved
-              </UiButton>
-              <UiButton
-                name="recommended"
-                title="Recommended"
-                className="!text-gray-400"
-              >
-                Recommended
-              </UiButton>{" "}
-            </div>
-
-            <List
-              itemLayout="horizontal"
-              dataSource={jobs}
-              renderItem={(item) => (
-                <List.Item
-                  className={`cursor-pointer rounded-xl  hover:bg-gray-100 transition ${
-                    selectedJob.id === item.id ? "bg-gray-100" : ""
-                  }`}
-                  onClick={() => setSelectedJob(item)}
-                >
-                  <List.Item.Meta
-                    avatar={<Avatar src={item.logo} size={50} />}
-                    title={
-                      <span className="text-blue-600 font-semibold">
-                        {item.title}
-                      </span>
-                    }
-                    description={
-                      <span className="text-gray-500">{item.company}</span>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
           </div>
         </Col>
-
         {/* Job Details */}
         <Col xs={24} md={12} lg={12}>
           <Card className="shadow-md rounded-2xl">
@@ -222,29 +232,119 @@ export default function JobDashboard() {
             </div>
             <Divider />
             <div className="">
-              <span className="bg-amber-800 text-lg text-gray-400">
-                Job Title
-              </span>
-              <Title className="!text-3xl !m-0 bg-red-400">
-                Front End Developer
-              </Title>
+              <span className=" text-lg text-gray-400">Job Title</span>
+              <Title className="!text-3xl !m-0 ">Front End Developer</Title>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-6">
-              <Tag icon={<CalendarOutlined />} color="blue">
-                Posted: {selectedJob.posted}
-              </Tag>
-              <Tag icon={<LaptopOutlined />} color="purple">
-                Mode: {selectedJob.mode}
-              </Tag>
-              <Tag icon={<ClockCircleOutlined />} color="orange">
-                Deadline: {selectedJob.deadline}
-              </Tag>
-              <Tag icon={<EnvironmentOutlined />} color="green">
-                Location: {selectedJob.location}
-              </Tag>
-              <Tag color="cyan">Type: {selectedJob.type}</Tag>
-              <Tag color="gold">Interview: {selectedJob.interviewDeadline}</Tag>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4  mt-6">
+              <div className="my-4    items-center  flex">
+                {" "}
+                <IconWrapper
+                  icon={
+                    <BuildFilled
+                      color="primary-6"
+                      className="!text-[#1890FF]"
+                    />
+                  }
+                  bgColorIcon="white"
+                />
+                <div className="ml-4">
+                  <div className=" text-sm text-gray-400">Posted</div>
+                  <div className="!text-lg font-semibold !m-0 ">
+                    30 - Dec - 2025
+                  </div>
+                </div>
+              </div>
+              <div className="my-4    items-center  flex">
+                {" "}
+                <IconWrapper
+                  icon={
+                    <NotificationFilled
+                      color="primary-6"
+                      className="!text-[#1890FF]"
+                    />
+                  }
+                  bgColorIcon="white"
+                />
+                <div className="ml-4">
+                  <div className=" text-sm text-gray-400">Posted</div>
+                  <div className="!text-lg font-semibold !m-0 ">
+                    30 - Dec - 2025
+                  </div>
+                </div>
+              </div>
+              <div className="my-4    items-center  flex">
+                {" "}
+                <IconWrapper
+                  icon={
+                    <CalendarFilled
+                      color="primary-6"
+                      className="!text-[#1890FF]"
+                    />
+                  }
+                  bgColorIcon="white"
+                />
+                <div className="ml-4">
+                  <div className=" text-sm text-gray-400">Posted</div>
+                  <div className="!text-lg font-semibold !m-0 ">
+                    30 - Dec - 2025
+                  </div>
+                </div>
+              </div>
+              <div className="my-4    items-center  flex">
+                {" "}
+                <IconWrapper
+                  icon={
+                    <NotificationFilled
+                      color="primary-6"
+                      className="!text-[#1890FF]"
+                    />
+                  }
+                  bgColorIcon="white"
+                />
+                <div className="ml-4">
+                  <div className=" text-sm text-gray-400">Posted</div>
+                  <div className="!text-lg font-semibold !m-0 ">
+                    30 - Dec - 2025
+                  </div>
+                </div>
+              </div>{" "}
+              <div className="my-4    items-center  flex">
+                {" "}
+                <IconWrapper
+                  icon={
+                    <NotificationFilled
+                      color="primary-6"
+                      className="!text-[#1890FF]"
+                    />
+                  }
+                  bgColorIcon="white"
+                />
+                <div className="ml-4">
+                  <div className=" text-sm text-gray-400">Posted</div>
+                  <div className="!text-lg font-semibold !m-0 ">
+                    30 - Dec - 2025
+                  </div>
+                </div>
+              </div>{" "}
+              <div className="my-4    items-center  flex">
+                {" "}
+                <IconWrapper
+                  icon={
+                    <NotificationFilled
+                      color="primary-6"
+                      className="!text-[#1890FF]"
+                    />
+                  }
+                  bgColorIcon="white"
+                />
+                <div className="ml-4">
+                  <div className=" text-sm text-gray-400">Posted</div>
+                  <div className="!text-lg font-semibold !m-0 ">
+                    30 - Dec - 2025
+                  </div>
+                </div>
+              </div>{" "}
             </div>
 
             <div className="mt-6">
