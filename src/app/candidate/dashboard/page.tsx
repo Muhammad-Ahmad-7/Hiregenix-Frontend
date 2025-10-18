@@ -8,26 +8,19 @@ import {
   Avatar,
   Button,
   Dropdown,
-  Menu,
   Row,
   Col,
   Select,
   Badge,
 } from "antd";
 import {
-  BankOutlined,
-  TeamOutlined,
-  StarOutlined,
-  MessageOutlined,
   CalendarOutlined,
   MoreOutlined,
   RiseOutlined,
-  ArrowUpOutlined,
-  ProfileOutlined,
-  ProfileFilled,
   ContainerFilled,
   StarFilled,
   MessageFilled,
+  ArrowUpOutlined,
 } from "@ant-design/icons";
 import ArrowRightUp from "@/icons/ArrowRightUp";
 import StatsCard from "@/component/pages/dashboard/StatsCard";
@@ -36,6 +29,7 @@ import { Color } from "antd/es/color-picker";
 import DropdownButton from "antd/es/dropdown/dropdown-button";
 import UiButton from "@/component/common/CustomButton";
 import { ROUTES } from "@/constants/routes";
+import { JobPortalMapCard } from "@/component/pages/candidate/dashboard/JobPortalMapCard";
 
 const { Option } = Select;
 
@@ -133,13 +127,6 @@ export default function Dashboard() {
       unread: true,
     },
     {
-      name: "Alexa",
-      text: "Hey Adam! Interested in tex...",
-      time: "3m",
-      avatar: "A",
-      unread: true,
-    },
-    {
       name: "Donald",
       text: "Hey Adam! Interested in tex hoas asdo ashdoas hasdha asdoash haoshdoas haosdhaoshd ",
       time: "",
@@ -208,21 +195,11 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      {/* <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <Select defaultValue="Front-end developer" className="w-48">
-          <Option value="front-end">Front-end developer</Option>
-          <Option value="backend">Backend developer</Option>
-          <Option value="full-stack">Full-stack developer</Option>
-        </Select>
-      </div> */}
-
+    <div className="p-6  bg-gray-100  min-h-screen">
       {/* First Row */}
       <Row gutter={[16, 16]}>
         {/* (1,1) nested 2x2 grid */}
-        <Col span={12}>
+        <Col span={11}>
           <Row gutter={[16, 16]}>
             <StatsCard
               icon={<ContainerFilled style={{ color: "white" }} />}
@@ -231,29 +208,13 @@ export default function Dashboard() {
               badgeText="45%+ in last 30 days"
               badgeColor="green"
             />
-            <Col span={12}>
-              <Card className="h-32">
-                <div className="flex items-center justify-between h-full">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-4 h-4 bg-blue-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">W</span>
-                      </div>
-                      <span className="text-xs text-gray-600">Active jobs</span>
-                    </div>
-                    <div className="text-2xl font-bold">10</div>
-                    <div className="text-xs text-green-500 flex items-center gap-1">
-                      <ArrowUpOutlined style={{ fontSize: "10px" }} />
-                      +10% in last 30 days
-                    </div>
-                  </div>
-                  <RiseOutlined
-                    className="text-gray-200"
-                    style={{ fontSize: "20px" }}
-                  />
-                </div>
-              </Card>
-            </Col>
+            <StatsCard
+              icon={<ContainerFilled style={{ color: "white" }} />}
+              title="Jobs Posted"
+              number={142}
+              badgeText="45%+ in last 30 days"
+              badgeColor="green"
+            />
             <StatsCard />
             <StatsCard
               icon={<StarFilled className="!text-white" />}
@@ -266,23 +227,33 @@ export default function Dashboard() {
         </Col>
 
         {/* (1,2) applications chart */}
-        <Col span={12}>
-          <Row gutter={[16, 16]}>
+        <Col span={13}>
+          <Row className=" w-full" gutter={[16, 16]}>
             <Col span={12}>
-              <div className="h-full bg-white hover-gray-50 px-4 rounded-lg">
-                <div className="flex gap-2 font-bold text-md items-center py-4 ">
-                  <div className="bg-blue-600 w-6 h-6 flex justify-center items-center rounded-full">
-                    <MessageFilled style={{ color: "white" }} />
-                  </div>
-                  <div className="text-md">Messages</div>
+              <div className="h-full bg-white hover-gray-50  rounded-lg">
+                <div className="flex gap-2 font-bold text-md px-4 items-center py-4 ">
+                  <TopIconAndNavigation
+                    icon={
+                      <MessageFilled
+                        size={36}
+                        style={{ color: "white" }}
+                        //   onMouseEnter={() => setLaoding(true)}
+                        //   onMouseLeave={() => setLaoding(false)}
+                        //   spin={laoding}
+                      />
+                    }
+                    title="Messages"
+                    arrow={{ shown: false }}
+                  />
                 </div>
+
                 <List
                   itemLayout="horizontal"
                   dataSource={messages}
-                  className="cursor-pointer"
+                  className="cursor-pointer !pb-9 "
                   renderItem={(item) => (
                     <List.Item
-                      className="hover:bg-gray-50 rounded"
+                      className="hover:bg-gray-50 hover:w-full !px-4 rounded"
                       actions={[
                         <div className="flex items-center gap-2">
                           {!item.time ? (
@@ -308,7 +279,7 @@ export default function Dashboard() {
                                 {item.avatar}
                               </Avatar>
                               {item.unread && (
-                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white"></div>
+                                <div className="absolute -top-1 -right-1 w-3 h-3  rounded-full bg-red-600 border border-white"></div>
                               )}
                             </div>
                             <div className="flex flex-col">
@@ -321,16 +292,15 @@ export default function Dashboard() {
                             </div>
                           </div>
                         }
-                        // title={}
-                        // description={}
                       />
                     </List.Item>
                   )}
                 />
                 <div
                   className=" 
+                  mt-5
                 absolute bottom-0 right-1.5 
-                flex justify-center w-[96%] py-3 pt-8 bg-gradient-to-t from-gray-200 to-transparent rounded-b-lg"
+                flex justify-center w-[96%] py-3  bg-gradient-to-t from-gray-50 to-transparent rounded-b-lg"
                 >
                   <UiButton className="!rounded-2xl" href={ROUTES.DASHBOARD}>
                     Load More
@@ -378,7 +348,7 @@ export default function Dashboard() {
       {/* Second Row */}
       <Row gutter={[16, 16]} className="mt-6">
         {/* (2,1) Active Jobs Table */}
-        <Col span={12}>
+        <Col span={11}>
           <Card
             title="Active Jobs"
             extra={
@@ -396,9 +366,115 @@ export default function Dashboard() {
             />
           </Card>
         </Col>
+        <Col span={13}>
+          <Row className=" w-full" gutter={[16, 16]}>
+            <Col span={12}>
+              <div className="bg-white p-4">
+                <TopIconAndNavigation
+                  icon={<ContainerFilled style={{ color: "white" }} />}
+                  title="Jobs"
+                />
+                <JobPortalMapCard />
+                <div>
+                  <div className="flex justify-center items-start ">
+                    <div className="flex items-center  justify-between w-full ">
+                      {/* Total jobs */}
+                      {jobsStats.map((data, index) => (
+                        <div key={index} className="text-left">
+                          <div className="text-gray-400 text-sm mb-2">
+                            {data.title}
+                          </div>
+                          <div className="text-xl font-semibold text-gray-900 tracking-tight">
+                            {data.value}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>{" "}
+            </Col>
 
+            <Col span={12}>
+              <Card
+                title="Interviews schedule"
+                extra={
+                  <CalendarOutlined
+                    className="text-blue-500"
+                    style={{ fontSize: "16px" }}
+                  />
+                }
+                className="h-full"
+              >
+                <p className="mb-3 font-medium text-sm text-gray-500">Today</p>
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div>
+                      <p className="font-semibold text-sm">
+                        Front-end developer
+                      </p>
+                      <p className="text-gray-500 text-xs">Devsine</p>
+                    </div>
+                  </div>
+                  <Button
+                    type="primary"
+                    size="small"
+                    className="bg-orange-500 border-orange-500 hover:bg-orange-600"
+                  >
+                    Join now
+                  </Button>
+                </div>
+              </Card>
+            </Col>
+          </Row>
+        </Col>
+        {/*  */}
         {/* (2,2) Messages + Interview Schedule */}
       </Row>
     </div>
   );
 }
+
+const jobsStats = [
+  { title: "Total jobs", value: 85357 },
+  { title: "New Jobs", value: 240 },
+  { title: "Recommended", value: 12450 },
+];
+export const TopIconAndNavigation = ({
+  icon,
+  title,
+  arrow = {
+    shown: true,
+    href: "",
+  },
+}: {
+  icon: React.ReactNode;
+  title?: string;
+  arrow?: {
+    shown?: boolean;
+    href?: string;
+  };
+}) => {
+  return (
+    <div className="flex  items-center justify-between w-full mb-2">
+      <div className="flex gap-3 items-center">
+        <div className="bg-orange-300 w-8 h-8 flex justify-center items-center rounded-full">
+          {icon}
+        </div>
+        <div className="text-black font-semibold">{title}</div>
+      </div>
+      {arrow.shown && (
+        // <div className="w-8 h-8 flex justify-center items-center rounded-full border border-gray-300">
+        <UiButton
+          href={arrow.href}
+          className="group !w-8 !h-8 !rounded-full flex items-center justify-center bg-white border border-gray-300 transition-all duration-300 hover:!bg-blue-500"
+        >
+          <ArrowUpOutlined className="text-gray-600 transform rotate-45 transition-all duration-300 ease-in-out group-hover:!text-white  group-hover:rotate-90" />
+        </UiButton>
+
+        // </div>
+      )}
+    </div>
+  );
+};

@@ -2,13 +2,18 @@ import React from "react";
 import { Col, Badge } from "antd";
 import { ProfileFilled, ContainerFilled } from "@ant-design/icons";
 import ArrowRightUp from "@/icons/ArrowRightUp";
+import { TopIconAndNavigation } from "@/app/candidate/dashboard/page";
 
 interface StatsCardProps {
   icon?: React.ReactNode;
   title?: string;
   number?: number | string;
   badgeText?: string;
-  badgeColor?: "green" | "orange"; // only two options
+  badgeColor?: "green" | "orange";
+  arrow?: {
+    shown?: boolean;
+    href?: string;
+  }; // only two options
 }
 
 export default function StatsCard({
@@ -17,6 +22,10 @@ export default function StatsCard({
   number = 23,
   badgeText, // no default → hidden unless provided
   badgeColor = "orange",
+  arrow = {
+    shown: true,
+    href: "",
+  },
 }: StatsCardProps) {
   // color map logic
   const colorMap = {
@@ -39,15 +48,7 @@ export default function StatsCard({
       <div className="h-40 p-4 bg-white rounded-xl">
         <div className="flex flex-col justify-between w-full h-full">
           {/* Top Section */}
-          <div className="flex items-center justify-between w-full mb-2">
-            <div className="bg-orange-300 w-8 h-8 flex justify-center items-center rounded-full">
-              {icon}
-            </div>
-            <div className="w-8 h-8 flex justify-center items-center rounded-full border border-gray-300">
-              <ArrowRightUp />
-            </div>
-          </div>
-
+          <TopIconAndNavigation icon={icon} arrow={arrow} />
           {/* Bottom Section */}
           <div>
             <div className="text-sm text-[#8C8C8C]">{title}</div>
