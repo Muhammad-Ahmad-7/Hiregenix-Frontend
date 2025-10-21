@@ -42,9 +42,11 @@ import React from "react";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "antd/dist/reset.css";
 import "./globals.css";
+import { Toaster } from "react-hot-toast";
 const RootLayout = ({ children }: React.PropsWithChildren) => (
   <html lang="en">
     <body>
+      <Toaster position="top-center" />
       <AntdRegistry>{children}</AntdRegistry>
     </body>
   </html>
