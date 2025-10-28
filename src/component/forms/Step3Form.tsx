@@ -29,23 +29,29 @@ for (let i = 10; i < 36; i++) {
 const handleChange = (value: string[]) => {
   console.log(`selected ${value}`);
 };
-export default function Step3Form({ onNext, onBack }: Step2FormProps) {
+export default function Step3Form({
+  onNext,
+  onBack,
+  initialValues,
+}: Step2FormProps) {
   const [form] = Form.useForm();
 
   const onFinish = (values: any) => {
     console.log("Form Values:", values);
+
+    onNext(values);
     form.resetFields();
-    onNext();
   };
 
   return (
     <Form
       form={form}
+      initialValues={initialValues}
       onFinish={onFinish}
       validateTrigger="onSubmit" // only validate when clicking Next
     >
       <div className="flex flex-col ">
-        <Col span={24}>
+        {/* <Col span={24}>
           <LabelSelect
             name="expertize"
             label="Expertize"
@@ -53,7 +59,7 @@ export default function Step3Form({ onNext, onBack }: Step2FormProps) {
             options={[]}
             // required
           />
-        </Col>
+        </Col> */}
         <Col span={24}>
           <LabelSelect
             label={
@@ -63,7 +69,7 @@ export default function Step3Form({ onNext, onBack }: Step2FormProps) {
               </span>
             }
             maxCount={5}
-            name="tags"
+            name="skills"
             mode="tags"
             style={{ width: "100%" }}
             placeholder="Tags Mode"

@@ -1,3 +1,4 @@
+import { getToken } from "@/utils/token";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -8,6 +9,21 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
+// ✅ Add request interceptor (Attach token automatically)
+api.interceptors.request.use(
+  (config) => {
+    if (typeof window !== "undefined") {
+      const token = getToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Define API response and helper types
 export interface Meta {
@@ -52,7 +68,7 @@ export const safeApiCall = async <T>({
     console.log("response", response);
     const { data } = response;
     console.log("data", data);
-    if (showToaster && data.status == "success") {
+    if (showToaster && data.status == "Success") {
       console.log("i am working ");
       toast.success(data.message);
       return response.data;

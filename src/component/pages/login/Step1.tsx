@@ -1,32 +1,100 @@
 "use client";
 
+import { completeProfileApi } from "@/app/api/candidate/profile.api";
 import Step1Form from "@/component/forms/Step1Form";
 import Step2Form from "@/component/forms/Step2Form";
 import Step3Form from "@/component/forms/Step3Form";
 import Step4Form from "@/component/forms/Step4Form";
-import { Col, Typography } from "antd";
+import { Col, Typography, Spin } from "antd";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import toast from "react-hot-toast";
 
 const { Title, Text } = Typography;
 
-export default function StepperForm() {
-  const [currentStep, setCurrentStep] = useState(1);
+interface Profile {
+  fullName: string;
+  dateOfBirth: string;
+  gender: string;
+  country: string;
+  city: string;
+  contactNumber: string;
+  profilePictureUrl: string;
+  githubUrl: string;
+  linkedinUrl: string;
+  portfolioUrl: string;
+  skills: string[];
+  bio: string;
+  tagline: string;
+}
 
-  const next = () => setCurrentStep((prev) => prev + 1);
-  const back = () => setCurrentStep((prev) => prev - 1);
+export default function StepperForm() {
+  const [profile, setProfile] = useState<Profile>({
+    fullName: "",
+    dateOfBirth: "",
+    gender: "",
+    country: "",
+    city: "",
+    contactNumber: "",
+    profilePictureUrl: "https://example.com/uploads/profile123.jpg",
+    githubUrl: "",
+    linkedinUrl: "",
+    portfolioUrl: "",
+    skills: [],
+    bio: "",
+    tagline: "",
+  });
+
+  const [currentStep, setCurrentStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const next = (values?: Partial<Profile>) => {
+    console.log(values);
+    if (values) setProfile((prev) => ({ ...prev, ...values }));
+    setCurrentStep((prev) => prev + 1);
+  };
+
+  const back = () => {
+    if (currentStep === 2) {
+      setProfile((prev) => ({ ...prev, dateOfBirth: "" }));
+    }
+    setCurrentStep((prev) => prev - 1);
+  };
+
+  const handleComplete = async (values: Partial<Profile>) => {
+    console.log(profile);
+    const finalProfile = { ...profile, ...values };
+    setLoading(true);
+    try {
+      const res = await completeProfileApi(finalProfile);
+      if (res.status === "Success") {
+        router.push("/auth/candidate");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <Step1Form onNext={next} />;
+        return <Step1Form onNext={next} initialValues={profile} />;
       case 2:
-        return <Step2Form onNext={next} onBack={back} />;
-
+        return (
+          <Step2Form onNext={next} onBack={back} initialValues={profile} />
+        );
       case 3:
-        return <Step3Form onNext={next} onBack={back} />;
-
+        return (
+          <Step3Form onNext={next} onBack={back} initialValues={profile} />
+        );
       case 4:
-        return <Step4Form onNext={next} onBack={back} />;
+        return (
+          <Step4Form
+            onNext={handleComplete}
+            onBack={back}
+            initialValues={profile}
+          />
+        );
       default:
         return null;
     }
@@ -34,7 +102,6 @@ export default function StepperForm() {
 
   return (
     <Col xs={24} md={12} className="p-4 lg:px-32 lg:py-16">
-      {/* Step indicator */}
       <Text className="w-full !text-[#1677FF] font-semibold">
         STEP {currentStep} OF 4
       </Text>
@@ -47,7 +114,13 @@ export default function StepperForm() {
           {currentStep === 4 && "Permissions Required"}
         </Title>
 
-        {renderStep()}
+        {loading ? (
+          <div className="flex justify-center items-center h-48">
+            <Spin size="large" />
+          </div>
+        ) : (
+          renderStep()
+        )}
       </div>
     </Col>
   );

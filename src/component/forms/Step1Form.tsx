@@ -11,58 +11,58 @@ import UiButton from "../common/CustomButton";
 const { Text } = Typography;
 type Step1FormProps = {
   onNext: () => void;
+  initialValues?: { any };
 };
 
-export default function Step1Form({ onNext }: Step1FormProps) {
+export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
   const options = [
     {
-      value: "1",
-      label: "Not Identified",
+      value: "male",
+      label: "Male",
     },
     {
-      value: "2",
-      label: "Closed",
+      value: "female",
+      label: "Female",
     },
     {
       value: "3",
       label: "Communicated",
     },
-    {
-      value: "4",
-      label: "Identified",
-    },
-    {
-      value: "5",
-      label: "Resolved",
-    },
-    {
-      value: "6",
-      label: "Cancelled",
-    },
   ];
   const [form] = Form.useForm();
 
   const onFinish = (values: any) => {
-    console.log("Step 1 Values:", values);
-    onNext(); // move to next step only if valid
+    // ✅ Convert Date to UTC ISO string
+    const formattedValues = {
+      ...values,
+      dateOfBirth: values.dateOfBirth
+        ? new Date(values.dateOfBirth).toISOString()
+        : "",
+
+      contactNumber:
+        "+" +
+        values.contactNumber.countryCode +
+        values.contactNumber.areaCode +
+        values.contactNumber.phoneNumber,
+    };
+
+    console.log("✅ Step 1 Values (with UTC):", formattedValues);
+    onNext(formattedValues);
   };
   return (
     <Form
       form={form}
+      initialValues={initialValues}
       onFinish={onFinish}
       validateTrigger="onSubmit" // only validate when clicking Next
     >
       <div className="flex flex-col ">
         <Col span={24}>
           <LabelInput
-            name="email"
-            label="Email Address"
-            placeholder="Enter your email"
+            name="fullName"
+            label="Full Name"
+            placeholder="Enter your Full Name"
             required
-            // type="email"
-            rules={[
-              { type: "email", message: "Please enter a valid email address" },
-            ]}
           />
         </Col>
         <Row gutter={24}>
@@ -70,7 +70,7 @@ export default function Step1Form({ onNext }: Step1FormProps) {
             <LabelDatePicker
               label="Date Of Birth"
               placeholder="D.O.B"
-              name="dob"
+              name="dateOfBirth"
               required
             />
           </Col>
@@ -113,7 +113,7 @@ export default function Step1Form({ onNext }: Step1FormProps) {
         <Col span={24}>
           <LabelPhoneNumber
             label="Contact Number"
-            name="phone"
+            name="contactNumber"
             required
             // rules={[
             //   { required: true, message: "Contact number is required" },
@@ -130,7 +130,7 @@ export default function Step1Form({ onNext }: Step1FormProps) {
             <PhoneInput enableSearch />
           </FormItem> */}
         </Col>
-        <div className="flex  justify-between w-full">
+        {/* <div className="flex  justify-between w-full">
           <div className="flex flex-col">
             <Text className="font-semibold">Upload profile picture</Text>
             <Text type="secondary">5MB Limit (JPEG, PNG, SVG)</Text>
@@ -138,7 +138,7 @@ export default function Step1Form({ onNext }: Step1FormProps) {
           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-lg border border-gray-200 mb-4">
             <PlusIcon />
           </div>
-        </div>
+        </div> */}
       </div>
       <div className="mt-4 gap-2 flex flex-col item-center">
         <Col span={6}>

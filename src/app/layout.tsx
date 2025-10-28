@@ -43,11 +43,14 @@ import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "antd/dist/reset.css";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import { ReduxProviders } from "./ReduxProvider";
 const RootLayout = ({ children }: React.PropsWithChildren) => (
   <html lang="en">
     <body>
-      <Toaster position="top-center" />
-      <AntdRegistry>{children}</AntdRegistry>
+      <ReduxProviders>
+        <Toaster position="top-center" />
+        <AntdRegistry>{children}</AntdRegistry>
+      </ReduxProviders>
     </body>
   </html>
 );

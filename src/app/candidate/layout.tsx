@@ -17,6 +17,9 @@ import {
   LogoutOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
+import { getCandidateProfileApi } from "../api/candidate/profile.api";
+import { useDispatch, useSelector } from "react-redux";
+import { setUserProfile } from "@/redux/slices/userSlice";
 // import { useDispatch, useSelector } from "react-redux";
 // import type { RootState } from "@/app/store/store";
 // import { logout } from "@/app/store/slices/authSlice";
@@ -58,6 +61,11 @@ const items = [
     label: <Link href="/candidate/job-analytics">Job Analytics</Link>,
   },
   {
+    key: "/candidate/interview-section",
+    icon: <MailOutlined />,
+    label: <Link href="/candidate/interview-section">Interview Sections</Link>,
+  },
+  {
     key: "/dashboard/admin/setting",
     icon: <SettingOutlined />,
     label: <Link href="/dashboard/admin/setting">Settings</Link>,
@@ -73,7 +81,26 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const dispatch = useDispatch();
+  const { profile, loading } = useSelector((state: RootState) => state.user);
+
+  // const {profile,loading} useSelector(state=>state.user)
   //   const dispatch = useDispatch();
+
+  useEffect(() => {
+    getCandidateProfileApi()
+      .then((res) => {
+        if (res.status === "Success") {
+          if (profile == null) {
+            dispatch(setUserProfile(res.data.candidate));
+          }
+        }
+      })
+      .catch((err) => {
+        console.log("Error fetching profile:", err);
+        router.push("/auth/sign-up");
+      });
+  }, []);
 
   //   const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.auth);
 

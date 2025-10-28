@@ -1,36 +1,42 @@
 "use client";
 
 import React, { useState } from "react";
-import { signUpApi } from "@/app/api/auth.api"; // or signInApi if that’s correct
+import { loginApi, signUpApi } from "@/app/api/auth.api"; // or signInApi if that’s correct
 import UiButton from "@/component/common/CustomButton";
 import EmailIcon from "@/icons/socials/EmailIcon";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import { Col, Input, Typography, message } from "antd";
 import Link from "next/link";
+import { storeToken } from "@/utils/token";
+import { useRouter } from "next/navigation";
 
 const { Title, Text } = Typography;
 
-export default function Left3() {
+export default function LoginScreen() {
   const [email, setEmail] = useState("abdullahusman5630@gmail.com");
   const [password, setPassword] = useState("A123456@i");
   const [loading, setLoading] = useState(false);
-
+  const router = useRouter();
   const handleSignIn = async () => {
     try {
       setLoading(true);
-      const res = await signUpApi({
+      const res = await loginApi({
         email,
         password,
-        role: "candidate",
       });
       console.log(res);
       console.log("Response:", res);
+      if (res.status == "Success") {
+        console.log("first");
+        storeToken(res.data.accessToken);
+        router.push("/auth/candidate");
+      }
     } catch (error: any) {
       console.error(error);
       message.error(error?.message || "Sign in failed");
     } finally {
-      // setEmail("");
-      // setPassword("");
+      //   setEmail("");
+      //   setPassword("");
       setLoading(false);
     }
   };

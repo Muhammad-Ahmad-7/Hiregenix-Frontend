@@ -13,27 +13,35 @@ const { Text } = Typography;
 type Step2FormProps = {
   onNext: () => void;
   onBack: () => void;
+
+  initialValues?: { any };
 };
 
-export default function Step2Form({ onNext, onBack }: Step2FormProps) {
+export default function Step2Form({
+  onNext,
+  onBack,
+  initialValues,
+}: Step2FormProps) {
   const [form] = Form.useForm();
 
   const onFinish = (values: any) => {
     console.log("Form Values:", values);
+
+    onNext(values);
     form.resetFields();
-    onNext();
   };
 
   return (
     <Form
       form={form}
+      initialValues={initialValues}
       onFinish={onFinish}
       validateTrigger="onSubmit" // only validate when clicking Next
     >
       <div className="flex flex-col ">
         <Col span={24}>
           <LabelInput
-            name="github"
+            name="githubUrl"
             label="Github Url"
             placeholder="e.g : github.com/ad-dev07"
             required
@@ -48,7 +56,7 @@ export default function Step2Form({ onNext, onBack }: Step2FormProps) {
         </Col>
         <Col span={24}>
           <LabelInput
-            name="linkdin"
+            name="linkedinUrl"
             label="Linkdin Url"
             itemProps={{ tooltip: "(optional)" }}
             placeholder="e.g : linkdin.com/ad-dev07"
@@ -63,7 +71,7 @@ export default function Step2Form({ onNext, onBack }: Step2FormProps) {
         </Col>
         <Col span={24}>
           <LabelInput
-            name="website"
+            name="portfolioUrl"
             label={
               <span>
                 Middle Name{" "}
@@ -82,9 +90,9 @@ export default function Step2Form({ onNext, onBack }: Step2FormProps) {
           />
         </Col>
         {/* <Col span={24} className="bg-red-600 flex justify-start"> */}
-        <UiButton type="link" className=" !justify-start !px-0">
+        {/* <UiButton type="link" className=" !justify-start !px-0">
           Add Addition Link +
-        </UiButton>
+        </UiButton> */}
         {/* </Col> */}
       </div>
       <Flex gap="small" wrap className="!mt-6">

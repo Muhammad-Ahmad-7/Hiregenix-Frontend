@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Avatar,
   Card,
@@ -29,6 +29,9 @@ import {
 import IconWrapper from "@/icons/IconWrapper";
 import { signUpApi } from "@/app/api/auth.api";
 import UiButton from "@/component/common/CustomButton";
+import { candidateProfileApi } from "@/app/api/candidate/profile.api";
+import { useSelector } from "react-redux";
+import { RootState } from "@reduxjs/toolkit/query";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -58,6 +61,10 @@ const experiences = [
 ];
 
 export default function ProfileDashboard() {
+  const { profile, loading } = useSelector((state: RootState) => state.user);
+  useEffect(() => {
+    console.log(profile);
+  }, []);
   return (
     <div style={{ background: "#f5f6fa", minHeight: "100vh" }}>
       <Row gutter={[24, 24]}>
@@ -153,17 +160,14 @@ export default function ProfileDashboard() {
             <Card className="rounded-xl">
               <UiButton
                 onClick={() => {
-                  signUpApi({
-                    email: "ib6457345@gmail.com",
-                    password: "newPassword123",
-                    role: "candidate",
-                  })
-                    .then((res) => {
-                      console.log("Signup Response:", res); // ✅ now works
-                    })
-                    .catch((err) => {
-                      console.error("Signup failed:", err);
-                    });
+                  console.log(profile);
+                  // candidateProfileApi()
+                  //   .then((res) => {
+                  //     console.log("Profile Response:", res); // ✅ now works
+                  //   })
+                  //   .catch((err) => {
+                  //     console.error("Signup failed:", err);
+                  //   });
                 }}
               >
                 PRESSSSSSS
