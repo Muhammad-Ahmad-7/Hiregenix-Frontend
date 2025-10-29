@@ -87,23 +87,23 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // const {profile,loading} useSelector(state=>state.user)
   //   const dispatch = useDispatch();
 
-  useEffect(() => {
-    dispatch(setLoading(true));
-    if (profile) return;
-    getCandidateProfileApi()
-      .then((res) => {
-        if (res.status === "Success") {
-          dispatch(setUserProfile(res.data.candidate));
+  // useEffect(() => {
+  //   dispatch(setLoading(true));
+  //   if (profile) return;
+  //   getCandidateProfileApi()
+  //     .then((res) => {
+  //       if (res.status === "Success") {
+  //         dispatch(setUserProfile(res.data.candidate));
 
-          dispatch(setLoading(false));
-        }
-      })
-      .catch((err) => {
-        console.log("Error fetching profile:", err);
-        router.push("/auth/sign-up");
-      })
-      .finally(() => {});
-  }, []);
+  //         dispatch(setLoading(false));
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       console.log("Error fetching profile:", err);
+  //       router.push("/auth/sign-up");
+  //     })
+  //     .finally(() => {});
+  // }, []);
 
   //   const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.auth);
 
@@ -165,7 +165,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   //     }
   //   };
   return (
-    profile && (
+    !profile && (
       <ConfigProvider
         theme={{
           components: {
