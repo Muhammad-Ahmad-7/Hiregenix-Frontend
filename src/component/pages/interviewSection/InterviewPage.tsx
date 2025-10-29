@@ -256,20 +256,21 @@ export default function InterviewsPage() {
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} lg={8}>
             <InterviewCard
-              name="Frontend Developer"
-              role="UI/UX Designer"
-              interviewType="Task"
-              date="August 25, 2025"
-              avatar="https://api.dicebear.com/7.x/avataaars/svg?seed=Frontend"
+              title="Frontend Developer"
+              company="Systems Limited"
+              type="Onsite"
+              deadline="August 25, 2025"
+              logo="/logo.png"
+              onJoin={() => alert("Joining interview...")}
             />
           </Col>
           <Col xs={24} sm={12} lg={8}>
             <InterviewCard
-              name="Frontend Developer"
-              role="Senior Developer"
-              interviewType="Onsite"
-              date="August 25, 2025"
-              avatar="https://api.dicebear.com/7.x/avataaars/svg?seed=Developer"
+              title="Frontend Developer"
+              company="Systems Limited"
+              type="Onsite"
+              deadline="August 25, 2025"
+              logo="/logo.png"
             />
           </Col>
         </Row>

@@ -21,7 +21,7 @@ export default function Left3() {
       const res = await signUpApi({
         email,
         password,
-        role: "candidate",
+        role: "company",
       });
       console.log(res);
       console.log("Response:", res);
