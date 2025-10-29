@@ -7,6 +7,7 @@ import {
   PlusOutlined,
   FilterOutlined,
 } from "@ant-design/icons";
+import Title from "antd/es/typography/Title";
 
 const JobApplicationsTable = () => {
   const [activeTab, setActiveTab] = useState("all");
@@ -676,6 +677,7 @@ const JobApplicationsTable = () => {
 
   return (
     <div className="bg-white p-6">
+      <Title>Applications</Title>
       <Tabs
         activeKey={activeTab}
         onChange={setActiveTab}

@@ -9,3 +9,9 @@ export const createJobApi = async (body) => {
     showToaster: true,
   });
 };
+export const getAllJobsApi = async (params = {}) => {
+  console.log("params", params);
+  return safeApiCall({
+    apiCall: () => api.get(`/company/get-all-jobs`, { params }),
+  });
+};

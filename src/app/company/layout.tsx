@@ -31,45 +31,40 @@ const { Header, Content, Sider } = Layout;
 
 const items = [
   {
-    key: "/candidate/dashboard",
+    key: "/comapny/dashboard",
     icon: <BarsOutlined />,
-    label: <Link href="/candidate/dashboard">Insights</Link>,
+    label: <Link href="/company/dashboard">Insights</Link>,
   },
   {
-    key: "/candidate/profile",
+    key: "/company/profile",
     icon: <UserOutlined />,
-    label: <Link href="/candidate/profile">Profile</Link>,
+    label: <Link href="/company/profile">Profile</Link>,
   },
   {
-    key: "/dashboard/admin/projects",
-    icon: <ProjectOutlined />,
-    label: <Link href="/dashboard/admin/projects">Projects</Link>,
-  },
-  {
-    key: "/candidate/job-portal",
+    key: "/company/create-job",
     icon: <FileTextOutlined />,
-    label: <Link href="/candidate/job-portal">Job Portal</Link>,
+    label: <Link href="/company/create-job">Job Portal</Link>,
   },
   {
-    key: "/candidate/chat",
+    key: "/company/chat",
     icon: <MessageOutlined />,
-    label: <Link href="/candidate/chat">Chat</Link>,
+    label: <Link href="/company/chat">Chat</Link>,
   },
   {
-    key: "/candidate/job-analytics",
+    key: "/company/job-analytics",
     icon: <MailOutlined />,
-    label: <Link href="/candidate/job-analytics">Job Analytics</Link>,
+    label: <Link href="/company/job-analytics">Job Analytics</Link>,
   },
   {
-    key: "/candidate/interview-section",
+    key: "/company/interview-section",
     icon: <MailOutlined />,
-    label: <Link href="/candidate/interview-section">Interview Sections</Link>,
+    label: <Link href="/company/interview-section">Interview Sections</Link>,
   },
-  {
-    key: "/dashboard/admin/setting",
-    icon: <SettingOutlined />,
-    label: <Link href="/dashboard/admin/setting">Settings</Link>,
-  },
+  // {
+  //   key: "/dashboard/admin/setting",
+  //   icon: <SettingOutlined />,
+  //   label: <Link href="/dashboard/admin/setting">Settings</Link>,
+  // },
 ];
 
 type DashboardLayoutProps = {
