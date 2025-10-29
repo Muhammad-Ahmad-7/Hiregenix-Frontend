@@ -9,6 +9,7 @@ import {
   Row,
   Col,
   Select,
+  Dropdown,
 } from "antd";
 import {
   MessageOutlined,
@@ -16,28 +17,19 @@ import {
   RiseOutlined,
   ContainerFilled,
   StarFilled,
+  MessageFilled,
+  MoreOutlined,
 } from "@ant-design/icons";
 import StatsCard from "@/component/pages/dashboard/StatsCard";
+import { TopIconAndNavigation } from "@/app/candidate/dashboard/page";
+import UiButton from "@/component/common/CustomButton";
+import { ROUTES } from "@/constants/routes";
 
 const { Option } = Select;
 
 export default function Dashboard() {
   // Table Data
   const jobData = [
-    {
-      key: 1,
-      title: "Front-end developer",
-      applications: 127,
-      views: 1400,
-      matches: 32,
-    },
-    {
-      key: 2,
-      title: "Kotlin developer",
-      applications: 45,
-      views: 2345,
-      matches: 12,
-    },
     {
       key: 3,
       title: "Swift developer",
@@ -170,7 +162,7 @@ export default function Dashboard() {
       {/* First Row */}
       <Row gutter={[8, 8]} className="sm:gutter-[16] md:gutter-[16]">
         {/* (1,1) nested 2x2 grid */}
-        <Col xs={24} sm={24} md={12} lg={12}>
+        <Col xs={24} sm={24} md={24} lg={12}>
           <Row gutter={[8, 8]} className="sm:gutter-[16] md:gutter-[16]">
             <StatsCard
               icon={<ContainerFilled style={{ color: "white" }} />}
@@ -198,7 +190,7 @@ export default function Dashboard() {
         </Col>
 
         {/* (1,2) applications chart */}
-        <Col xs={24} sm={24} md={12} lg={12}>
+        <Col xs={24} sm={24} md={24} lg={12}>
           <Card
             title="Applications received per week"
             className="h-full"
@@ -208,7 +200,7 @@ export default function Dashboard() {
               </span>
             }
           >
-            <div className="flex items-end justify-between h-40 px-2 sm:px-4 mt-4 gap-1 sm:gap-2">
+            <div className="flex items-end justify-between h-30 px-2 sm:px-4 mt-4 gap-1 sm:gap-2">
               {weeklyData.map((item, index) => (
                 <div key={index} className="flex flex-col items-center flex-1">
                   <div className="text-xs text-gray-400 mb-1">{item.value}</div>
@@ -230,7 +222,7 @@ export default function Dashboard() {
         className="mt-4 sm:mt-6 sm:gutter-[16] md:gutter-[16]"
       >
         {/* (2,1) Active Jobs Table */}
-        <Col xs={24} sm={24} md={12} lg={12}>
+        <Col xs={24} sm={24} md={24} lg={12}>
           <Card
             title="Active Jobs"
             extra={
@@ -251,69 +243,78 @@ export default function Dashboard() {
         </Col>
 
         {/* (2,2) Messages + Interview Schedule */}
-        <Col xs={24} sm={24} md={12} lg={12}>
+        <Col xs={24} sm={24} md={24} lg={12}>
           <Row gutter={[8, 8]} className="sm:gutter-[16] md:gutter-[16]">
-            <Col xs={24} sm={24} md={12} lg={12}>
-              <Card
-                title="Messages"
-                extra={
-                  <MessageOutlined
-                    className="text-blue-500"
-                    style={{ fontSize: "16px" }}
+            <Col xs={24} lg={12}>
+              <div className="h-84 bg-white hover-gray-50 relative rounded-lg">
+                <div className="flex gap-2 font-bold text-md px-4 items-center py-2">
+                  <TopIconAndNavigation
+                    icon={
+                      <MessageFilled size={36} style={{ color: "white" }} />
+                    }
+                    title="Messages"
+                    arrow={{ shown: false }}
                   />
-                }
-                className="h-full"
-              >
+                </div>
+
                 <List
                   itemLayout="horizontal"
                   dataSource={messages}
+                  className="cursor-pointer !pb-9"
                   renderItem={(item) => (
                     <List.Item
-                      className="hover:bg-gray-50 px-2 rounded"
-                      actions={
-                        [
-                          // <div className="flex items-center gap-2">
-                          //   {item.time && (
-                          //     <span className="text-xs text-gray-400">
-                          //       {item.time}
-                          //     </span>
-                          //   )}
-                          //   <Dropdown overlay={menu} trigger={["click"]}>
-                          //     <MoreOutlined className="text-gray-400 cursor-pointer" />
-                          //   </Dropdown>
-                          // </div>,
-                        ]
-                      }
+                      className="hover:bg-gray-50 hover:w-full !px-4 rounded"
+                      actions={[
+                        <div className="flex items-center gap-2" key="actions">
+                          {!item.time ? (
+                            <div className="bg-[#FF4D4F] w-5 h-5 flex justify-center items-center rounded-full text-white text-xs">
+                              5
+                            </div>
+                          ) : (
+                            <span className="text-xs text-[#202020]">
+                              {item.time}
+                            </span>
+                          )}
+                          <Dropdown menu={{ item }} trigger={["click"]}>
+                            <MoreOutlined className="!text-[#202020] cursor-pointer" />
+                          </Dropdown>
+                        </div>,
+                      ]}
                     >
                       <List.Item.Meta
                         avatar={
-                          <div className="relative">
-                            <Avatar size={28} className="bg-gray-300 text-sm">
-                              {item.avatar}
-                            </Avatar>
-                            {item.unread && (
-                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white"></div>
-                            )}
+                          <div className="flex items-center gap-5">
+                            <div className="relative">
+                              <Avatar size={34} className="bg-gray-300 text-sm">
+                                {item.avatar}
+                              </Avatar>
+                              {item.unread && (
+                                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border border-white"></div>
+                              )}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">
+                                {item.name}
+                              </span>
+                              <span className="text-xs text-gray-500 line-clamp-1">
+                                {item.text}
+                              </span>
+                            </div>
                           </div>
-                        }
-                        title={
-                          <span className="text-sm font-medium">
-                            {item.name}
-                          </span>
-                        }
-                        description={
-                          <span className="text-xs text-gray-500">
-                            {item.text}
-                          </span>
                         }
                       />
                     </List.Item>
                   )}
                 />
-              </Card>
+                <div className="absolute -bottom-0 right-1.5 flex justify-center w-[96%] py-3 bg-gradient-to-t from-gray-50 to-transparent rounded-b-lg">
+                  <UiButton className="!rounded-2xl" href={ROUTES.DASHBOARD}>
+                    Load More
+                  </UiButton>
+                </div>
+              </div>
             </Col>
 
-            <Col xs={24} sm={24} md={12} lg={12}>
+            <Col xs={24} sm={24} md={24} lg={12}>
               <Card
                 title="Interviews schedule"
                 extra={

@@ -57,8 +57,13 @@ const items = [
   },
   {
     key: "/company/job-applications",
+    icon: <FileTextOutlined />,
+    label: <Link href="/company/job-applications">Jobs Applications</Link>,
+  },
+  {
+    key: "/company/hire",
     icon: <MailOutlined />,
-    label: <Link href="/company/job-applications">Interview Sections</Link>,
+    label: <Link href="/company/hire">Hire</Link>,
   },
   // {
   //   key: "/dashboard/admin/setting",

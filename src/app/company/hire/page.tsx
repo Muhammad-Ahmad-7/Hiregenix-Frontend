@@ -31,6 +31,8 @@ import {
   PaperClipOutlined,
   UploadOutlined,
   GlobalOutlined,
+  ClockCircleOutlined,
+  VideoCameraOutlined,
 } from "@ant-design/icons";
 import IconWrapper from "@/icons/IconWrapper";
 import { signUpApi } from "@/app/api/auth.api";
@@ -42,6 +44,7 @@ import {
 import { useSelector } from "react-redux";
 import { RootState } from "@reduxjs/toolkit/query";
 import ResumeUploader from "@/component/pages/candidate/profile/ResumeUploader";
+import JobApplicationStats from "./JobApplicationStats";
 
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
@@ -218,7 +221,20 @@ export default function ProfileDashboard() {
           </Space>
         </div>
 
-        <Divider className=" !my-3" />
+        <div className="flex items-center gap-2 justify-between">
+          <Button
+            type="primary"
+            icon={<VideoCameraOutlined />}
+            className="!rounded-full font-semibold !w-full  px-5 mx-2 h-10 flex items-center"
+            // onClick={onJoin}
+          >
+            Hire
+          </Button>
+
+          <div className="border rounded-full p-2 hover:bg-gray-100 cursor-pointer transition">
+            <ClockCircleOutlined className="text-gray-700 text-lg" />
+          </div>
+        </div>
 
         <Text strong>Bio</Text>
         <Paragraph>{userProfile?.bio || "No bio available"}</Paragraph>
@@ -311,144 +327,7 @@ export default function ProfileDashboard() {
         {/* Right Main Section */}
         <Col xs={24} md={24} lg={15}>
           <Space direction="vertical" style={{ width: "100%" }} size="large">
-            {/* Resume Upload/Display Card */}
-            <Card className="rounded-xl">
-              <div className="flex justify-between items-center">
-                <div className="">
-                  {resumeUrl ? (
-                    <>
-                      <div>
-                        <Title level={5} style={{ margin: 0 }}>
-                          Resume Uploaded Successfully
-                        </Title>
-                      </div>
-                      <Text type="secondary">
-                        Your resume has been received and is ready for review.
-                      </Text>
-                      <div className="!mt-4 gap-2 flex items-center">
-                        <PaperClipOutlined />
-                        <a
-                          href={resumeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="!text-[#52C41A] hover:!text-[#73D13D]"
-                        >
-                          {userProfile?.fullName
-                            ? `${userProfile.fullName.replace(
-                                /\s+/g,
-                                ""
-                              )}Resume.pdf`
-                            : "Resume.pdf"}
-                        </a>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <Title level={5} style={{ margin: 0 }}>
-                          Upload Your Resume
-                        </Title>
-                      </div>
-                      <Text type="secondary">
-                        Upload your resume in PDF format to complete your
-                        profile.
-                      </Text>
-                      <div className="!mt-4">
-                        <Upload {...uploadProps}>
-                          <Button
-                            icon={<UploadOutlined />}
-                            loading={uploading}
-                            type="primary"
-                          >
-                            {uploading ? "Uploading..." : "Upload Resume"}
-                          </Button>
-                        </Upload>
-                      </div>
-                    </>
-                  )}
-                </div>
-                {resumeUrl && (
-                  <Upload {...uploadProps}>
-                    <IconWrapper
-                      icon={<EditOutlined />}
-                      bgColorIcon="default"
-                    />
-                  </Upload>
-                )}
-              </div>
-            </Card>
-
-            {/* Experience Section */}
-            <Card
-              title={<Title level={5}>Experience</Title>}
-              className="rounded-xl shadow-md"
-            >
-              <Timeline mode="left">
-                {experiences.map((item, index) => (
-                  <Timeline.Item key={index}>
-                    <div className="mb-6" color="gray">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <Text strong className="text-lg">
-                            {item.title} — {item.company}
-                          </Text>
-                          <div>
-                            <Text type="secondary">{item.date}</Text>
-                          </div>
-                        </div>
-                      </div>
-
-                      <Paragraph className="mt-2 mb-3">
-                        {item.description}
-                      </Paragraph>
-
-                      <Space wrap>
-                        {skills.slice(0, 5).map((skill, i) => (
-                          <Tag
-                            key={i}
-                            color="blue"
-                            className="rounded-full text-sm font-medium"
-                          >
-                            {skill}
-                          </Tag>
-                        ))}
-                        {skills.length > 5 && (
-                          <Tag className="rounded-full text-sm font-medium">
-                            +{skills.length - 5}
-                          </Tag>
-                        )}
-                      </Space>
-
-                      {index !== experiences.length - 1 && (
-                        <Divider className="!my-4 border-gray-200" />
-                      )}
-                    </div>
-                  </Timeline.Item>
-                ))}
-              </Timeline>
-
-              <div className="text-center mt-4">
-                <Button type="default">Load More</Button>
-              </div>
-            </Card>
-
-            {/* Certifications */}
-            <Card
-              title={<Title level={5}>Certifications</Title>}
-              style={{
-                borderRadius: 12,
-                boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-              }}
-            >
-              <Paragraph>
-                <Text strong>Product Engineer</Text> — Google Labs (Mar 2023 –
-                Aug 2023)
-              </Paragraph>
-              <Paragraph>
-                Designed and developed a fully responsive web application using
-                React.js and Node.js/Express.js for backend.
-              </Paragraph>
-            </Card>
+            <JobApplicationStats />
           </Space>
         </Col>
       </Row>
