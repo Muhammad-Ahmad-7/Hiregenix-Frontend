@@ -677,7 +677,6 @@ const JobApplicationsTable = () => {
 
   return (
     <div className="bg-white p-6">
-      <Title>Applications</Title>
       <Tabs
         activeKey={activeTab}
         onChange={setActiveTab}

@@ -29,7 +29,7 @@ export default function LoginScreen() {
       if (res.status == "Success") {
         console.log("first");
         storeToken(res.data.accessToken);
-        router.push("/auth/candidate");
+        router.push("/candidate");
       }
     } catch (error: any) {
       console.error(error);

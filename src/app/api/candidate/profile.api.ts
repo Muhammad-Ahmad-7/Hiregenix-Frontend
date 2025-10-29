@@ -30,3 +30,15 @@ export const completeProfileApi = async (body) => {
     showToaster: true,
   });
 };
+export const uploadResumeApi = async (formData: FormData) => {
+  console.log("Uploading resume:", formData.get("file"));
+  return safeApiCall({
+    apiCall: () =>
+      api.post("/candidate/resume", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }),
+    showToaster: true,
+  });
+};

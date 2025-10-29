@@ -68,7 +68,7 @@ export default function StepperForm() {
     try {
       const res = await completeProfileApi(finalProfile);
       if (res.status === "Success") {
-        router.push("/auth/candidate");
+        router.push("/candidate");
       }
     } finally {
       setLoading(false);

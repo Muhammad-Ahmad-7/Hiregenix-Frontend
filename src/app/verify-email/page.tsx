@@ -35,7 +35,7 @@ export default function Page() {
 
           // Redirect after a short delay
           setTimeout(() => {
-            router.push("/auth/candidate");
+            router.push("/candidate");
           }, 1500);
         } else {
           setStatus("error");

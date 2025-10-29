@@ -41,11 +41,6 @@ const items = [
     label: <Link href="/candidate/profile">Profile</Link>,
   },
   {
-    key: "/dashboard/admin/projects",
-    icon: <ProjectOutlined />,
-    label: <Link href="/dashboard/admin/projects">Projects</Link>,
-  },
-  {
     key: "/candidate/job-portal",
     icon: <FileTextOutlined />,
     label: <Link href="/candidate/job-portal">Job Portal</Link>,
@@ -65,11 +60,11 @@ const items = [
     icon: <MailOutlined />,
     label: <Link href="/candidate/interview-section">Interview Sections</Link>,
   },
-  {
-    key: "/dashboard/admin/setting",
-    icon: <SettingOutlined />,
-    label: <Link href="/dashboard/admin/setting">Settings</Link>,
-  },
+  // {
+  //   key: "/dashboard/admin/setting",
+  //   icon: <SettingOutlined />,
+  //   label: <Link href="/dashboard/admin/setting">Settings</Link>,
+  // },
 ];
 
 type DashboardLayoutProps = {
@@ -87,23 +82,23 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // const {profile,loading} useSelector(state=>state.user)
   //   const dispatch = useDispatch();
 
-  // useEffect(() => {
-  //   dispatch(setLoading(true));
-  //   if (profile) return;
-  //   getCandidateProfileApi()
-  //     .then((res) => {
-  //       if (res.status === "Success") {
-  //         dispatch(setUserProfile(res.data.candidate));
+  useEffect(() => {
+    dispatch(setLoading(true));
+    if (profile) return;
+    getCandidateProfileApi()
+      .then((res) => {
+        if (res.status === "Success") {
+          dispatch(setUserProfile(res.data.candidate));
 
-  //         dispatch(setLoading(false));
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       console.log("Error fetching profile:", err);
-  //       router.push("/auth/sign-up");
-  //     })
-  //     .finally(() => {});
-  // }, []);
+          dispatch(setLoading(false));
+        }
+      })
+      .catch((err) => {
+        console.log("Error fetching profile:", err);
+        router.push("/auth/sign-up");
+      })
+      .finally(() => {});
+  }, []);
 
   //   const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.auth);
 

@@ -1,7 +1,6 @@
 import React from "react";
 import { Col, Badge } from "antd";
-import { ProfileFilled, ContainerFilled } from "@ant-design/icons";
-import ArrowRightUp from "@/icons/ArrowRightUp";
+import { ProfileFilled } from "@ant-design/icons";
 import { TopIconAndNavigation } from "@/app/candidate/dashboard/page";
 
 interface StatsCardProps {
@@ -13,14 +12,15 @@ interface StatsCardProps {
   arrow?: {
     shown?: boolean;
     href?: string;
-  }; // only two options
+  };
+  bgColorIcon?: string;
 }
 
 export default function StatsCard({
   icon = <ProfileFilled style={{ color: "white" }} />,
   title = "Applicants",
   number = 23,
-  badgeText, // no default → hidden unless provided
+  badgeText,
   badgeColor = "orange",
   arrow = {
     shown: true,
@@ -28,7 +28,6 @@ export default function StatsCard({
   },
   bgColorIcon = "#1890FF",
 }: StatsCardProps) {
-  // color map logic
   const colorMap = {
     green: {
       bg: "#F6FFED",
@@ -45,8 +44,13 @@ export default function StatsCard({
   const colors = colorMap[badgeColor];
 
   return (
-    <Col span={12}>
-      <div className="h-40 p-4 bg-white rounded-xl">
+    <Col
+      xs={24} // Full width on small screens
+      sm={12} // Two per row on tablets
+      md={12} // Two per row on medium screens
+      lg={12} // Two per row on large screens
+    >
+      <div className="h-30 p-4 bg-white rounded-xl">
         <div className="flex flex-col justify-between w-full h-full">
           {/* Top Section */}
           <TopIconAndNavigation
@@ -54,13 +58,13 @@ export default function StatsCard({
             arrow={arrow}
             bgColorIcon={bgColorIcon}
           />
+
           {/* Bottom Section */}
           <div>
             <div className="text-sm text-[#8C8C8C]">{title}</div>
-            <div className="flex items-center gap-3">
-              <div className="text-5xl font-semibold text-black">{number}</div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="text-4xl font-semibold text-black">{number}</div>
 
-              {/* Show badge only when badgeText is provided */}
               {badgeText && (
                 <Badge
                   count={badgeText}
