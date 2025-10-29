@@ -68,7 +68,7 @@ export default function StepperForm() {
     try {
       const res = await completeProfileApi(finalProfile);
       if (res.status === "Success") {
-        router.push("/candidate");
+        router.push("/candidate/profile");
       }
     } finally {
       setLoading(false);
@@ -101,12 +101,12 @@ export default function StepperForm() {
   };
 
   return (
-    <Col xs={24} md={12} className="p-4 lg:px-32 lg:py-16">
+    <Col xs={24} md={12} className="lg:px-16 lg:py-8 ">
       <Text className="w-full !text-[#1677FF] font-semibold">
         STEP {currentStep} OF 4
       </Text>
 
-      <div className="w-full shadow-none">
+      <div className="w-full shadow-none ">
         <Title level={1} className="!mb-2">
           {currentStep === 1 && "Personal Information"}
           {currentStep === 2 && "Education Information"}
@@ -115,7 +115,7 @@ export default function StepperForm() {
         </Title>
 
         {loading ? (
-          <div className="flex justify-center items-center h-48">
+          <div className=" flex justify-center items-center h-48">
             <Spin size="large" />
           </div>
         ) : (

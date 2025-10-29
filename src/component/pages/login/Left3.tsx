@@ -10,7 +10,7 @@ import Link from "next/link";
 
 const { Title, Text } = Typography;
 
-export default function Left3() {
+export default function Left3({ role }: { role?: string }) {
   const [email, setEmail] = useState("abdullahusman5630@gmail.com");
   const [password, setPassword] = useState("A123456@i");
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,7 @@ export default function Left3() {
       const res = await signUpApi({
         email,
         password,
-        role: "company",
+        role: role || "candidate",
       });
       console.log(res);
       console.log("Response:", res);

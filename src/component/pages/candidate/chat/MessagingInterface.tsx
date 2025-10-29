@@ -9,10 +9,13 @@ import {
   PaperClipOutlined,
   SendOutlined,
   FilePdfOutlined,
+  ArrowLeftOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 
 const MessagingInterface = () => {
   const [selectedChat, setSelectedChat] = useState("ibm");
+  const [showChatList, setShowChatList] = useState(true);
 
   const conversations = [
     {
@@ -98,12 +101,25 @@ const MessagingInterface = () => {
     },
   ];
 
+  const handleChatSelect = (chatId: string) => {
+    setSelectedChat(chatId);
+    setShowChatList(false);
+  };
+
+  const handleBackToList = () => {
+    setShowChatList(true);
+  };
+
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-[calc(100vh-100px)] bg-white">
       {/* Left Sidebar - Conversations List */}
-      <div className="w-[420px] border-r border-gray-200 flex flex-col">
+      <div
+        className={`${
+          showChatList ? "flex" : "hidden"
+        } md:flex w-full md:w-[380px] lg:w-[420px] border-r border-gray-200 flex-col`}
+      >
         {/* Search Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-3 md:p-4 border-b border-gray-200">
           <div className="flex gap-2">
             <Input
               placeholder="Search name"
@@ -119,9 +135,20 @@ const MessagingInterface = () => {
                 ],
               }}
             >
-              <Button>
+              <Button className="hidden sm:flex">
                 All <DownOutlined />
               </Button>
+            </Dropdown>
+            <Dropdown
+              menu={{
+                items: [
+                  { key: "1", label: "All" },
+                  { key: "2", label: "Unread" },
+                  { key: "3", label: "Archived" },
+                ],
+              }}
+            >
+              <Button icon={<MenuOutlined />} className="sm:hidden" />
             </Dropdown>
           </div>
         </div>
@@ -131,8 +158,8 @@ const MessagingInterface = () => {
           {conversations.map((conv) => (
             <div
               key={conv.id}
-              onClick={() => setSelectedChat(conv.id)}
-              className={`flex items-start gap-3 p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+              onClick={() => handleChatSelect(conv.id)}
+              className={`flex items-start gap-3 p-3 md:p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
                 selectedChat === conv.id ? "bg-blue-50" : ""
               }`}
             >
@@ -145,13 +172,19 @@ const MessagingInterface = () => {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-gray-900">{conv.name}</span>
-                  <span className="text-xs text-gray-500">{conv.time}</span>
+                  <span className="font-medium text-gray-900 text-sm md:text-base truncate">
+                    {conv.name}
+                  </span>
+                  <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                    {conv.time}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-600 truncate">{conv.message}</p>
+                <p className="text-xs md:text-sm text-gray-600 truncate">
+                  {conv.message}
+                </p>
               </div>
               {conv.unread > 0 && (
-                <Badge count={conv.unread} className="mt-1" />
+                <Badge count={conv.unread} className="mt-1 flex-shrink-0" />
               )}
             </div>
           ))}
@@ -159,44 +192,57 @@ const MessagingInterface = () => {
       </div>
 
       {/* Right Side - Chat Window */}
-      <div className="flex-1 flex flex-col">
+      <div
+        className={`${
+          !showChatList ? "flex" : "hidden"
+        } md:flex flex-1 flex-col`}
+      >
         {/* Chat Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 border-b border-gray-200">
+          <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={handleBackToList}
+              className="md:hidden flex-shrink-0"
+            />
             <Avatar
               size={40}
               style={{ backgroundColor: "#1890ff" }}
               src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%231890ff' width='100' height='100'/%3E%3Ctext x='50' y='50' font-size='40' text-anchor='middle' dy='.3em' fill='white' font-family='Arial'%3EIBM%3C/text%3E%3C/svg%3E"
+              className="flex-shrink-0"
             />
-            <span className="font-medium text-gray-900">
+            <span className="font-medium text-gray-900 text-sm md:text-base truncate">
               International Business Machines
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">Sun, Aug 17, 3:57 PM</span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-xs md:text-sm text-gray-500 hidden sm:block">
+              Sun, Aug 17, 3:57 PM
+            </span>
             <Button type="text" icon={<MoreOutlined />} />
           </div>
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-3 md:p-6 bg-gray-50">
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`mb-6 flex ${
+              className={`mb-4 md:mb-6 flex ${
                 msg.sender === "you" ? "justify-end" : "justify-start"
               }`}
             >
               {msg.sender !== "you" && (
                 <Avatar
                   size={32}
-                  className="mr-3 mt-1"
+                  className="mr-2 md:mr-3 mt-1 flex-shrink-0"
                   style={{ backgroundColor: "#1890ff" }}
                   src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%231890ff' width='100' height='100'/%3E%3Ctext x='50' y='50' font-size='40' text-anchor='middle' dy='.3em' fill='white' font-family='Arial'%3EIBM%3C/text%3E%3C/svg%3E"
                 />
               )}
               <div
-                className={`max-w-2xl ${
+                className={`max-w-[85%] md:max-w-2xl ${
                   msg.sender === "you" ? "items-end" : "items-start"
                 } flex flex-col`}
               >
@@ -206,26 +252,26 @@ const MessagingInterface = () => {
                   </div>
                 )}
                 {msg.sender === "you" && msg.attachment && (
-                  <div className="bg-white rounded-lg p-3 mb-2 shadow-sm border border-gray-200 flex items-center gap-2">
-                    <FilePdfOutlined className="text-red-500 text-xl" />
-                    <span className="text-sm font-medium">
+                  <div className="bg-white rounded-lg p-2 md:p-3 mb-2 shadow-sm border border-gray-200 flex items-center gap-2 max-w-full">
+                    <FilePdfOutlined className="text-red-500 text-lg md:text-xl flex-shrink-0" />
+                    <span className="text-xs md:text-sm font-medium truncate">
                       {msg.attachment}
                     </span>
                   </div>
                 )}
                 <div
-                  className={`rounded-lg p-4 ${
+                  className={`rounded-lg p-3 md:p-4 ${
                     msg.sender === "you"
                       ? "bg-white shadow-sm border border-gray-200"
                       : "bg-white shadow-sm border border-gray-200"
                   }`}
                 >
-                  <p className="text-sm text-gray-800 whitespace-pre-line">
+                  <p className="text-xs md:text-sm text-gray-800 whitespace-pre-line break-words">
                     {msg.text}
                   </p>
                   {msg.emoji && (
                     <div className="mt-2">
-                      <span className="text-xl">{msg.emoji}</span>
+                      <span className="text-lg md:text-xl">{msg.emoji}</span>
                     </div>
                   )}
                 </div>
@@ -240,7 +286,7 @@ const MessagingInterface = () => {
               {msg.sender === "you" && (
                 <Avatar
                   size={32}
-                  className="ml-3 mt-1"
+                  className="ml-2 md:ml-3 mt-1 flex-shrink-0"
                   style={{ backgroundColor: "#52c41a" }}
                 >
                   U
@@ -251,20 +297,24 @@ const MessagingInterface = () => {
         </div>
 
         {/* Message Input */}
-        <div className="p-4 border-t border-gray-200 bg-white">
-          <div className="flex items-center gap-3">
+        <div className="p-3 md:p-4 border-t border-gray-200 bg-white">
+          <div className="flex items-center gap-2 md:gap-3">
             <Button
               type="primary"
-              icon={<span className="text-lg">⚡</span>}
-              className="h-10 px-4"
+              icon={<span className="text-base md:text-lg">⚡</span>}
+              className="h-9 md:h-10 px-3 md:px-4 hidden sm:flex"
               style={{ backgroundColor: "#7c3aed" }}
             />
             <Input
               placeholder="Write a message..."
-              className="flex-1 h-10"
+              className="flex-1 h-9 md:h-10 text-sm md:text-base"
               suffix={
-                <div className="flex gap-2">
-                  <Button type="text" icon={<SmileOutlined />} />
+                <div className="flex gap-1 md:gap-2">
+                  <Button
+                    type="text"
+                    icon={<SmileOutlined />}
+                    className="hidden sm:flex"
+                  />
                   <Button type="text" icon={<PaperClipOutlined />} />
                 </div>
               }
@@ -272,7 +322,7 @@ const MessagingInterface = () => {
             <Button
               type="primary"
               icon={<SendOutlined />}
-              className="h-10 w-10"
+              className="h-9 md:h-10 w-9 md:w-10 flex items-center justify-center"
             />
           </div>
         </div>

@@ -3,9 +3,9 @@
 export const ROUTES = {
   HOME: "/",
   DASHBOARD: "/dashboard",
-  candidate: "/candidate",
+  candidate: "/auth/candidate",
 
-  company: "/company",
+  company: "/auth/company",
 };
 
 //usage

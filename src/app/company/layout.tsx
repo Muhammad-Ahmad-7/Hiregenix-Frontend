@@ -56,9 +56,9 @@ const items = [
     label: <Link href="/company/job-analytics">Job Analytics</Link>,
   },
   {
-    key: "/company/interview-section",
+    key: "/company/job-applications",
     icon: <MailOutlined />,
-    label: <Link href="/company/interview-section">Interview Sections</Link>,
+    label: <Link href="/company/job-applications">Interview Sections</Link>,
   },
   // {
   //   key: "/dashboard/admin/setting",

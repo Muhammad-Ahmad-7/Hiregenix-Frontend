@@ -16,6 +16,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("abdullahusman5630@gmail.com");
   const [password, setPassword] = useState("A123456@i");
   const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState("candidate");
   const router = useRouter();
   const handleSignIn = async () => {
     try {
@@ -29,7 +30,11 @@ export default function LoginScreen() {
       if (res.status == "Success") {
         console.log("first");
         storeToken(res.data.accessToken);
-        router.push("/candidate");
+        if (res.data.user.role == "candidate") {
+          router.push("/candidate");
+        } else if (res.data.user.role == "company") {
+          router.push("/company");
+        }
       }
     } catch (error: any) {
       console.error(error);

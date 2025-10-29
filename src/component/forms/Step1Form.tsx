@@ -1,5 +1,6 @@
-import { Col, Form, Row, Typography } from "antd";
-import React from "react";
+"use client";
+import { Col, Form, Row, Typography, Upload, message, Avatar } from "antd";
+import React, { useState } from "react";
 import PlusIcon from "@/icons/PlusIcon";
 import {
   LabelDatePicker,
@@ -8,14 +9,24 @@ import {
   LabelSelect,
 } from "../common";
 import UiButton from "../common/CustomButton";
+import { LoadingOutlined, UserOutlined } from "@ant-design/icons";
+import { uploadFileApi } from "@/app/api/auth.api";
+
 const { Text } = Typography;
+
 type Step1FormProps = {
-  onNext: () => void;
-  initialValues?: { any };
+  onNext: (values: any) => void;
+  initialValues?: any;
 };
 
 export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
-  const options = [
+  const [form] = Form.useForm();
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
+    initialValues?.profilePictureUrl || null
+  );
+  const [uploading, setUploading] = useState(false);
+
+  const genderOptions = [
     {
       value: "male",
       label: "Male",
@@ -25,20 +36,91 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
       label: "Female",
     },
     {
-      value: "3",
-      label: "Communicated",
+      value: "other",
+      label: "Other",
     },
   ];
-  const [form] = Form.useForm();
+
+  const countryOptions = [
+    { label: "USA", value: "USA" },
+    { label: "UK", value: "UK" },
+    { label: "Pakistan", value: "Pakistan" },
+    { label: "India", value: "India" },
+    { label: "Canada", value: "Canada" },
+  ];
+
+  const cityOptions = [
+    { label: "Lahore", value: "Lahore" },
+    { label: "Karachi", value: "Karachi" },
+    { label: "Islamabad", value: "Islamabad" },
+    { label: "New York", value: "New York" },
+    { label: "London", value: "London" },
+  ];
+
+  const handleImageUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await uploadFileApi(formData);
+      console.log("Upload Response:", response);
+
+      if (response?.data?.url) {
+        setProfilePictureUrl(response.data.url);
+        form.setFieldValue("profilePictureUrl", response.data.url);
+        message.success("Profile picture uploaded successfully!");
+      } else {
+        message.error("Upload failed: Invalid response from server");
+        console.error("Invalid response structure:", response);
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to upload image. Please try again.";
+      message.error(errorMessage);
+      console.error("Upload error:", error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const uploadProps = {
+    beforeUpload: (file: File) => {
+      const isImage =
+        file.type === "image/jpeg" ||
+        file.type === "image/png" ||
+        file.type === "image/svg+xml";
+      if (!isImage) {
+        message.error("You can only upload JPEG, PNG, or SVG files!");
+        return false;
+      }
+      const isLt5M = file.size / 1024 / 1024 < 5;
+      if (!isLt5M) {
+        message.error("Image must be smaller than 5MB!");
+        return false;
+      }
+      handleImageUpload(file);
+      return false; // Prevent auto upload
+    },
+    showUploadList: false,
+  };
 
   const onFinish = (values: any) => {
-    // ✅ Convert Date to UTC ISO string
+    // Check if profile picture is uploaded
+    if (!profilePictureUrl) {
+      message.error("Please upload a profile picture");
+      return;
+    }
+
+    // Format date and contact number
     const formattedValues = {
       ...values,
+      profilePictureUrl: profilePictureUrl,
       dateOfBirth: values.dateOfBirth
         ? new Date(values.dateOfBirth).toISOString()
         : "",
-
       contactNumber:
         "+" +
         values.contactNumber.countryCode +
@@ -49,14 +131,20 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
     console.log("✅ Step 1 Values (with UTC):", formattedValues);
     onNext(formattedValues);
   };
+
   return (
     <Form
       form={form}
       initialValues={initialValues}
       onFinish={onFinish}
-      validateTrigger="onSubmit" // only validate when clicking Next
+      validateTrigger="onSubmit"
     >
-      <div className="flex flex-col ">
+      <div className="flex flex-col">
+        {/* Hidden field to store profile picture URL */}
+        <Form.Item name="profilePictureUrl" hidden>
+          <input type="hidden" />
+        </Form.Item>
+
         <Col span={24}>
           <LabelInput
             name="fullName"
@@ -80,7 +168,7 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
               placeholder="Gender"
               name="gender"
               required
-              options={options}
+              options={genderOptions}
             />
           </Col>
         </Row>
@@ -91,10 +179,7 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
               label="Country"
               placeholder="Country"
               required
-              options={[
-                { label: "USA", value: "us" },
-                { label: "UK", value: "uk" },
-              ]}
+              options={countryOptions}
               itemProps={{
                 tooltip: "Pick your country",
                 validateTrigger: "onBlur",
@@ -106,7 +191,8 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
               label="City"
               placeholder="City"
               name="city"
-              options={options}
+              required
+              options={cityOptions}
             />
           </Col>
         </Row>
@@ -115,40 +201,57 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
             label="Contact Number"
             name="contactNumber"
             required
-            // rules={[
-            //   { required: true, message: "Contact number is required" },
-            //   {
-            //     pattern: /^[0-9]{10,15}$/,
-            //     message: "Please enter a valid phone number",
-            //   },
-            // ]}
           />
-          {/* <Text className="font-normal text-[#000000D9]">
-            Contact Number <span className="text-red-500">*</span>
-          </Text>
-          <FormItem name="phone">
-            <PhoneInput enableSearch />
-          </FormItem> */}
         </Col>
-        {/* <div className="flex  justify-between w-full">
+
+        {/* Profile Picture Upload Section */}
+        <div className="flex justify-between items-center w-full mt-4 mb-6">
           <div className="flex flex-col">
-            <Text className="font-semibold">Upload profile picture</Text>
+            <Text className="font-semibold">
+              Upload profile picture <span className="text-red-500">*</span>
+            </Text>
             <Text type="secondary">5MB Limit (JPEG, PNG, SVG)</Text>
           </div>
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-lg border border-gray-200 mb-4">
-            <PlusIcon />
+          <Upload {...uploadProps}>
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer transition-all">
+              {uploading ? (
+                <LoadingOutlined className="text-2xl text-blue-500" />
+              ) : profilePictureUrl ? (
+                <Avatar size={60} src={profilePictureUrl} />
+              ) : (
+                <PlusIcon />
+              )}
+            </div>
+          </Upload>
+        </div>
+
+        {/* Show preview if image is uploaded */}
+        {/* {profilePictureUrl && !uploading && (
+          <div className="mb-4 flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+            <Avatar size={48} src={profilePictureUrl} />
+            <div className="flex-1">
+              <Text className="text-green-700 font-medium">
+                Profile picture uploaded successfully!
+              </Text>
+            </div>
+            <Upload {...uploadProps}>
+              <UiButton type="link" size="small">
+                Change
+              </UiButton>
+            </Upload>
           </div>
-        </div> */}
+        )} */}
       </div>
-      <div className="mt-4 gap-2 flex flex-col item-center">
+
+      <div className="mt-4 gap-2 flex flex-col items-start">
         <Col span={6}>
           <UiButton
             htmlType="submit"
             type="primary"
-            onClick={() => {}}
             block
             size="large"
             className="!rounded-xl"
+            loading={uploading}
           >
             Next
           </UiButton>

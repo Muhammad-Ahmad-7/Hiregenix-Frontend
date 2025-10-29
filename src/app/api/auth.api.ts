@@ -30,3 +30,16 @@ export const verifyEmailApi = async (token: string) => {
     showToaster: true,
   });
 };
+
+export const uploadFileApi = async (formData: FormData) => {
+  console.log("Uploading resume:", formData.get("file"));
+  return safeApiCall({
+    apiCall: () =>
+      api.post("/upload/file", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }),
+    showToaster: true,
+  });
+};

@@ -1,36 +1,23 @@
 "use client";
-
-import React from "react";
 import {
   Card,
   Table,
   List,
   Avatar,
   Button,
-  Dropdown,
   Menu,
   Row,
   Col,
   Select,
-  Badge,
 } from "antd";
 import {
-  BankOutlined,
-  TeamOutlined,
-  StarOutlined,
   MessageOutlined,
   CalendarOutlined,
-  MoreOutlined,
   RiseOutlined,
-  ArrowUpOutlined,
-  ProfileOutlined,
-  ProfileFilled,
   ContainerFilled,
   StarFilled,
 } from "@ant-design/icons";
-import ArrowRightUp from "@/icons/ArrowRightUp";
 import StatsCard from "@/component/pages/dashboard/StatsCard";
-import Star from "@/icons/Star";
 
 const { Option } = Select;
 
@@ -169,7 +156,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className=" bg-gray-50 min-h-screen">
       {/* Header */}
       {/* <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
@@ -181,10 +168,10 @@ export default function Dashboard() {
       </div> */}
 
       {/* First Row */}
-      <Row gutter={[16, 16]}>
+      <Row gutter={[8, 8]} className="sm:gutter-[16] md:gutter-[16]">
         {/* (1,1) nested 2x2 grid */}
-        <Col span={12}>
-          <Row gutter={[16, 16]}>
+        <Col xs={24} sm={24} md={12} lg={12}>
+          <Row gutter={[8, 8]} className="sm:gutter-[16] md:gutter-[16]">
             <StatsCard
               icon={<ContainerFilled style={{ color: "white" }} />}
               title="Jobs Posted"
@@ -211,22 +198,22 @@ export default function Dashboard() {
         </Col>
 
         {/* (1,2) applications chart */}
-        <Col span={12}>
+        <Col xs={24} sm={24} md={12} lg={12}>
           <Card
             title="Applications received per week"
             className="h-full"
             extra={
-              <span className="text-sm text-gray-400">
+              <span className="text-xs sm:text-sm text-gray-400">
                 September 29 - October 6
               </span>
             }
           >
-            <div className="flex items-end justify-between h-40 px-4 mt-4">
+            <div className="flex items-end justify-between h-40 px-2 sm:px-4 mt-4 gap-1 sm:gap-2">
               {weeklyData.map((item, index) => (
-                <div key={index} className="flex flex-col items-center">
+                <div key={index} className="flex flex-col items-center flex-1">
                   <div className="text-xs text-gray-400 mb-1">{item.value}</div>
                   <div
-                    className="bg-blue-500 rounded-t w-6 flex items-end justify-center"
+                    className="bg-blue-500 rounded-t w-full max-w-6 flex items-end justify-center"
                     style={{ height: `${(item.value / 12) * 100}px` }}
                   ></div>
                   <div className="text-xs text-gray-400 mt-2">{item.day}</div>
@@ -238,9 +225,12 @@ export default function Dashboard() {
       </Row>
 
       {/* Second Row */}
-      <Row gutter={[16, 16]} className="mt-6">
+      <Row
+        gutter={[8, 8]}
+        className="mt-4 sm:mt-6 sm:gutter-[16] md:gutter-[16]"
+      >
         {/* (2,1) Active Jobs Table */}
-        <Col span={12}>
+        <Col xs={24} sm={24} md={12} lg={12}>
           <Card
             title="Active Jobs"
             extra={
@@ -255,14 +245,15 @@ export default function Dashboard() {
               columns={jobColumns}
               pagination={false}
               size="small"
+              scroll={{ x: 600 }}
             />
           </Card>
         </Col>
 
         {/* (2,2) Messages + Interview Schedule */}
-        <Col span={12}>
-          <Row gutter={[16, 16]}>
-            <Col span={12}>
+        <Col xs={24} sm={24} md={12} lg={12}>
+          <Row gutter={[8, 8]} className="sm:gutter-[16] md:gutter-[16]">
+            <Col xs={24} sm={24} md={12} lg={12}>
               <Card
                 title="Messages"
                 extra={
@@ -322,7 +313,7 @@ export default function Dashboard() {
               </Card>
             </Col>
 
-            <Col span={12}>
+            <Col xs={24} sm={24} md={12} lg={12}>
               <Card
                 title="Interviews schedule"
                 extra={
@@ -334,9 +325,9 @@ export default function Dashboard() {
                 className="h-full"
               >
                 <p className="mb-3 font-medium text-sm text-gray-500">Today</p>
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-green-50 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
                     <div>
                       <p className="font-semibold text-sm">
                         Front-end developer
@@ -347,7 +338,7 @@ export default function Dashboard() {
                   <Button
                     type="primary"
                     size="small"
-                    className="bg-orange-500 border-orange-500 hover:bg-orange-600"
+                    className="bg-orange-500 border-orange-500 hover:bg-orange-600 w-full sm:w-auto"
                   >
                     Join now
                   </Button>

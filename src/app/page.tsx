@@ -6,16 +6,19 @@
 //     </div>
 //   );
 // }
-
+"use client";
+import Left1 from "@/component/pages/login/Left1";
+import Left3 from "@/component/pages/login/Left3";
+import SignInWrapper from "@/component/pages/login/SignInWrapper";
 import { Button, DatePicker } from "antd";
 import React from "react";
 
+import sign_in from "../../public/main.png";
 const Home = () => (
-  <div className="App">
-    <button>Button</button>
-    <DatePicker />
-    <Button onClick={() => {}}>Enter</Button>
-  </div>
+  <SignInWrapper img={sign_in}>
+    <Left1 />
+    {/* <Left3 /> */}
+  </SignInWrapper>
 );
 
 export default Home;
