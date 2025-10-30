@@ -31,9 +31,9 @@ export default function LoginScreen() {
         console.log("first");
         storeToken(res.data.accessToken);
         if (res.data.user.role == "candidate") {
-          router.push("/candidate");
+          router.push("/profile-completion/candidate");
         } else if (res.data.user.role == "company") {
-          router.push("/company");
+          router.push("/profile-completion/company");
         }
       }
     } catch (error: any) {
@@ -100,7 +100,7 @@ export default function LoginScreen() {
           </UiButton>
           <div className="flex justify-center mt-2">
             <Text className="font-normal">
-              Don’t have an account? <Link href="/">Sign Up</Link>
+              Don’t have an account? <Link href="/auth/sign-up">Sign Up</Link>
             </Text>
           </div>
         </div>

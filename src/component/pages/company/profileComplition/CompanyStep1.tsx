@@ -59,7 +59,7 @@ export default function CompanyStep1() {
       const res = await completeCompanyProfileApi(finalProfile);
       if (res.status === "Success") {
         toast.success("Company profile completed successfully!");
-        router.push("/dashboard");
+        router.push("/company/profile");
       }
     } catch (error) {
       toast.error("Failed to complete company profile.");

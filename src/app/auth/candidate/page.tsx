@@ -5,13 +5,15 @@ import SignInWrapper from "@/component/pages/login/SignInWrapper";
 import Left1 from "@/component/pages/login/Left1";
 import Left2 from "@/component/pages/login/Left2";
 import Left3 from "@/component/pages/login/Left3";
+import LoginScreen from "@/component/pages/login/Login";
 
 const Page: React.FC = () => {
   return (
     <SignInWrapper img={sign_in}>
       {/* <Left1 /> */}
       {/* <Left2 /> */}
-      <Left3 />
+      {/* <Left3 role="candidate"/> */}
+      <LoginScreen />
     </SignInWrapper>
   );
 };

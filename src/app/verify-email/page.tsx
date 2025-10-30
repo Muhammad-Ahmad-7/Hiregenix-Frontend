@@ -35,7 +35,7 @@ export default function Page() {
 
           // Redirect after a short delay
           setTimeout(() => {
-            router.push("/candidate");
+            router.push("/profile-completion/candidate");
           }, 1500);
         } else {
           setStatus("error");

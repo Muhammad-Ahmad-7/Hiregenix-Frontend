@@ -12,7 +12,8 @@ const Page: React.FC = () => {
     <SignInWrapper img={sign_in}>
       {/* <Left1 /> */}
       {/* <Left2 /> */}
-      <LoginScreen />
+      <Left3 />
+      {/* <LoginScreen /> */}
     </SignInWrapper>
   );
 };

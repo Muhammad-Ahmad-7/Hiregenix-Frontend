@@ -51,7 +51,7 @@ export default function Left3({ role }: { role?: string }) {
       {/* Form */}
       <div className="w-full">
         <Title level={1} className="!mb-2">
-          Sign in with mail
+          Sign up with mail
         </Title>
         <Text type="secondary">Let’s get started with your job process</Text>
 
@@ -89,7 +89,7 @@ export default function Left3({ role }: { role?: string }) {
           </UiButton>
           <div className="flex justify-center mt-2">
             <Text className="font-normal">
-              Don’t have an account? <Link href="/">Sign Up</Link>
+              Already have an account? <Link href="/">Login</Link>
             </Text>
           </div>
         </div>

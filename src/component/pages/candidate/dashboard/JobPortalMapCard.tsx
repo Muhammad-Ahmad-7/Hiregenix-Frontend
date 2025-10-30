@@ -25,7 +25,11 @@ const stylingFunction = ({
   };
 };
 
-export function JobPortalMapCard() {
+export function JobPortalMapCard({
+  size = "sm",
+}: {
+  size?: "sm" | "md" | "lg";
+}) {
   const data = [
     { country: "cn", value: 1389618778 },
     { country: "in", value: 1311559204 },
@@ -53,7 +57,18 @@ export function JobPortalMapCard() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
+  if (size == "lg") {
+    return (
+      <div className="w-full flex justify-center items-center overflow-hidden">
+        <WorldMap
+          color="blue"
+          // styleFunction={stylingFunction}
+          size="lg"
+          data={data}
+        />
+      </div>
+    );
+  }
   return (
     <div className="w-full flex justify-center items-center overflow-hidden">
       {mapSize == "md" ? (
