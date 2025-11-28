@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Col, Form, Row, Typography, Spin, message } from "antd";
 import { LabelInput, LabelSelect, LabelDatePicker } from "../../../common";
 import UiButton from "../../../common/CustomButton";
-import { createJobApi } from "@/app/api/company/jobs.api";
+import { createJobApi } from "@/app/api/job/jobs.api";
 
 const { Title } = Typography;
 
@@ -39,15 +39,15 @@ export default function CreateJob() {
       description: values.description,
       requiredSkills: values.requiredSkills
         ? values.requiredSkills
-            .split(",")
-            .map((s: string) => s.trim())
-            .filter(Boolean)
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean)
         : [],
       requirements: values.requirements
         ? values.requirements
-            .split("\n")
-            .map((s: string) => s.trim())
-            .filter(Boolean)
+          .split("\n")
+          .map((s: string) => s.trim())
+          .filter(Boolean)
         : [],
       workMode: values.workMode,
       location: {

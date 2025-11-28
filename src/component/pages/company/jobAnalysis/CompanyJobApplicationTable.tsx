@@ -14,7 +14,7 @@ import {
   message,
 } from "antd";
 import { PlusOutlined, SearchOutlined, DownOutlined } from "@ant-design/icons";
-import { getAllJobsApi } from "@/app/api/company/jobs.api";
+import { getAllJobsApi } from "@/app/api/job/jobs.api";
 
 const { Title } = Typography;
 
