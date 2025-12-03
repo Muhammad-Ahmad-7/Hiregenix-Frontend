@@ -20,6 +20,7 @@ import Link from "next/link";
 import { getCandidateProfileApi } from "../api/candidate/profile.api";
 import { useDispatch, useSelector } from "react-redux";
 import { setLoading, setUserProfile } from "@/redux/slices/userSlice";
+import { getToken } from "@/utils/token";
 // import { useDispatch, useSelector } from "react-redux";
 // import type { RootState } from "@/app/store/store";
 // import { logout } from "@/app/store/slices/authSlice";
@@ -85,8 +86,11 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   useEffect(() => {
     dispatch(setLoading(true));
     if (profile) return;
-    getCandidateProfileApi()
+    const token = getToken();
+    console.log(token);
+    getCandidateProfileApi(token)
       .then((res) => {
+        console.log("first", res);
         if (res.status === "Success") {
           dispatch(setUserProfile(res.data.candidate));
 

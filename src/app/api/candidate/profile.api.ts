@@ -13,7 +13,7 @@ interface SignUpApiBody {
 }
 export const getCandidateProfileApi = async () => {
   return safeApiCall({
-    apiCall: () => api.get("/candidate/profile"),
+    apiCall: () => api.get("/candidate/profile/692fdedc6b8f39c9bcfe2fac"),
     showToaster: true,
   });
 };

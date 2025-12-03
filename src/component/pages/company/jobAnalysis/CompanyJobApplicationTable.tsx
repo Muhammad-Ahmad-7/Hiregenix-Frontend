@@ -14,46 +14,109 @@ import {
   message,
 } from "antd";
 import { PlusOutlined, SearchOutlined, DownOutlined } from "@ant-design/icons";
-import { getAllJobsApi } from "@/app/api/job/jobs.api";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  deleteJobApi,
+  getCompanyClosedJobsApi,
+  getCompanyOpenJobsApi,
+} from "@/app/api/company/jobs.api";
+import {
+  appendClosedJobs,
+  appendOpenJobs,
+  setCompanyClosedJobs,
+  setCompanyOpenJobs,
+  setLoading,
+} from "@/redux/slices/company/companyJobSlice";
+import { RootState } from "@/redux/store";
+import { Job_Interface } from "@/constants/Interfaces/Types/Jobs.interface";
 
 const { Title } = Typography;
 
 const MyJobsTable = () => {
-  const [activeTab, setActiveTab] = useState("open");
-  const [search, setSearch] = useState("");
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
 
-  // ✅ Fetch jobs from API
-  const fetchJobs = async () => {
+  const { openJobs, closedJobs, openMeta, closedMeta, loading } = useSelector(
+    (state: RootState) => state.companyJob
+  );
+
+  const [activeTab, setActiveTab] = useState<"open" | "closed">("open");
+  const [search, setSearch] = useState("");
+
+  // -----------------------
+  // Fetch Jobs API
+  // -----------------------
+  const fetchOpenJobs = async (page = 1) => {
     try {
-      setLoading(true);
-      const res = await getAllJobsApi();
-      setJobs(res?.data?.jobs || []);
+      dispatch(setLoading(true));
+      const res = await getCompanyOpenJobsApi(page);
+
+      const jobs: Job_Interface[] = res?.data?.findActiveJobs || [];
+      const meta = res.meta;
+
+      if (page === 1) {
+        dispatch(setCompanyOpenJobs({ jobs, meta }));
+      } else {
+        dispatch(appendOpenJobs({ jobs, meta }));
+      }
     } catch (err) {
       console.error(err);
-      message.error("Failed to fetch jobs");
+      message.error("Failed to fetch open jobs");
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
+  const fetchClosedJobs = async (page = 1) => {
+    try {
+      dispatch(setLoading(true));
+      const res = await getCompanyClosedJobsApi(page);
+
+      const jobs: Job_Interface[] = res?.data?.findClosedJobs || [];
+      const meta = res.meta;
+
+      if (page === 1) {
+        dispatch(setCompanyClosedJobs({ jobs, meta }));
+      } else {
+        dispatch(appendClosedJobs({ jobs, meta }));
+      }
+    } catch (err) {
+      console.error(err);
+      message.error("Failed to fetch closed jobs");
+    } finally {
+      dispatch(setLoading(false));
+    }
+  };
+
+  // -----------------------
+  // Initial fetch
+  // -----------------------
   useEffect(() => {
-    fetchJobs();
-  }, []);
+    if (openJobs === null && closedJobs === null) {
+      if (activeTab === "open") {
+        fetchOpenJobs();
+      } else {
+        fetchClosedJobs();
+      }
+    }
+  }, [activeTab]);
 
-  // ✅ Filter by active tab & search
-  const filteredJobs = jobs
-    .filter((job) => job.status === activeTab)
-    .filter((job) => job.title.toLowerCase().includes(search.toLowerCase()));
+  // -----------------------
+  // Filtered Jobs for Table
+  // -----------------------
+  const filteredJobs =
+    (activeTab === "open" ? openJobs : closedJobs)?.filter((job) =>
+      job.title.toLowerCase().includes(search.toLowerCase())
+    ) || [];
 
-  // ✅ Define table columns
+  // -----------------------
+  // Table Columns
+  // -----------------------
   const columns = [
     {
       title: "Title",
       dataIndex: "title",
       key: "title",
-      render: (text) => (
+      render: (text: string) => (
         <span className="font-medium text-gray-800">{text}</span>
       ),
     },
@@ -65,7 +128,7 @@ const MyJobsTable = () => {
     {
       title: "Location",
       key: "location",
-      render: (_, record) => (
+      render: (_: any, record: Job_Interface) => (
         <span>
           {record.location?.city}, {record.location?.country}
         </span>
@@ -75,18 +138,20 @@ const MyJobsTable = () => {
       title: "Work Mode",
       dataIndex: "workMode",
       key: "workMode",
-      render: (text) => <span className="capitalize">{text || "N/A"}</span>,
+      render: (text: string) => (
+        <span className="capitalize">{text || "N/A"}</span>
+      ),
     },
     {
       title: "Experience",
       dataIndex: "experienceLevel",
       key: "experienceLevel",
-      render: (text) => <span className="capitalize">{text}</span>,
+      render: (text: string) => <span className="capitalize">{text}</span>,
     },
     {
       title: "Salary",
       key: "salaryRange",
-      render: (_, record) => {
+      render: (_: any, record: Job_Interface) => {
         const salary = record.salaryRange;
         if (!salary) return "—";
         return `${salary.min} - ${salary.max} ${salary.currency}`;
@@ -96,7 +161,7 @@ const MyJobsTable = () => {
       title: "Deadline",
       dataIndex: "deadline",
       key: "deadline",
-      render: (date) =>
+      render: (date: string) =>
         new Date(date).toLocaleDateString("en-GB", {
           day: "2-digit",
           month: "short",
@@ -106,11 +171,16 @@ const MyJobsTable = () => {
     {
       title: "Details",
       key: "details",
-      render: (_, record) => (
+      render: (_: any, record: Job_Interface) => (
         <Button
           type="link"
           className="p-0"
-          onClick={() => message.info(`Viewing details for ${record.title}`)}
+          onClick={() => {
+            message.info(`Viewing details for ${record.title}`);
+            deleteJobApi({ jobId: record._id }).then((res) => {
+              console.log("Delete response:", res);
+            });
+          }}
         >
           View
         </Button>
@@ -118,7 +188,9 @@ const MyJobsTable = () => {
     },
   ];
 
-  // ✅ Dropdown Filter Menu (future feature)
+  // -----------------------
+  // Dropdown Filter (future)
+  // -----------------------
   const filterMenu = {
     items: [
       { key: "1", label: "All" },
@@ -128,12 +200,25 @@ const MyJobsTable = () => {
     ],
   };
 
+  // -----------------------
+  // Load More Button
+  // -----------------------
+  const loadMoreJobs = () => {
+    if (activeTab === "open" && openMeta) {
+      const nextPage = openMeta.page + 1;
+      if (nextPage <= openMeta.totalPages) fetchOpenJobs(nextPage);
+    } else if (activeTab === "closed" && closedMeta) {
+      const nextPage = closedMeta.page + 1;
+      if (nextPage <= closedMeta.totalPages) fetchClosedJobs(nextPage);
+    }
+  };
+
   return (
     <Card className="rounded-2xl shadow-sm p-6">
       {/* Tabs */}
       <Tabs
         activeKey={activeTab}
-        onChange={setActiveTab}
+        onChange={(key) => setActiveTab(key as "open" | "closed")}
         tabBarGutter={40}
         items={[
           { key: "open", label: "Open Jobs" },
@@ -175,17 +260,26 @@ const MyJobsTable = () => {
           <Spin size="large" />
         </div>
       ) : (
-        <Table
-          columns={columns}
-          dataSource={filteredJobs.map((job) => ({ ...job, key: job._id }))}
-          pagination={{
-            position: ["bottomCenter"],
-            pageSize: 5,
-            showSizeChanger: false,
-          }}
-          bordered
-          className="rounded-lg overflow-hidden"
-        />
+        <>
+          <Table
+            columns={columns}
+            dataSource={filteredJobs.map((job) => ({ ...job, key: job._id }))}
+            pagination={false} // Using Load More
+            bordered
+            className="rounded-lg overflow-hidden"
+          />
+          {/* Load More */}
+          {(activeTab === "open" ? openMeta : closedMeta)?.page <
+            (activeTab === "open"
+              ? openMeta?.totalPages
+              : closedMeta?.totalPages) && (
+            <div className="flex justify-center mt-4">
+              <Button onClick={loadMoreJobs} type="dashed">
+                Load More
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </Card>
   );

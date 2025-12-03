@@ -42,6 +42,16 @@ import {
 import { useSelector } from "react-redux";
 import { RootState } from "@reduxjs/toolkit/query";
 import ResumeUploader from "@/component/pages/candidate/profile/ResumeUploader";
+import {
+  getAllActiveJobsApi,
+  getAllJobsWithPagePaginationApi,
+  getRecommendedJobsApi,
+} from "@/app/api/candidate/jobs.api";
+import {
+  getAllInterviewsApi,
+  getAllTodaysInterviewsApi,
+  scheduleInterviewApi,
+} from "@/app/api/candidate/interview.api";
 
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
@@ -295,6 +305,22 @@ export default function ProfileDashboard() {
       </Space>
     </Card>
   );
+  const test = async () => {
+    // const res = await getRecommendedJobsApi();
+
+    // const res = getAllJobsWithPagePaginationApi({ page: 1, limit: 5 });
+
+    // const res = getAllActiveJobsApi({ page: 1, limit: 5 });
+
+    // const res = getAllInterviewsApi({ page: 1, limit: 5 });
+
+    // const res = getAllTodaysInterviewsApi({ page: 1, limit: 5 });
+    const res = await scheduleInterviewApi({
+      jobId: "692ac8aa230f2d146fe62c4e",
+      scheduledDate: "2025-12-05T00:00:00.000+00:00",
+    });
+    console.log("Candidate Profile API Response:", res);
+  };
 
   return (
     <div style={{ minHeight: "100vh" }}>
@@ -315,6 +341,7 @@ export default function ProfileDashboard() {
             <Card className="rounded-xl">
               <div className="flex justify-between items-center">
                 <div className="">
+                  <Button onClick={test}>TEST API</Button>
                   {resumeUrl ? (
                     <>
                       <div>

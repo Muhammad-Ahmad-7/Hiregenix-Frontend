@@ -42,6 +42,7 @@ import {
 import { useSelector } from "react-redux";
 import { RootState } from "@reduxjs/toolkit/query";
 import ResumeUploader from "@/component/pages/candidate/profile/ResumeUploader";
+import { getCompanyOpenJobsApi } from "@/app/api/company/jobs.api";
 
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
@@ -94,20 +95,36 @@ export default function ProfileDashboard() {
   const [uploading, setUploading] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
+  const [test, setTest] = useState();
   // Check if screen is large (lg breakpoint and above)
   const isLargeScreen = screens.lg;
-
+  const fetchJobs = () => {
+    getCompanyOpenJobsApi()
+      .then((res) => {
+        console.log(res);
+        if (res.status === "Success") {
+          console.log("first:", res);
+          setTest(res);
+        } else {
+          message.error("Failed to fetch open jobs.");
+        }
+      })
+      .finally(() => {
+        console.log(test);
+      });
+  };
   useEffect(() => {
     console.log(profile);
     // Set user profile from Redux state
     if (profile) {
       setUserProfile(profile as UserProfile);
     }
+    console.log(test);
     // Check if profile already has a resume URL
     if (profile?.resumeUrl) {
       setResumeUrl(profile.resumeUrl);
     }
-  }, [profile]);
+  }, [profile, test]);
 
   const handleResumeUpload = async (file: File) => {
     setUploading(true);
@@ -163,7 +180,6 @@ export default function ProfileDashboard() {
     // You can implement logic to extract year from URL or profile data
     return "2023";
   };
-
   const SidebarCard = (
     <Card className="rounded-xl">
       <Space direction="vertical" style={{ width: "100%" }}>
@@ -189,6 +205,7 @@ export default function ProfileDashboard() {
           <IconWrapper icon={<EditOutlined />} bgColorIcon="default" />
         </div>
         <Divider className=" !my-3" />
+        <Button onClick={fetchJobs}>test Button for api </Button>
         <div className="flex justify-between items-center">
           <Text strong>Joined</Text>
           <Text>August 22, 2025</Text>
