@@ -7,20 +7,18 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   UserOutlined,
-  ProjectOutlined,
   FileTextOutlined,
   MessageOutlined,
   MailOutlined,
   CloseOutlined,
   BarsOutlined,
-  SettingOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
 import { getCandidateProfileApi } from "../api/candidate/profile.api";
 import { useDispatch, useSelector } from "react-redux";
 import { setLoading, setUserProfile } from "@/redux/slices/userSlice";
-import { getToken } from "@/utils/token";
+import { removeToken } from "@/utils/token";
 // import { useDispatch, useSelector } from "react-redux";
 // import type { RootState } from "@/app/store/store";
 // import { logout } from "@/app/store/slices/authSlice";
@@ -78,7 +76,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const dispatch = useDispatch();
-  const { profile, loading } = useSelector((state: RootState) => state.user);
+  const { profile } = useSelector((state: RootState) => state.user);
 
   // const {profile,loading} useSelector(state=>state.user)
   //   const dispatch = useDispatch();
@@ -86,9 +84,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   useEffect(() => {
     dispatch(setLoading(true));
     if (profile) return;
-    const token = getToken();
-    console.log(token);
-    getCandidateProfileApi(token)
+    getCandidateProfileApi()
       .then((res) => {
         console.log("first", res);
         if (res.status === "Success") {
@@ -223,7 +219,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 borderBottom: "1px solid #f0f0f0",
               }}
             >
-              {collapsed ? "AD" : "Admin Dashboard"}
+              {collapsed ? "CD" : "Candidate Dashboard"}
 
               {isMobile && !collapsed && (
                 <CloseOutlined
@@ -244,6 +240,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <Button
                 type="text"
                 icon={<LogoutOutlined />}
+                onClick={() => removeToken()}
                 className={`w-full font-bold text-left ${
                   collapsed
                     ? "flex justify-center bg-red-600 hover:bg-red-700"
@@ -286,7 +283,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               </div>
               <h1 style={{ margin: 0, fontSize: "1.25rem" }}>
-                Admin Dashboard
+                Candidate Dashboard
               </h1>
             </Header>
 

@@ -8,9 +8,9 @@
 // }
 "use client";
 import Left1 from "@/component/pages/login/Left1";
-import Left3 from "@/component/pages/login/Left3";
+// import Left3 from "@/component/pages/login/Left3";
 import SignInWrapper from "@/component/pages/login/SignInWrapper";
-import { Button, DatePicker } from "antd";
+// import { Button, DatePicker } from "antd";
 import React from "react";
 
 import sign_in from "../../public/main.png";

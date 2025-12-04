@@ -1,18 +1,6 @@
 "use client";
+import { Card, Table, List, Avatar, Button, Row, Col, Dropdown } from "antd";
 import {
-  Card,
-  Table,
-  List,
-  Avatar,
-  Button,
-  Menu,
-  Row,
-  Col,
-  Select,
-  Dropdown,
-} from "antd";
-import {
-  MessageOutlined,
   CalendarOutlined,
   RiseOutlined,
   ContainerFilled,
@@ -24,8 +12,6 @@ import StatsCard from "@/component/pages/dashboard/StatsCard";
 import { TopIconAndNavigation } from "@/app/candidate/dashboard/page";
 import UiButton from "@/component/common/CustomButton";
 import { ROUTES } from "@/constants/routes";
-
-const { Option } = Select;
 
 export default function Dashboard() {
   // Table Data
@@ -139,13 +125,13 @@ export default function Dashboard() {
     { day: "Sun", value: 6 },
   ];
 
-  const menu = (
-    <Menu>
-      <Menu.Item key="1">Reply</Menu.Item>
-      <Menu.Item key="2">Mark as read</Menu.Item>
-      <Menu.Item key="3">Delete</Menu.Item>
-    </Menu>
-  );
+  // const menu = (
+  //   <Menu>
+  //     <Menu.Item key="1">Reply</Menu.Item>
+  //     <Menu.Item key="2">Mark as read</Menu.Item>
+  //     <Menu.Item key="3">Delete</Menu.Item>
+  //   </Menu>
+  // );
 
   return (
     <div className=" bg-gray-50 min-h-screen">

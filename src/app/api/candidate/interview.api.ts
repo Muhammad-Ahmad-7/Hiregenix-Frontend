@@ -23,7 +23,13 @@ export const getAllInterviewsApi = async (params: {
   });
 };
 
-export const scheduleInterviewApi = async ({ jobId, scheduledDate }) => {
+export const scheduleInterviewApi = async ({
+  jobId,
+  scheduledDate,
+}: {
+  jobId: string;
+  scheduledDate: string;
+}) => {
   return safeApiCall({
     apiCall: () =>
       api.post(`/interview/schedule-interview/${jobId}`, { scheduledDate }),

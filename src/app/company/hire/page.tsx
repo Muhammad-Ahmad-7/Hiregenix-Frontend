@@ -9,41 +9,25 @@ import {
   Divider,
   Button,
   Space,
-  List,
   Row,
   Col,
-  Timeline,
   Affix,
   Grid,
-  Upload,
   message,
 } from "antd";
 import {
-  GithubOutlined,
-  LinkedinOutlined,
-  CheckCircleOutlined,
-  FilePdfOutlined,
   EditOutlined,
-  PlusCircleOutlined,
   PlusOutlined,
   GithubFilled,
   LinkedinFilled,
-  PaperClipOutlined,
-  UploadOutlined,
   GlobalOutlined,
   ClockCircleOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
 import IconWrapper from "@/icons/IconWrapper";
-import { signUpApi } from "@/app/api/auth.api";
-import UiButton from "@/component/common/CustomButton";
-import {
-  candidateProfileApi,
-  uploadResumeApi,
-} from "@/app/api/candidate/profile.api";
+// import { uploadResumeApi } from "@/app/api/candidate/profile.api";
 import { useSelector } from "react-redux";
 import { RootState } from "@reduxjs/toolkit/query";
-import ResumeUploader from "@/component/pages/candidate/profile/ResumeUploader";
 import JobApplicationStats from "./JobApplicationStats";
 
 const { Title, Text, Paragraph } = Typography;
@@ -65,36 +49,14 @@ interface UserProfile {
   tagline: string;
 }
 
-const skills = [
-  "Front-end developer",
-  "Backend",
-  "Node.js",
-  "Threads",
-  "Mobile App Development",
-];
-
-const experiences = [
-  {
-    title: "Product Engineer",
-    company: "Google Labs",
-    date: "Mar 2023 – Aug 2023",
-    description:
-      "Designed and developed a fully responsive web application using React.js for the front end and Node.js/Express.js for the back end. Integrated REST APIs and implemented MongoDB for data management. Focused on optimizing performance and delivering a smooth user experience.",
-  },
-  {
-    title: "Product Engineer",
-    company: "Google Labs",
-    date: "Mar 2023 – Aug 2023",
-    description:
-      "Designed and developed a fully responsive web application using React.js for the front end and Node.js/Express.js for the back end. Integrated REST APIs and implemented MongoDB for data management. Focused on optimizing performance and delivering a smooth user experience.",
-  },
-];
-
 export default function ProfileDashboard() {
-  const { profile, loading } = useSelector((state: RootState) => state.user);
+  const {
+    profile,
+    //  loading
+  } = useSelector((state: RootState) => state.user);
   const screens = useBreakpoint();
-  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  // const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+  // const [uploading, setUploading] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // Check if screen is large (lg breakpoint and above)
@@ -112,60 +74,59 @@ export default function ProfileDashboard() {
     }
   }, [profile]);
 
-  const handleResumeUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
+  // const handleResumeUpload = async (file: File) => {
+  //   setUploading(true);
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append("file", file);
 
-      const response = await uploadResumeApi(formData);
-      console.log("API Response:", response);
+  //     const response = await uploadResumeApi(formData);
+  //     console.log("API Response:", response);
 
-      // Check if response exists and has the expected data structure
-      if (response && response.data && response.data.resumeUrl) {
-        setResumeUrl(response.data.resumeUrl);
-        message.success("Resume uploaded successfully!");
-      } else {
-        // Handle case where API returns but without expected data
-        message.error("Upload failed: Invalid response from server");
-        console.error("Invalid response structure:", response);
-      }
-    } catch (error: any) {
-      // Better error handling
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to upload resume. Please try again.";
-      message.error(errorMessage);
-      console.error("Upload error:", error);
-    } finally {
-      setUploading(false);
-    }
-  };
+  //     // Check if response exists and has the expected data structure
+  //     if (response && response.data && response.data.resumeUrl) {
+  //       setResumeUrl(response.data.resumeUrl);
+  //       message.success("Resume uploaded successfully!");
+  //     } else {
+  //       // Handle case where API returns but without expected data
+  //       message.error("Upload failed: Invalid response from server");
+  //       console.error("Invalid response structure:", response);
+  //     }
+  //   } catch (err) {
+  //     const errorMessage = "Failed to upload resume. Please try again.";
 
-  const uploadProps = {
-    beforeUpload: (file: File) => {
-      const isPdf = file.type === "application/pdf";
-      if (!isPdf) {
-        message.error("You can only upload PDF files!");
-        return false;
-      }
-      const isLt5M = file.size / 1024 / 1024 < 5;
-      if (!isLt5M) {
-        message.error("File must be smaller than 5MB!");
-        return false;
-      }
-      handleResumeUpload(file);
-      return false; // Prevent auto upload
-    },
-    showUploadList: false,
-  };
+  //     message.error(errorMessage);
+  //     console.error("Upload error:", err);
+  //   } finally {
+  //     setUploading(false);
+  //   }
+  // };
+
+  // const uploadProps = {
+  //   beforeUpload: (file: File) => {
+  //     const isPdf = file.type === "application/pdf";
+  //     if (!isPdf) {
+  //       message.error("You can only upload PDF files!");
+  //       return false;
+  //     }
+  //     const isLt5M = file.size / 1024 / 1024 < 5;
+  //     if (!isLt5M) {
+  //       message.error("File must be smaller than 5MB!");
+  //       return false;
+  //     }
+  //     handleResumeUpload(file);
+  //     return false; // Prevent auto upload
+  //   },
+  //   showUploadList: false,
+  // };
 
   // Helper function to get year from URL or return default
-  const getYearFromUrl = (url: string) => {
-    // You can implement logic to extract year from URL or profile data
-    return "2023";
-  };
+  const getYearFromUrl = () =>
+    // url: string
+    {
+      // You can implement logic to extract year from URL or profile data
+      return "2023";
+    };
 
   const SidebarCard = (
     <Card className="rounded-xl">

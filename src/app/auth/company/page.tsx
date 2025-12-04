@@ -2,9 +2,6 @@
 import React from "react";
 import sign_in from "../../../../public/main.png";
 import SignInWrapper from "@/component/pages/login/SignInWrapper";
-import Left1 from "@/component/pages/login/Left1";
-import Left2 from "@/component/pages/login/Left2";
-import Left3 from "@/component/pages/login/Left3";
 import LoginScreen from "@/component/pages/login/Login";
 
 const Page: React.FC = () => {

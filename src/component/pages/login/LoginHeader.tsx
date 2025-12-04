@@ -3,7 +3,7 @@ import { GlobalOutlined } from "@ant-design/icons";
 import { Col, Image, Row, Select, Typography } from "antd";
 import React from "react";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 export default function LoginHeader() {
   return (
     <Row className="h-20 px-6 flex items-center bg-white">

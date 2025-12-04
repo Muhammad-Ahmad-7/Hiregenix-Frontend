@@ -1,29 +1,29 @@
 import * as React from "react";
 import WorldMap from "react-svg-worldmap";
-import { CountryContext } from "react-svg-worldmap";
+// import { CountryContext } from "react-svg-worldmap";
 
-const stylingFunction = ({
-  countryValue,
-  minValue,
-  maxValue,
-  country,
-  color,
-}: CountryContext) => {
-  const calculatedValue =
-    typeof countryValue === "string" ? minValue : countryValue;
-  const opacityLevel =
-    calculatedValue !== undefined
-      ? 0.1 + (1.5 * (calculatedValue - minValue)) / (maxValue - minValue)
-      : 0;
-  return {
-    fill: country === "US" ? "blue" : color,
-    fillOpacity: opacityLevel,
-    stroke: "black",
-    strokeWidth: 1,
-    strokeOpacity: 1,
-    cursor: "pointer",
-  };
-};
+// const stylingFunction = ({
+//   countryValue,
+//   minValue,
+//   maxValue,
+//   country,
+//   color,
+// }: CountryContext) => {
+//   const calculatedValue =
+//     typeof countryValue === "string" ? minValue : countryValue;
+//   const opacityLevel =
+//     calculatedValue !== undefined
+//       ? 0.1 + (1.5 * (calculatedValue - minValue)) / (maxValue - minValue)
+//       : 0;
+//   return {
+//     fill: country === "US" ? "blue" : color,
+//     fillOpacity: opacityLevel,
+//     stroke: "black",
+//     strokeWidth: 1,
+//     strokeOpacity: 1,
+//     cursor: "pointer",
+//   };
+// };
 
 export function JobPortalMapCard({
   size = "sm",

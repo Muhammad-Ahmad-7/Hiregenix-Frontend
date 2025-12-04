@@ -63,6 +63,7 @@ export default function CompanyStep1() {
       }
     } catch (error) {
       toast.error("Failed to complete company profile.");
+      console.error("Error completing company profile:", error);
     } finally {
       setLoading(false);
     }

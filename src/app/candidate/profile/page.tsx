@@ -9,7 +9,6 @@ import {
   Divider,
   Button,
   Space,
-  List,
   Row,
   Col,
   Timeline,
@@ -17,134 +16,273 @@ import {
   Grid,
   Upload,
   message,
+  Spin,
+  Empty,
 } from "antd";
 import {
-  GithubOutlined,
-  LinkedinOutlined,
-  CheckCircleOutlined,
-  FilePdfOutlined,
   EditOutlined,
-  PlusCircleOutlined,
   PlusOutlined,
   GithubFilled,
   LinkedinFilled,
   PaperClipOutlined,
   UploadOutlined,
   GlobalOutlined,
+  CheckCircleOutlined,
+  TrophyOutlined,
+  ProjectOutlined,
 } from "@ant-design/icons";
-import IconWrapper from "@/icons/IconWrapper";
-import { signUpApi } from "@/app/api/auth.api";
-import UiButton from "@/component/common/CustomButton";
-import {
-  candidateProfileApi,
-  uploadResumeApi,
-} from "@/app/api/candidate/profile.api";
-import { useSelector } from "react-redux";
-import { RootState } from "@reduxjs/toolkit/query";
-import ResumeUploader from "@/component/pages/candidate/profile/ResumeUploader";
-import {
-  getAllActiveJobsApi,
-  getAllJobsWithPagePaginationApi,
-  getRecommendedJobsApi,
-} from "@/app/api/candidate/jobs.api";
-import {
-  getAllInterviewsApi,
-  getAllTodaysInterviewsApi,
-  scheduleInterviewApi,
-} from "@/app/api/candidate/interview.api";
 
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
 
+interface ResumeData {
+  parsedData: {
+    name: string;
+    email: string;
+    phone: string;
+    linkedin: string;
+    github: string;
+    portfolio: string | null;
+    summary: string | null;
+    skills: string[];
+    experience: Array<{
+      _id: string;
+      company: string;
+      position: string;
+      startDate: string;
+      endDate?: string;
+      description: string;
+    }>;
+    education: Array<{
+      _id: string;
+      institution: string;
+      degree: string;
+      startYear: number;
+      endYear: number;
+    }>;
+    projects: Array<{
+      _id: string;
+      name: string;
+      description: string;
+      technologies: string[];
+      link: string | null;
+    }>;
+    certifications: string[];
+  };
+  fileUrl: string;
+  aiScore: number;
+  aiSuggestions: string[];
+}
+
 interface UserProfile {
   fullName: string;
-  dateOfBirth: string;
-  gender: string;
-  country: string;
-  city: string;
-  contactNumber: string;
   profilePictureUrl: string;
+  tagline: string;
+  city: string;
+  country: string;
+  bio: string;
   githubUrl: string;
   linkedinUrl: string;
   portfolioUrl: string;
-  skills: string[];
-  bio: string;
-  tagline: string;
+  resumeUrl?: string;
 }
 
-const skills = [
-  "Front-end developer",
-  "Backend",
-  "Node.js",
-  "Threads",
-  "Mobile App Development",
-];
-
-const experiences = [
-  {
-    title: "Product Engineer",
-    company: "Google Labs",
-    date: "Mar 2023 – Aug 2023",
-    description:
-      "Designed and developed a fully responsive web application using React.js for the front end and Node.js/Express.js for the back end. Integrated REST APIs and implemented MongoDB for data management. Focused on optimizing performance and delivering a smooth user experience.",
-  },
-  {
-    title: "Product Engineer",
-    company: "Google Labs",
-    date: "Mar 2023 – Aug 2023",
-    description:
-      "Designed and developed a fully responsive web application using React.js for the front end and Node.js/Express.js for the back end. Integrated REST APIs and implemented MongoDB for data management. Focused on optimizing performance and delivering a smooth user experience.",
-  },
-];
-
 export default function ProfileDashboard() {
-  const { profile, loading } = useSelector((state: RootState) => state.user);
   const screens = useBreakpoint();
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [resumeData, setResumeData] = useState<ResumeData | null>(null);
 
-  // Check if screen is large (lg breakpoint and above)
+  // Mock user profile - replace with your Redux state
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    fullName: "Muhammad Taha",
+    profilePictureUrl:
+      "https://api.dicebear.com/8.x/avataaars/svg?seed=Muhammad",
+    tagline: "Full Stack Developer | AI Enthusiast",
+    city: "Lahore",
+    country: "Pakistan",
+    bio: "Passionate about building innovative solutions with modern technologies. Experienced in full-stack development and machine learning.",
+    githubUrl: "https://github.com/tahaxd77",
+    linkedinUrl: "https://www.linkedin.com/in/muhammad-taha-ayaz",
+    portfolioUrl: "",
+  });
+
   const isLargeScreen = screens.lg;
 
   useEffect(() => {
-    console.log(profile);
-    // Set user profile from Redux state
-    if (profile) {
-      setUserProfile(profile as UserProfile);
-    }
-    // Check if profile already has a resume URL
-    if (profile?.resumeUrl) {
-      setResumeUrl(profile.resumeUrl);
-    }
-  }, [profile]);
+    // Simulate API call - replace with your actual API call
+    const fetchResumeData = async () => {
+      try {
+        setLoading(true);
+        // Replace this with your actual API call: const response = await getResumeDataApi();
+
+        // Simulated data from your API response
+        const mockData: ResumeData = {
+          parsedData: {
+            name: "Muhammad Taha",
+            email: "m_taha_ayaz@yahoo.com",
+            phone: "03055800377",
+            linkedin: "https://www.linkedin.com/in/muhammad-taha-ayaz",
+            github: "https://github.com/tahaxd77",
+            portfolio: null,
+            summary: null,
+            skills: [
+              "Java",
+              "Python",
+              "C/C++",
+              "SQL",
+              "JavaScript",
+              "HTML/CSS",
+              "Git",
+              "React Native",
+              "React",
+              "Flask",
+              "Supabase",
+              "scikit-learn",
+              "pandas",
+              "Spark MLlib",
+              "JavaFX",
+            ],
+            experience: [
+              {
+                _id: "69302d7cb074fbffb726fa49",
+                company: "COMSATS University",
+                position:
+                  "Undergraduate Student (Relevant Coursework/Projects)",
+                startDate: "2022-09-30T19:00:00.000Z",
+                description:
+                  "• Developed an understanding with SQL databases to store data efficiently.\n• Learned different types of Data structures and their optimization.\n• Developed a great knowledge about Object Oriented Programming.\n• Experienced learning Mobile App Development using React Native.",
+              },
+            ],
+            education: [
+              {
+                _id: "69302d7cb074fbffb726fa4a",
+                institution: "COMSATS University",
+                degree: "Bachelor of Computer Science",
+                startYear: 2022,
+                endYear: 2026,
+              },
+              {
+                _id: "69302d7cb074fbffb726fa4b",
+                institution: "Punjab College",
+                degree: "Intermediate in Computer Sciences",
+                startYear: 2020,
+                endYear: 2022,
+              },
+            ],
+            projects: [
+              {
+                _id: "69302d7cb074fbffb726fa4c",
+                name: "Real Estate Price Predictor",
+                description:
+                  "Developed a predictive tool using machine learning models to estimate real estate prices based on user input and historical data. Utilized Python libraries such as scikit-learn, pandas, and matplotlib for data preprocessing, model training, and performance visualization.",
+                technologies: [
+                  "Python",
+                  "JavaScript",
+                  "scikit-learn",
+                  "pandas",
+                  "matplotlib",
+                  "HTML",
+                  "CSS",
+                ],
+                link: null,
+              },
+              {
+                _id: "69302d7cb074fbffb726fa4d",
+                name: "Movie Recommendation System",
+                description:
+                  "Developed a Movie Recommendation System using Python, Jupyter Notebook, and Spark MLlib (ALS algorithm) to provide personalized recommendations based on user ratings. Built Flask-based REST APIs for serving recommendations and movie details.",
+                technologies: [
+                  "Jupyter Notebook",
+                  "Python",
+                  "JS",
+                  "Spark MLlib",
+                  "Flask",
+                ],
+                link: null,
+              },
+              {
+                _id: "69302d7cb074fbffb726fa4e",
+                name: "BuilderPro",
+                description:
+                  "Developed a cross-platform e-commerce mobile application tailored for building materials, enabling users to browse, search, and purchase products seamlessly. Implemented robust backend functionality using Supabase.",
+                technologies: ["React Native", "JS", "Supabase"],
+                link: null,
+              },
+              {
+                _id: "69302d7cb074fbffb726fa4f",
+                name: "RealTime Chat Application",
+                description:
+                  "Built a real-time chat application enabling users to connect and message friends instantly with a responsive and intuitive UI. Integrated Supabase for seamless user authentication and real-time database updates.",
+                technologies: ["React", "JS", "Supabase"],
+                link: null,
+              },
+              {
+                _id: "69302d7cb074fbffb726fa50",
+                name: "Dealership Management System",
+                description:
+                  "Developed complete backend model used to store the data efficiently. This allows to perform CRUD operations more smoothly. Allows to generate various reports on different aspects.",
+                technologies: ["Python", "SQL Server"],
+                link: null,
+              },
+              {
+                _id: "69302d7cb074fbffb726fa51",
+                name: "Library Management System",
+                description:
+                  "Developed a system to efficiently manage catalogue and inventory. A user interactive system to make sure the borrowing and returning of books.",
+                technologies: ["Java", "JavaFX"],
+                link: null,
+              },
+            ],
+            certifications: [],
+          },
+          fileUrl:
+            "https://res.cloudinary.com/hiregenx/image/upload/v1764764854/qp5mtvtqlljrekogcapz.pdf",
+          aiScore: 72.5,
+          aiSuggestions: [
+            "Add a professional summary or objective statement at the beginning of your resume.",
+            "Quantify your project achievements with metrics and results.",
+            "Include links to your GitHub repositories or live demos for each project.",
+            "Consider seeking internships or part-time roles to gain formal work experience.",
+          ],
+        };
+
+        setResumeData(mockData);
+        setResumeUrl(mockData.fileUrl);
+
+        // Update user profile with resume data
+        if (mockData.parsedData) {
+          setUserProfile((prev) => ({
+            ...prev,
+            fullName: mockData.parsedData.name || prev.fullName,
+            githubUrl: mockData.parsedData.github || prev.githubUrl,
+            linkedinUrl: mockData.parsedData.linkedin || prev.linkedinUrl,
+            portfolioUrl: mockData.parsedData.portfolio || prev.portfolioUrl,
+          }));
+        }
+      } catch (error) {
+        message.error("Failed to load resume data");
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResumeData();
+  }, []);
 
   const handleResumeUpload = async (file: File) => {
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
-
-      const response = await uploadResumeApi(formData);
-      console.log("API Response:", response);
-
-      // Check if response exists and has the expected data structure
-      if (response && response.data && response.data.resumeUrl) {
-        setResumeUrl(response.data.resumeUrl);
-        message.success("Resume uploaded successfully!");
-      } else {
-        // Handle case where API returns but without expected data
-        message.error("Upload failed: Invalid response from server");
-        console.error("Invalid response structure:", response);
-      }
-    } catch (error: any) {
-      // Better error handling
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to upload resume. Please try again.";
-      message.error(errorMessage);
-      console.error("Upload error:", error);
+      // const response = await uploadResumeApi(formData);
+      // Handle response and update state
+      message.success("Resume uploaded successfully!");
+    } catch (error: unknown) {
+      message.error("Failed to upload resume");
+      console.error(error);
     } finally {
       setUploading(false);
     }
@@ -163,15 +301,17 @@ export default function ProfileDashboard() {
         return false;
       }
       handleResumeUpload(file);
-      return false; // Prevent auto upload
+      return false;
     },
     showUploadList: false,
   };
 
-  // Helper function to get year from URL or return default
-  const getYearFromUrl = (url: string) => {
-    // You can implement logic to extract year from URL or profile data
-    return "2023";
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
   };
 
   const SidebarCard = (
@@ -179,69 +319,71 @@ export default function ProfileDashboard() {
       <Space direction="vertical" style={{ width: "100%" }}>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Avatar
-              size={72}
-              src={
-                userProfile?.profilePictureUrl ||
-                "https://api.dicebear.com/8.x/avataaars/svg?seed=default"
-              }
-            />
+            <Avatar size={72} src={userProfile.profilePictureUrl} />
             <div>
               <Title level={4} style={{ marginBottom: 0 }}>
-                {userProfile?.fullName || "User Name"}
+                {userProfile.fullName}
               </Title>
-              <Text type="secondary">
-                {userProfile?.tagline || "Professional"}
-              </Text>
+              <Text type="secondary">{userProfile.tagline}</Text>
             </div>
           </div>
+          <EditOutlined className="cursor-pointer text-lg" />
+        </div>
 
-          <IconWrapper icon={<EditOutlined />} bgColorIcon="default" />
-        </div>
-        <Divider className=" !my-3" />
+        <Divider className="!my-3" />
+
         <div className="flex justify-between items-center">
-          <Text strong>Joined</Text>
-          <Text>August 22, 2025</Text>
+          <Text strong>Email</Text>
+          <Text>{resumeData?.parsedData.email || "Not specified"}</Text>
         </div>
+
+        <div className="flex justify-between items-center">
+          <Text strong>Phone</Text>
+          <Text>{resumeData?.parsedData.phone || "Not specified"}</Text>
+        </div>
+
         <div className="flex justify-between items-center">
           <Text strong>Location</Text>
           <Text>
-            {userProfile?.city && userProfile?.country
+            {userProfile.city && userProfile.country
               ? `${userProfile.city}, ${userProfile.country}`
               : "Not specified"}
           </Text>
         </div>
-        <div className="flex justify-between items-center ">
+
+        <div className="flex justify-between items-start">
           <Text strong className="!w-[35%]">
             Skills
           </Text>
-          <Space wrap className="!flex justify-end ">
-            {userProfile?.skills && userProfile.skills.length > 0 ? (
-              userProfile.skills.map((skill, index) => (
-                <Tag key={index} className="rounded-full">
-                  {skill}
+          <Space wrap className="!flex justify-end">
+            {resumeData?.parsedData.skills?.slice(0, 8).map((skill, index) => (
+              <Tag key={index} className="rounded-full" color="blue">
+                {skill}
+              </Tag>
+            ))}
+            {resumeData?.parsedData.skills &&
+              resumeData.parsedData.skills.length > 8 && (
+                <Tag className="rounded-full">
+                  +{resumeData.parsedData.skills.length - 8}
                 </Tag>
-              ))
-            ) : (
-              <Text type="secondary">No skills added</Text>
-            )}
+              )}
           </Space>
         </div>
 
-        <Divider className=" !my-3" />
+        <Divider className="!my-3" />
 
         <Text strong>Bio</Text>
-        <Paragraph>{userProfile?.bio || "No bio available"}</Paragraph>
+        <Paragraph>{userProfile.bio}</Paragraph>
 
-        <Divider className=" !my-3" />
+        <Divider className="!my-3" />
 
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
             <Text strong>Links</Text>
-            <IconWrapper icon={<PlusOutlined />} bgColorIcon="default" />
+            <PlusOutlined className="cursor-pointer" />
           </div>
 
-          {userProfile?.githubUrl && (
+          {userProfile.githubUrl && (
             <div className="flex items-center justify-between">
               <div className="flex gap-2 items-center">
                 <GithubFilled className="text-3xl" />
@@ -249,18 +391,14 @@ export default function ProfileDashboard() {
                   href={userProfile.githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-blue-500"
                 >
                   <Text strong>GitHub</Text>
                 </a>
               </div>
-              <Text type="secondary">
-                Since {getYearFromUrl(userProfile.githubUrl)}
-              </Text>
             </div>
           )}
 
-          {userProfile?.linkedinUrl && (
+          {userProfile.linkedinUrl && (
             <div className="flex items-center justify-between">
               <div className="flex gap-2 items-center">
                 <LinkedinFilled className="text-3xl text-[#0A66C2]" />
@@ -268,18 +406,14 @@ export default function ProfileDashboard() {
                   href={userProfile.linkedinUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-blue-500"
                 >
                   <Text strong>LinkedIn</Text>
                 </a>
               </div>
-              <Text type="secondary">
-                Since {getYearFromUrl(userProfile.linkedinUrl)}
-              </Text>
             </div>
           )}
 
-          {userProfile?.portfolioUrl && (
+          {userProfile.portfolioUrl && (
             <div className="flex items-center justify-between">
               <div className="flex gap-2 items-center">
                 <GlobalOutlined className="text-3xl" />
@@ -287,45 +421,31 @@ export default function ProfileDashboard() {
                   href={userProfile.portfolioUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-blue-500"
                 >
                   <Text strong>Portfolio</Text>
                 </a>
               </div>
-              <Text type="secondary">Website</Text>
             </div>
           )}
-
-          {!userProfile?.githubUrl &&
-            !userProfile?.linkedinUrl &&
-            !userProfile?.portfolioUrl && (
-              <Text type="secondary">No links added</Text>
-            )}
         </div>
       </Space>
     </Card>
   );
-  const test = async () => {
-    // const res = await getRecommendedJobsApi();
 
-    // const res = getAllJobsWithPagePaginationApi({ page: 1, limit: 5 });
-
-    // const res = getAllActiveJobsApi({ page: 1, limit: 5 });
-
-    // const res = getAllInterviewsApi({ page: 1, limit: 5 });
-
-    // const res = getAllTodaysInterviewsApi({ page: 1, limit: 5 });
-    const res = await scheduleInterviewApi({
-      jobId: "692ac8aa230f2d146fe62c4e",
-      scheduledDate: "2025-12-05T00:00:00.000+00:00",
-    });
-    console.log("Candidate Profile API Response:", res);
-  };
+  if (loading) {
+    return (
+      <div
+        className="flex justify-center items-center"
+        style={{ minHeight: "100vh" }}
+      >
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh" }}>
       <Row gutter={[24, 24]}>
-        {/* Left Sidebar */}
         <Col xs={24} md={24} lg={9}>
           {isLargeScreen ? (
             <Affix offsetTop={80}>{SidebarCard}</Affix>
@@ -334,23 +454,54 @@ export default function ProfileDashboard() {
           )}
         </Col>
 
-        {/* Right Main Section */}
         <Col xs={24} md={24} lg={15}>
           <Space direction="vertical" style={{ width: "100%" }} size="large">
-            {/* Resume Upload/Display Card */}
+            {/* AI Score Card */}
+            {resumeData && (
+              <Card
+                className="rounded-xl"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                }}
+              >
+                <div className="text-white">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <Title level={5} style={{ color: "white", margin: 0 }}>
+                        AI Resume Score
+                      </Title>
+                      <Text style={{ color: "rgba(255,255,255,0.9)" }}>
+                        Your resume has been analyzed by AI
+                      </Text>
+                    </div>
+                    <div className="text-right">
+                      <Title level={2} style={{ color: "white", margin: 0 }}>
+                        {resumeData.aiScore}/100
+                      </Title>
+                      <Text style={{ color: "rgba(255,255,255,0.9)" }}>
+                        Score
+                      </Text>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* Resume Upload Card */}
             <Card className="rounded-xl">
               <div className="flex justify-between items-center">
-                <div className="">
-                  <Button onClick={test}>TEST API</Button>
+                <div>
                   {resumeUrl ? (
                     <>
-                      <div>
-                        <Title level={5} style={{ margin: 0 }}>
-                          Resume Uploaded Successfully
-                        </Title>
-                      </div>
+                      <Title level={5} style={{ margin: 0 }}>
+                        <CheckCircleOutlined
+                          style={{ color: "#52c41a", marginRight: 8 }}
+                        />
+                        Resume Uploaded Successfully
+                      </Title>
                       <Text type="secondary">
-                        Your resume has been received and is ready for review.
+                        Your resume has been received and analyzed.
                       </Text>
                       <div className="!mt-4 gap-2 flex items-center">
                         <PaperClipOutlined />
@@ -360,22 +511,15 @@ export default function ProfileDashboard() {
                           rel="noopener noreferrer"
                           className="!text-[#52C41A] hover:!text-[#73D13D]"
                         >
-                          {userProfile?.fullName
-                            ? `${userProfile.fullName.replace(
-                                /\s+/g,
-                                ""
-                              )}Resume.pdf`
-                            : "Resume.pdf"}
+                          {userProfile.fullName.replace(/\s+/g, "")}Resume.pdf
                         </a>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div>
-                        <Title level={5} style={{ margin: 0 }}>
-                          Upload Your Resume
-                        </Title>
-                      </div>
+                      <Title level={5} style={{ margin: 0 }}>
+                        Upload Your Resume
+                      </Title>
                       <Text type="secondary">
                         Upload your resume in PDF format to complete your
                         profile.
@@ -396,86 +540,166 @@ export default function ProfileDashboard() {
                 </div>
                 {resumeUrl && (
                   <Upload {...uploadProps}>
-                    <IconWrapper
-                      icon={<EditOutlined />}
-                      bgColorIcon="default"
-                    />
+                    <EditOutlined className="cursor-pointer text-lg" />
                   </Upload>
                 )}
               </div>
             </Card>
 
+            {/* AI Suggestions */}
+            {resumeData?.aiSuggestions &&
+              resumeData.aiSuggestions.length > 0 && (
+                <Card
+                  title={<Title level={5}>AI Suggestions</Title>}
+                  className="rounded-xl"
+                >
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    {resumeData.aiSuggestions.map((suggestion, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Text type="secondary">{index + 1}.</Text>
+                        <Text>{suggestion}</Text>
+                      </div>
+                    ))}
+                  </Space>
+                </Card>
+              )}
+
             {/* Experience Section */}
             <Card
               title={<Title level={5}>Experience</Title>}
-              className="rounded-xl shadow-md"
+              className="rounded-xl"
             >
-              <Timeline mode="left">
-                {experiences.map((item, index) => (
-                  <Timeline.Item key={index}>
-                    <div className="mb-6" color="gray">
-                      <div className="flex justify-between items-start">
+              {resumeData?.parsedData.experience &&
+              resumeData.parsedData.experience.length > 0 ? (
+                <Timeline>
+                  {resumeData.parsedData.experience.map((exp) => (
+                    <Timeline.Item key={exp._id}>
+                      <div className="mb-4">
+                        <Text strong className="text-lg">
+                          {exp.position}
+                        </Text>
                         <div>
-                          <Text strong className="text-lg">
-                            {item.title} — {item.company}
+                          <Text type="secondary">
+                            {exp.company} • {formatDate(exp.startDate)}
                           </Text>
-                          <div>
-                            <Text type="secondary">{item.date}</Text>
-                          </div>
+                        </div>
+                        <Paragraph
+                          className="mt-2"
+                          style={{ whiteSpace: "pre-line" }}
+                        >
+                          {exp.description}
+                        </Paragraph>
+                      </div>
+                    </Timeline.Item>
+                  ))}
+                </Timeline>
+              ) : (
+                <Empty description="No experience data available" />
+              )}
+            </Card>
+
+            {/* Education Section */}
+            <Card
+              title={<Title level={5}>Education</Title>}
+              className="rounded-xl"
+            >
+              {resumeData?.parsedData.education &&
+              resumeData.parsedData.education.length > 0 ? (
+                <Timeline>
+                  {resumeData.parsedData.education.map((edu) => (
+                    <Timeline.Item key={edu._id}>
+                      <div className="mb-4">
+                        <Text strong className="text-lg">
+                          {edu.degree}
+                        </Text>
+                        <div>
+                          <Text type="secondary">
+                            {edu.institution} • {edu.startYear} - {edu.endYear}
+                          </Text>
                         </div>
                       </div>
+                    </Timeline.Item>
+                  ))}
+                </Timeline>
+              ) : (
+                <Empty description="No education data available" />
+              )}
+            </Card>
 
-                      <Paragraph className="mt-2 mb-3">
-                        {item.description}
-                      </Paragraph>
-
-                      <Space wrap>
-                        {skills.slice(0, 5).map((skill, i) => (
-                          <Tag
-                            key={i}
-                            color="blue"
-                            className="rounded-full text-sm font-medium"
+            {/* Projects Section */}
+            <Card
+              title={
+                <Title level={5}>
+                  <ProjectOutlined /> Projects
+                </Title>
+              }
+              className="rounded-xl"
+            >
+              {resumeData?.parsedData.projects &&
+              resumeData.parsedData.projects.length > 0 ? (
+                <Space
+                  direction="vertical"
+                  style={{ width: "100%" }}
+                  size="large"
+                >
+                  {resumeData.parsedData.projects.map((project) => (
+                    <div key={project._id}>
+                      <div className="flex justify-between items-start">
+                        <Text strong className="text-lg">
+                          {project.name}
+                        </Text>
+                        {project.link && (
+                          <a
+                            href={project.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
                           >
-                            {skill}
+                            <Button size="small">View Project</Button>
+                          </a>
+                        )}
+                      </div>
+                      <Paragraph className="mt-2">
+                        {project.description}
+                      </Paragraph>
+                      <Space wrap className="mt-2">
+                        {project.technologies.map((tech, i) => (
+                          <Tag key={i} color="blue" className="rounded-full">
+                            {tech}
                           </Tag>
                         ))}
-                        {skills.length > 5 && (
-                          <Tag className="rounded-full text-sm font-medium">
-                            +{skills.length - 5}
-                          </Tag>
-                        )}
                       </Space>
-
-                      {index !== experiences.length - 1 && (
-                        <Divider className="!my-4 border-gray-200" />
-                      )}
+                      <Divider />
                     </div>
-                  </Timeline.Item>
-                ))}
-              </Timeline>
-
-              <div className="text-center mt-4">
-                <Button type="default">Load More</Button>
-              </div>
+                  ))}
+                </Space>
+              ) : (
+                <Empty description="No projects available" />
+              )}
             </Card>
 
             {/* Certifications */}
-            <Card
-              title={<Title level={5}>Certifications</Title>}
-              style={{
-                borderRadius: 12,
-                boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-              }}
-            >
-              <Paragraph>
-                <Text strong>Product Engineer</Text> — Google Labs (Mar 2023 –
-                Aug 2023)
-              </Paragraph>
-              <Paragraph>
-                Designed and developed a fully responsive web application using
-                React.js and Node.js/Express.js for backend.
-              </Paragraph>
-            </Card>
+            {resumeData?.parsedData.certifications &&
+              resumeData.parsedData.certifications.length > 0 && (
+                <Card
+                  title={
+                    <Title level={5}>
+                      <TrophyOutlined /> Certifications
+                    </Title>
+                  }
+                  className="rounded-xl"
+                >
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    {resumeData.parsedData.certifications.map((cert, index) => (
+                      <div key={index}>
+                        <Text strong>{cert.name}</Text>
+                        <div>
+                          <Text type="secondary">{cert.issuer}</Text>
+                        </div>
+                      </div>
+                    ))}
+                  </Space>
+                </Card>
+              )}
           </Space>
         </Col>
       </Row>

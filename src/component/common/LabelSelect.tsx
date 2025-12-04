@@ -27,7 +27,9 @@ const LabelSelect: React.FC<LabelSelectProps> = ({
   const selectNode = (
     <Select
       {...rest}
-      style={{ width: "100%", ...((rest as any).style ?? {}) }}
+      // style={{ width: "100%", ...((rest as any).style ?? {}) }}
+
+      style={{ width: "100%", ...(rest.style ?? {}) }}
       showSearch
       optionFilterProp="label"
       filterSort={(optionA, optionB) =>

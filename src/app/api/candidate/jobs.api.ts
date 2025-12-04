@@ -40,3 +40,17 @@ export const getAllActiveJobsApi = async (params: {
     showToaster: true,
   });
 };
+//
+
+export const getAllJobsWithScrollingApi = async (params: {
+  limit: number;
+  lastId?: string;
+}) => {
+  return safeApiCall({
+    apiCall: () =>
+      api.get("/job/get-all-jobs", {
+        params: params,
+      }),
+    showToaster: true,
+  });
+};

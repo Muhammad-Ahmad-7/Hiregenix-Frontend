@@ -74,8 +74,8 @@ export const safeApiCall = async <T>({
       return response.data;
     }
     return returnDataOnly ? response.data.data : response.data;
-  } catch (error: any) {
-    const errorMsg = error.response.data.message ?? "Something went wrong";
+  } catch (error) {
+    const errorMsg = error?.response?.data.message ?? "Something went wrong";
     console.log(errorMsg);
     toast.error(errorMsg, {
       duration: 3000,

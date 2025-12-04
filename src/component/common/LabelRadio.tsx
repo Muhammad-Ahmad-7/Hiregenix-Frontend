@@ -8,7 +8,7 @@ type LabelRadioGroupProps = RadioGroupProps & {
   label: string;
   name: string;
   required?: boolean;
-  itemProps?: any; // rules, tooltip, etc.
+  itemProps?: unknown; // rules, tooltip, etc.
   options?: { label: string; value: string | number }[]; // convenient option format
 };
 

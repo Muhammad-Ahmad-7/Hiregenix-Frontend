@@ -29,7 +29,7 @@ const InterviewCard: React.FC<InterviewCardProps> = ({
   onJoin,
 }) => {
   return (
-    <div className="bg-white shadow-sm hover:shadow-md transition-all rounded-2xl p-5 flex flex-col justify-between w-full sm:w-[360px] border border-gray-100">
+    <div className="bg-white shadow-sm hover:shadow-md transition-all rounded-2xl p-5 flex flex-col justify-between w-full flex-wrap  sm:w-[350px] border border-gray-100">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">

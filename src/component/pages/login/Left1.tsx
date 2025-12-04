@@ -1,8 +1,7 @@
 import UiButton from "@/component/common/CustomButton";
 import { ROUTES } from "@/constants/routes";
 import Fire from "@/icons/Fire";
-import { Button, Col, Typography } from "antd";
-import Link from "next/link";
+import { Col, Typography } from "antd";
 import React from "react";
 const { Text, Title } = Typography;
 export default function Left1() {

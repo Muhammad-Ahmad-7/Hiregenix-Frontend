@@ -128,7 +128,7 @@ const MyJobsTable = () => {
     {
       title: "Location",
       key: "location",
-      render: (_: any, record: Job_Interface) => (
+      render: (_: unknown, record: Job_Interface) => (
         <span>
           {record.location?.city}, {record.location?.country}
         </span>
@@ -151,7 +151,7 @@ const MyJobsTable = () => {
     {
       title: "Salary",
       key: "salaryRange",
-      render: (_: any, record: Job_Interface) => {
+      render: (_: unknown, record: Job_Interface) => {
         const salary = record.salaryRange;
         if (!salary) return "—";
         return `${salary.min} - ${salary.max} ${salary.currency}`;
@@ -171,7 +171,7 @@ const MyJobsTable = () => {
     {
       title: "Details",
       key: "details",
-      render: (_: any, record: Job_Interface) => (
+      render: (_: unknown, record: Job_Interface) => (
         <Button
           type="link"
           className="p-0"

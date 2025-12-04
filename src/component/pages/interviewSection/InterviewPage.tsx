@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -11,6 +11,7 @@ import {
   Tooltip,
   Row,
   Col,
+  Spin,
 } from "antd";
 import {
   PlusOutlined,
@@ -19,8 +20,45 @@ import {
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import InterviewCard from "./InterviewCard";
+import {
+  getAllInterviewsApi,
+  getAllTodaysInterviewsApi,
+} from "@/app/api/candidate/interview.api";
 
-interface InterviewRecord {
+// Interfaces
+export interface Interview {
+  _id: string;
+  candidateId: string;
+  companyId: {
+    _id: string;
+    companyName: string;
+  };
+  jobId: {
+    _id: string;
+    title: string;
+    workMode: string;
+    deadline: string;
+  };
+  type: string;
+  scheduledDate: string;
+  status: string;
+  aiResult: {
+    strengths: string[];
+    improvements: string[];
+  };
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+interface InterviewTableRecord {
   key: string;
   name: string;
   company: string;
@@ -30,199 +68,148 @@ interface InterviewRecord {
   interviewStatus: string;
 }
 
-const scheduleData: InterviewRecord[] = [
-  {
-    key: "1",
-    name: "Jess developer",
-    company: "Architect",
-    type: "Onsite",
-    role: "22-05-25",
-    date: "75%",
-    interviewStatus: "Scheduled",
-  },
-  {
-    key: "2",
-    name: "Kathy Reinger",
-    company: "Analyst",
-    type: "Task",
-    role: "22-05-25",
-    date: "75%",
-    interviewStatus: "Scheduled",
-  },
-  {
-    key: "3",
-    name: "Kathy Developer",
-    company: "Analyst",
-    type: "Phone",
-    role: "22-05-25",
-    date: "75%",
-    interviewStatus: "Scheduled",
-  },
-  {
-    key: "4",
-    name: "Kathy Developer",
-    company: "Analyst",
-    type: "Onsite",
-    role: "22-05-25",
-    date: "75%",
-    interviewStatus: "Scheduled",
-  },
-  {
-    key: "5",
-    name: "Kathy Developer",
-    company: "Analyst",
-    type: "Task",
-    role: "22-05-25",
-    date: "75%",
-    interviewStatus: "Scheduled",
-  },
-];
-
-const historyData: InterviewRecord[] = [
-  {
-    key: "6",
-    name: "John Smith",
-    company: "Developer",
-    type: "Onsite",
-    role: "21-05-25",
-    date: "50%",
-    interviewStatus: "Completed",
-  },
-  {
-    key: "7",
-    name: "Sarah Johnson",
-    company: "Designer",
-    type: "Task",
-    role: "21-05-25",
-    date: "50%",
-    interviewStatus: "Completed",
-  },
-  {
-    key: "8",
-    name: "Mike Wilson",
-    company: "Manager",
-    type: "Phone",
-    role: "20-05-25",
-    date: "50%",
-    interviewStatus: "Completed",
-  },
-  {
-    key: "9",
-    name: "Emily Brown",
-    company: "Analyst",
-    type: "Onsite",
-    role: "20-05-25",
-    date: "50%",
-    interviewStatus: "Completed",
-  },
-];
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Scheduled":
-      return "processing";
-    case "Completed":
-      return "success";
-    case "Cancelled":
-      return "error";
-    default:
-      return "default";
-  }
-};
-
-const columns: ColumnsType<InterviewRecord> = [
-  {
-    title: "Name",
-    dataIndex: "name",
-    key: "name",
-    width: 150,
-    render: (text) => (
-      <span className="font-medium text-blue-600 cursor-pointer hover:underline">
-        {text}
-      </span>
-    ),
-  },
-  {
-    title: "Company",
-    dataIndex: "company",
-    key: "company",
-    width: 120,
-  },
-  {
-    title: "Type",
-    dataIndex: "type",
-    key: "type",
-    width: 100,
-    render: (type) => {
-      const colors: Record<string, string> = {
-        Onsite: "cyan",
-        Task: "purple",
-        Phone: "blue",
-      };
-      return <Badge color={colors[type] || "default"} text={type} />;
-    },
-  },
-  {
-    title: "Role",
-    dataIndex: "role",
-    key: "role",
-    width: 100,
-  },
-  {
-    title: "Date",
-    dataIndex: "date",
-    key: "date",
-    width: 100,
-  },
-  {
-    title: "Interview Status",
-    dataIndex: "interviewStatus",
-    key: "interviewStatus",
-    width: 120,
-    render: (status) => <Badge status={getStatusColor(status)} text={status} />,
-  },
-  {
-    title: "Action",
-    key: "action",
-    width: 150,
-    render: () => (
-      <Space size="small">
-        <Tooltip title="Reschedule">
-          <Button
-            type="link"
-            size="small"
-            className="text-blue-500 hover:text-blue-700"
-          >
-            Reschedule
-          </Button>
-        </Tooltip>
-      </Space>
-    ),
-  },
-];
-
 export default function InterviewsPage() {
   const [activeTab, setActiveTab] = useState("schedule");
   const [searchText, setSearchText] = useState("");
-
-  const tabItems = [
-    { label: "Schedule", key: "schedule" },
-    { label: "History", key: "history" },
-  ];
-
-  const getTableData = () => {
-    switch (activeTab) {
-      case "history":
-        return historyData;
-      case "schedule":
-      default:
-        return scheduleData;
+  const [todaysInterviews, setTodaysInterviews] = useState<Interview[]>([]);
+  const [allInterviews, setAllInterviews] = useState<Interview[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [allInterviewsMeta, setAllInterviewsMeta] =
+    useState<PaginationMeta | null>(null);
+  {
+    console.log(allInterviewsMeta);
+  }
+  // Format date helper
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch {
+      return dateString;
     }
   };
 
-  const filteredData = getTableData().filter((record) =>
-    record.name.toLowerCase().includes(searchText.toLowerCase())
+  // Fetch data
+  useEffect(() => {
+    const fetchAllInterviews = async () => {
+      try {
+        setLoading(true);
+        const res = await getAllInterviewsApi({ page: 1, limit: 50 });
+        setAllInterviews(res.data.interviews || []);
+        setAllInterviewsMeta(res.meta || null);
+      } catch (err) {
+        console.error("Error fetching all interviews:", err);
+        setAllInterviews([]);
+        setAllInterviewsMeta(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchTodaysInterviews = async () => {
+      try {
+        setLoading(true);
+        const res = await getAllTodaysInterviewsApi();
+        setTodaysInterviews(res.data.interviews || []);
+      } catch (err) {
+        console.error("Error fetching today's interviews:", err);
+        setTodaysInterviews([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllInterviews();
+    fetchTodaysInterviews();
+  }, []);
+
+  // Map API data to table format
+  const mapInterviewsToTable = (
+    interviews: Interview[]
+  ): InterviewTableRecord[] =>
+    interviews.map((i) => ({
+      key: i._id,
+      name: i.jobId?.title || "N/A",
+      company: i.companyId?.companyName || "N/A",
+      type: i.type || "N/A",
+      role: i.jobId?.workMode || "N/A",
+      date: formatDate(i.scheduledDate),
+      interviewStatus: i.status,
+    }));
+
+  const filteredAllInterviews = mapInterviewsToTable(allInterviews).filter(
+    (i) => i.name.toLowerCase().includes(searchText.toLowerCase())
   );
+
+  // Columns for Table
+  const columns: ColumnsType<InterviewTableRecord> = [
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      render: (text) => (
+        <span className="font-medium text-blue-600 cursor-pointer hover:underline">
+          {text}
+        </span>
+      ),
+    },
+    { title: "Company", dataIndex: "company", key: "company" },
+    {
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
+      render: (type) => {
+        const colors: Record<string, string> = {
+          Onsite: "cyan",
+          Task: "purple",
+          Phone: "blue",
+        };
+        return <Badge color={colors[type] || "default"} text={type} />;
+      },
+    },
+    { title: "Role", dataIndex: "role", key: "role" },
+    { title: "Date", dataIndex: "date", key: "date" },
+    {
+      title: "Interview Status",
+      dataIndex: "interviewStatus",
+      key: "interviewStatus",
+      render: (status) => {
+        const color =
+          status === "scheduled"
+            ? "processing"
+            : status === "completed"
+            ? "success"
+            : "error";
+        return (
+          <Badge
+            status={color}
+            text={status.charAt(0).toUpperCase() + status.slice(1)}
+          />
+        );
+      },
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: () => (
+        <Space>
+          <Tooltip title="Reschedule">
+            <Button
+              type="link"
+              className="text-blue-500 hover:text-blue-700"
+              size="small"
+            >
+              Reschedule
+            </Button>
+          </Tooltip>
+        </Space>
+      ),
+    },
+  ];
 
   return (
     <div className="w-full bg-gray-50 min-h-screen p-6">
@@ -231,7 +218,11 @@ export default function InterviewsPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Interviews</h1>
           <p className="text-sm text-gray-600 mt-1">
-            Sunday 23, 2025 • Kathryn Ott time
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
           </p>
         </div>
         <Space>
@@ -253,27 +244,40 @@ export default function InterviewsPage() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
           Interviews Today
         </h2>
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12} lg={8}>
-            <InterviewCard
-              title="Frontend Developer"
-              company="Systems Limited"
-              type="Onsite"
-              deadline="August 25, 2025"
-              logo="/logo.png"
-              onJoin={() => alert("Joining interview...")}
-            />
-          </Col>
-          <Col xs={24} sm={12} lg={8}>
-            <InterviewCard
-              title="Frontend Developer"
-              company="Systems Limited"
-              type="Onsite"
-              deadline="August 25, 2025"
-              logo="/logo.png"
-            />
-          </Col>
-        </Row>
+
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Spin size="large" />
+          </div>
+        ) : todaysInterviews.length > 0 ? (
+          <Row gutter={[16, 16]}>
+            {todaysInterviews.map((interview) => (
+              <Col xs={24} sm={12} lg={8} key={interview._id}>
+                <InterviewCard
+                  title={interview.jobId?.title || "N/A"}
+                  company={interview.companyId?.companyName || "N/A"}
+                  type={interview.type}
+                  deadline={formatDate(
+                    interview.jobId?.deadline || interview.scheduledDate
+                  )}
+                  logo="/logo.png"
+                  onJoin={() =>
+                    alert(`Joining interview for ${interview.jobId?.title}`)
+                  }
+                />
+              </Col>
+            ))}
+          </Row>
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <p className="text-gray-500 text-lg">
+              No interviews scheduled for today
+            </p>
+            <p className="text-gray-400 text-sm mt-2">
+              Check back later or schedule a new interview
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Interviews Analytics Section */}
@@ -282,7 +286,7 @@ export default function InterviewsPage() {
           Interviews Analytics
         </h2>
 
-        {/* Search Bar */}
+        {/* Search */}
         <div className="mb-4">
           <Input
             placeholder="Search interviews..."
@@ -298,23 +302,25 @@ export default function InterviewsPage() {
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
-          items={tabItems}
+          items={[
+            { label: "Schedule", key: "schedule" },
+            { label: "History", key: "history" },
+          ]}
           className="mb-6"
         />
 
         {/* Table */}
         <Table
           columns={columns}
-          dataSource={filteredData}
+          dataSource={filteredAllInterviews}
           pagination={{
-            pageSize: 10,
-            total: filteredData.length,
+            pageSize: 5,
+            total: filteredAllInterviews.length,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) => `Total ${total} items`,
           }}
           scroll={{ x: 1200 }}
-          className="bg-white"
           rowClassName="hover:bg-gray-50"
         />
       </div>

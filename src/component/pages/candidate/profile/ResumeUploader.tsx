@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, Typography, Upload, message, Space } from "antd";
+import { Typography, Upload, message, Space } from "antd";
 import { UploadOutlined, PaperClipOutlined } from "@ant-design/icons";
 import UiButton from "@/component/common/CustomButton";
 import { uploadResumeApi } from "@/app/api/candidate/profile.api";
+import { UploadChangeParam, UploadFile } from "antd/es/upload";
 
 const { Title, Text } = Typography;
 
@@ -12,7 +13,7 @@ export default function ResumeUploader() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const handleFileChange = (info: any) => {
+  const handleFileChange = (info: UploadChangeParam<UploadFile>) => {
     if (info.file.status === "removed") {
       setFile(null);
       return;

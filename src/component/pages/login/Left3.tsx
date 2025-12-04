@@ -7,6 +7,7 @@ import EmailIcon from "@/icons/socials/EmailIcon";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import { Col, Input, Typography, message } from "antd";
 import Link from "next/link";
+import { AxiosError } from "axios";
 
 const { Title, Text } = Typography;
 
@@ -25,7 +26,8 @@ export default function Left3({ role }: { role?: string }) {
       });
       console.log(res);
       console.log("Response:", res);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
       console.error(error);
       message.error(error?.message || "Sign in failed");
     } finally {

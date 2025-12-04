@@ -27,8 +27,8 @@ const LabelWrapper: React.FC<LabelWrapperProps> = ({
   // pick out rules/label/name from itemProps so they don't override our controlled values
   const {
     rules: itemPropsRules,
-    label: itemPropsLabel,
-    name: itemPropsName,
+    // label: itemPropsLabel,
+    // name: itemPropsName,
     labelCol: itemPropsLabelCol,
     wrapperCol: itemPropsWrapperCol,
     ...restItemProps

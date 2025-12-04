@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { loginApi, signUpApi } from "@/app/api/auth.api"; // or signInApi if that’s correct
+import { loginApi } from "@/app/api/auth.api"; // or signInApi if that’s correct
 import UiButton from "@/component/common/CustomButton";
 import EmailIcon from "@/icons/socials/EmailIcon";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
@@ -9,6 +9,7 @@ import { Col, Input, Typography, message } from "antd";
 import Link from "next/link";
 import { storeToken } from "@/utils/token";
 import { useRouter } from "next/navigation";
+import { AxiosError } from "axios";
 
 const { Title, Text } = Typography;
 
@@ -16,7 +17,6 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("abdullahusman5630@gmail.com");
   const [password, setPassword] = useState("A123456@i");
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState("candidate");
   const router = useRouter();
   const handleSignIn = async () => {
     try {
@@ -36,7 +36,8 @@ export default function LoginScreen() {
           router.push("/profile-completion/company");
         }
       }
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
       console.error(error);
       message.error(error?.message || "Sign in failed");
     } finally {

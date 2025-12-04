@@ -2,15 +2,6 @@
 
 import api, { safeApiCall } from "../base.api";
 
-interface LoginApiBody {
-  email: string;
-  password: string;
-}
-interface SignUpApiBody {
-  email: string;
-  password: string;
-  role: "candidate" | "company";
-}
 export const getCandidateProfileApi = async () => {
   return safeApiCall({
     apiCall: () => api.get("/candidate/profile"),

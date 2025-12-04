@@ -7,7 +7,6 @@ import {
   PlusOutlined,
   FilterOutlined,
 } from "@ant-design/icons";
-import Title from "antd/es/typography/Title";
 
 const JobApplicationsTable = () => {
   const [activeTab, setActiveTab] = useState("all");

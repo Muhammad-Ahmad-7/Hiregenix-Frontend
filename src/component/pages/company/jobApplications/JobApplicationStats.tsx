@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useState } from "react";
-import { Select, Card, Row, Col, Statistic, Avatar } from "antd";
+import { Select, Row, Col, Statistic, Avatar } from "antd";
 import { DownOutlined } from "@ant-design/icons";
 
 interface JobRole {
@@ -66,9 +66,9 @@ export const JobApplicationStats: React.FC<JobApplicationStatsProps> = ({
   };
 
   const currentStats = statsData[selectedRole] || defaultStatsData.frontend;
-  const selectedRoleLabel =
-    jobRoles.find((role) => role.value === selectedRole)?.label ||
-    "Frontend Developer";
+  // const selectedRoleLabel =
+  //   jobRoles.find((role) => role.value === selectedRole)?.label ||
+  //   "Frontend Developer";
 
   return (
     <div className="w-full py-2 mb-2 rounded-lg">

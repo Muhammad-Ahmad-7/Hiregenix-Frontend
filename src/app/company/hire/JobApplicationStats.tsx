@@ -73,7 +73,7 @@ export const JobApplicationStats: React.FC<JobApplicationStatsProps> = ({
               Resume Attached
             </Title>
             <Text type="secondary">
-              The candidate's resume is attached below for review purposes
+              The candidate&apos;s resume is attached below for review purposes
             </Text>
           </div>
           <div className="flex items-center gap-2">

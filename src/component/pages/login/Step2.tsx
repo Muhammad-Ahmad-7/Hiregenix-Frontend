@@ -1,5 +1,4 @@
 "use client";
-import Step1Form from "@/component/forms/Step1Form";
 import Step2Form from "@/component/forms/Step2Form";
 import { Col, Typography } from "antd";
 import React from "react";

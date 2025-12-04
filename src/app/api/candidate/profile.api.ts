@@ -2,15 +2,6 @@
 
 import api, { safeApiCall } from "../base.api";
 
-interface LoginApiBody {
-  email: string;
-  password: string;
-}
-interface SignUpApiBody {
-  email: string;
-  password: string;
-  role: "candidate" | "company";
-}
 export const getCandidateProfileApi = async () => {
   return safeApiCall({
     apiCall: () => api.get("/candidate/profile/692fdedc6b8f39c9bcfe2fac"),
@@ -39,6 +30,12 @@ export const uploadResumeApi = async (formData: FormData) => {
           "Content-Type": "multipart/form-data",
         },
       }),
+    showToaster: true,
+  });
+};
+export const getResumeDataApi = async () => {
+  return safeApiCall({
+    apiCall: () => api.get("/candidate/get-resume-parsed-data"),
     showToaster: true,
   });
 };

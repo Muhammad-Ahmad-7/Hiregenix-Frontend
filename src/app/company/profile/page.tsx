@@ -9,7 +9,6 @@ import {
   Divider,
   Button,
   Space,
-  List,
   Row,
   Col,
   Timeline,
@@ -19,12 +18,7 @@ import {
   message,
 } from "antd";
 import {
-  GithubOutlined,
-  LinkedinOutlined,
-  CheckCircleOutlined,
-  FilePdfOutlined,
   EditOutlined,
-  PlusCircleOutlined,
   PlusOutlined,
   GithubFilled,
   LinkedinFilled,
@@ -33,16 +27,11 @@ import {
   GlobalOutlined,
 } from "@ant-design/icons";
 import IconWrapper from "@/icons/IconWrapper";
-import { signUpApi } from "@/app/api/auth.api";
-import UiButton from "@/component/common/CustomButton";
-import {
-  candidateProfileApi,
-  uploadResumeApi,
-} from "@/app/api/candidate/profile.api";
+import { uploadResumeApi } from "@/app/api/candidate/profile.api";
 import { useSelector } from "react-redux";
 import { RootState } from "@reduxjs/toolkit/query";
-import ResumeUploader from "@/component/pages/candidate/profile/ResumeUploader";
 import { getCompanyOpenJobsApi } from "@/app/api/company/jobs.api";
+import { AxiosError } from "axios";
 
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
@@ -89,7 +78,10 @@ const experiences = [
 ];
 
 export default function ProfileDashboard() {
-  const { profile, loading } = useSelector((state: RootState) => state.user);
+  const {
+    profile,
+    //  loading
+  } = useSelector((state: RootState) => state.user);
   const screens = useBreakpoint();
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -144,14 +136,16 @@ export default function ProfileDashboard() {
         message.error("Upload failed: Invalid response from server");
         console.error("Invalid response structure:", response);
       }
-    } catch (error: any) {
-      // Better error handling
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message?: string }>;
+
       const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
+        err.response?.data?.message ||
+        err.message ||
         "Failed to upload resume. Please try again.";
+
       message.error(errorMessage);
-      console.error("Upload error:", error);
+      console.error("Upload error:", err);
     } finally {
       setUploading(false);
     }
@@ -176,10 +170,12 @@ export default function ProfileDashboard() {
   };
 
   // Helper function to get year from URL or return default
-  const getYearFromUrl = (url: string) => {
-    // You can implement logic to extract year from URL or profile data
-    return "2023";
-  };
+  const getYearFromUrl = () =>
+    // url: string
+    {
+      // You can implement logic to extract year from URL or profile data
+      return "2023";
+    };
   const SidebarCard = (
     <Card className="rounded-xl">
       <Space direction="vertical" style={{ width: "100%" }}>

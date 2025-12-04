@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Card,
   Table,
@@ -10,8 +10,6 @@ import {
   Dropdown,
   Row,
   Col,
-  Select,
-  Badge,
   Calendar,
 } from "antd";
 import {
@@ -28,10 +26,7 @@ import { ROUTES } from "@/constants/routes";
 import StatsCard from "@/component/pages/dashboard/StatsCard";
 import { JobPortalMapCard } from "@/component/pages/candidate/dashboard/JobPortalMapCard";
 
-const { Option } = Select;
-
 export default function Dashboard() {
-  const [laoding, setLaoding] = useState(false);
   const jobData = [
     {
       key: 2,
