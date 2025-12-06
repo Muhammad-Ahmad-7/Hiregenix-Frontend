@@ -1,3 +1,4 @@
+"use client";
 import { INFO } from "@/constants/info";
 import { GlobalOutlined } from "@ant-design/icons";
 import { Col, Image, Row, Select, Typography } from "antd";

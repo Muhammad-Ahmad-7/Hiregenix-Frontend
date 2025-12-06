@@ -11,7 +11,7 @@ import { AxiosError } from "axios";
 
 const { Title, Text } = Typography;
 
-export default function Left3({ role }: { role?: string }) {
+export default function Left3({ role }: { role: "company" | "candidate" }) {
   const [email, setEmail] = useState("abdullahusman5630@gmail.com");
   const [password, setPassword] = useState("A123456@i");
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,7 @@ export default function Left3({ role }: { role?: string }) {
       const res = await signUpApi({
         email,
         password,
-        role: role || "candidate",
+        role,
       });
       console.log(res);
       console.log("Response:", res);
@@ -55,7 +55,10 @@ export default function Left3({ role }: { role?: string }) {
         <Title level={1} className="!mb-2">
           Sign up with mail
         </Title>
-        <Text type="secondary">Let’s get started with your job process</Text>
+        <Text type="secondary">
+          Let’s get started with{" "}
+          {role == "candidate" ? "candidate" : "company's recruiter"}
+        </Text>
 
         <div className="mt-8 gap-2 flex flex-col">
           <Input
@@ -87,11 +90,11 @@ export default function Left3({ role }: { role?: string }) {
             size="large"
             className="!rounded-xl"
           >
-            Sign In
+            Sign Up
           </UiButton>
           <div className="flex justify-center mt-2">
             <Text className="font-normal">
-              Already have an account? <Link href="/">Login</Link>
+              Already have an account? <Link href="/">Sign In</Link>
             </Text>
           </div>
         </div>

@@ -18,9 +18,23 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("A123456@i");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const handleRedirections = ({
+    isProfileCompleted,
+    role,
+  }: {
+    isProfileCompleted: boolean;
+    role: "candidate" | "company";
+  }) => {
+    if (isProfileCompleted) {
+      router.replace(`${role}/dashboard`);
+    } else {
+      router.replace(`/profile-completion/${role}`);
+    }
+  };
   const handleSignIn = async () => {
     try {
       setLoading(true);
+
       const res = await loginApi({
         email,
         password,
@@ -30,10 +44,12 @@ export default function LoginScreen() {
       if (res.status == "Success") {
         console.log("first");
         storeToken(res.data.accessToken);
-        if (res.data.user.role == "candidate") {
-          router.push("/profile-completion/candidate");
-        } else if (res.data.user.role == "company") {
-          router.push("/profile-completion/company");
+        const role = res.data.user.role;
+        const isProfileCompleted = res.data.user.isProfileCompleted;
+        if (role == "candidate") {
+          handleRedirections({ isProfileCompleted, role });
+        } else if (role == "company") {
+          handleRedirections({ isProfileCompleted, role });
         }
       }
     } catch (err: unknown) {
@@ -101,7 +117,7 @@ export default function LoginScreen() {
           </UiButton>
           <div className="flex justify-center mt-2">
             <Text className="font-normal">
-              Don’t have an account? <Link href="/auth/sign-up">Sign Up</Link>
+              Don’t have an account? <Link href="/auth">Sign Up</Link>
             </Text>
           </div>
         </div>
