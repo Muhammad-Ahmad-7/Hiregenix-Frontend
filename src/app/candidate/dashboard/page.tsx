@@ -136,22 +136,28 @@ export default function Dashboard() {
             <Row gutter={[16, 16]}>
               <StatsCard
                 icon={<ContainerFilled style={{ color: "white" }} />}
-                title="Jobs Posted"
+                title="Applied Jobs"
                 number={142}
                 badgeText="45%+ in last 30 days"
                 badgeColor="green"
               />
               <StatsCard
                 icon={<ContainerFilled style={{ color: "white" }} />}
-                title="Jobs Posted"
+                title="Resume Score"
                 number={142}
                 badgeText="45%+ in last 30 days"
                 badgeColor="green"
               />
-              <StatsCard />
+              <StatsCard
+                title="matchedJobs"
+                icon={<StarFilled className="!text-white" />}
+                number={142}
+                badgeText="45%+ in last 30 days"
+                badgeColor="orange"
+              />
               <StatsCard
                 icon={<StarFilled className="!text-white" />}
-                title="Jobs Posted"
+                title="Active Jobs"
                 number={142}
                 badgeText="45%+ in last 30 days"
                 badgeColor="orange"
@@ -233,10 +239,12 @@ export default function Dashboard() {
             <Card
               title="Active Jobs"
               extra={
-                <RiseOutlined
-                  className="text-gray-400"
-                  style={{ fontSize: "16px" }}
-                />
+                <UiButton
+                  href={"#"}
+                  className="group !w-8 !h-8 !rounded-full flex items-center justify-center bg-white border border-gray-300 transition-all duration-300 hover:!bg-blue-500"
+                >
+                  <ArrowUpOutlined className="text-gray-600 transform rotate-45 transition-all duration-300 ease-in-out group-hover:!text-white group-hover:rotate-90" />
+                </UiButton>
               }
             >
               <Table

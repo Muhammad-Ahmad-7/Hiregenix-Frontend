@@ -259,9 +259,7 @@ export default function CompanyStep1Form({
 }: CompanyStep1FormProps) {
   const [form] = Form.useForm<CompanyStep1FormValues>();
   const [uploading, setUploading] = useState(false);
-  const [logoUrl, setLogoUrl] = useState<string | null>(
-    initialValues?.logoUrl || null
-  );
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   const countryOptions = [
     { label: "USA", value: "USA" },
@@ -433,7 +431,8 @@ export default function CompanyStep1Form({
             <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer transition-all">
               {uploading ? (
                 <LoadingOutlined className="text-2xl text-blue-500" />
-              ) : logoUrl ? (
+              ) : logoUrl !== null ? (
+                // <PlusIcon />
                 <Avatar size={60} src={logoUrl} />
               ) : (
                 <PlusIcon />

@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Select, Row, Col, Statistic, Avatar } from "antd";
 import { DownOutlined } from "@ant-design/icons";
 
@@ -19,6 +19,7 @@ interface StatsData {
 
 interface JobApplicationStatsProps {
   jobRoles?: JobRole[];
+  totalApplications: number;
   statsData?: Record<string, StatsData>;
   onJobRoleChange?: (value: string) => void;
 }
@@ -55,29 +56,36 @@ const defaultStatsData: Record<string, StatsData> = {
 
 export const JobApplicationStats: React.FC<JobApplicationStatsProps> = ({
   jobRoles = defaultJobRoles,
+  totalApplications,
   statsData = defaultStatsData,
   onJobRoleChange,
 }) => {
-  const [selectedRole, setSelectedRole] = useState<string>("frontend");
+  const [selectedRole, setSelectedRole] = useState<string>("");
+
+  // Initialize with first job role when data is available
+  useEffect(() => {
+    if (jobRoles.length > 0 && !selectedRole) {
+      setSelectedRole(jobRoles[0].value);
+    }
+  }, [jobRoles, selectedRole]);
 
   const handleRoleChange = (value: string) => {
     setSelectedRole(value);
     onJobRoleChange?.(value);
   };
 
-  const currentStats = statsData[selectedRole] || defaultStatsData.frontend;
-  // const selectedRoleLabel =
-  //   jobRoles.find((role) => role.value === selectedRole)?.label ||
-  //   "Frontend Developer";
+  const currentStats = statsData[selectedRole] || {
+    totalApplications: 0,
+    totalViews: 0,
+    bestMatches: 0,
+  };
 
   return (
     <div className="w-full py-2 mb-2 rounded-lg">
-      {/* Job Role Selector */}
-
-      {/* Statistics Cards */}
       <Row gutter={[24, 24]}>
-        {/* <Col xs={24} sm={12} lg={6}>
-          <div className="mb-8 flex items-center gap-4">
+        {/* Job Role Selector */}
+        <Col xs={24} sm={12} lg={6}>
+          <div className="p-4 py-[34px] bg-white rounded-2xl shadow-sm flex justify-between items-center">
             <Avatar
               size={40}
               style={{
@@ -89,63 +97,55 @@ export const JobApplicationStats: React.FC<JobApplicationStatsProps> = ({
               icon={<span style={{ fontSize: "20px" }}>👨‍💻</span>}
             />
             <Select
-              value={selectedRole}
+              value={selectedRole || undefined}
               onChange={handleRoleChange}
               style={{ width: 200 }}
               suffixIcon={<DownOutlined />}
+              placeholder="Select Job Role"
               options={jobRoles.map((role) => ({
                 label: role.label,
                 value: role.value,
               }))}
+            />
+          </div>
+        </Col>
+
+        {/* Total Applications */}
+        <Col xs={24} sm={12} lg={6}>
+          <div className="p-4 bg-white rounded-2xl shadow-sm">
+            <Statistic
+              title="Total applications"
+              value={totalApplications | 0}
+              valueStyle={{
+                color: "#000",
+                fontSize: "32px",
+                fontWeight: "bold",
+              }}
+            />
+          </div>
+        </Col>
+
+        {/* Total Views */}
+        {/* <Col xs={24} sm={12} lg={6}>
+          <div className="p-4 bg-white rounded-2xl shadow-sm">
+            <Statistic
+              title="Total Views"
+              value={currentStats.totalViews}
+              valueStyle={{
+                color: "#000",
+                fontSize: "32px",
+                fontWeight: "bold",
+              }}
             />
           </div>
         </Col> */}
-        <Col xs={24} sm={12} lg={6}>
-          <div
-            bordered={false}
-            className="p-4 py-[34] bg-white rounded-2xl shadow-sm flex justify-between items-center"
-          >
-            <Avatar
-              size={40}
-              style={{
-                backgroundColor: "#FF6B35",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              icon={<span style={{ fontSize: "20px" }}>👨‍💻</span>}
-            />
-            <Select
-              value={selectedRole}
-              onChange={handleRoleChange}
-              style={{ width: 200 }}
-              suffixIcon={<DownOutlined />}
-              options={jobRoles.map((role) => ({
-                label: role.label,
-                value: role.value,
-              }))}
-            />
-          </div>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <div bordered={false} className="p-4 bg-white rounded-2xl shadow-sm">
-            <Statistic
-              title="Total applications"
-              value={currentStats.totalApplications}
-              valueStyle={{
-                color: "#000",
-                fontSize: "32px",
-                fontWeight: "bold",
-              }}
-            />
-          </div>
-        </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div bordered={false} className="p-4 bg-white rounded-2xl shadow-sm">
+        {/* Best Matches */}
+        {/* <Col xs={24} sm={12} lg={6}>
+          <div className="p-4 bg-white rounded-2xl shadow-sm">
             <Statistic
-              title="Total applications"
-              value={currentStats.totalApplications}
+              title="Best Matches"
+              value={currentStats.bestMatches}
               valueStyle={{
                 color: "#000",
                 fontSize: "32px",
@@ -153,21 +153,7 @@ export const JobApplicationStats: React.FC<JobApplicationStatsProps> = ({
               }}
             />
           </div>
-        </Col>
-
-        <Col xs={24} sm={12} lg={6}>
-          <div bordered={false} className="p-4 bg-white rounded-2xl shadow-sm">
-            <Statistic
-              title="Total applications"
-              value={currentStats.totalApplications}
-              valueStyle={{
-                color: "#000",
-                fontSize: "32px",
-                fontWeight: "bold",
-              }}
-            />
-          </div>
-        </Col>
+        </Col> */}
       </Row>
     </div>
   );

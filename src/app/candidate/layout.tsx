@@ -18,7 +18,7 @@ import Link from "next/link";
 import { getCandidateProfileApi } from "../api/candidate/profile.api";
 import { useDispatch, useSelector } from "react-redux";
 import { setLoading, setUserProfile } from "@/redux/slices/userSlice";
-import { removeToken } from "@/utils/token";
+import { getToken, removeToken } from "@/utils/token";
 // import { useDispatch, useSelector } from "react-redux";
 // import type { RootState } from "@/app/store/store";
 // import { logout } from "@/app/store/slices/authSlice";
@@ -82,6 +82,10 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   //   const dispatch = useDispatch();
 
   useEffect(() => {
+    // if (!getToken()) {
+    //   console.log("i am runnning 1");
+    //   router.replace("/");
+    // }
     dispatch(setLoading(true));
     if (profile) return;
     getCandidateProfileApi()
@@ -95,7 +99,10 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       })
       .catch((err) => {
         console.log("Error fetching profile:", err);
-        router.push("/auth/sign-up");
+
+        console.log("i am runnning 2");
+        // router.replace("/");
+        // router.push("/auth/sign-up");
       })
       .finally(() => {});
   }, []);

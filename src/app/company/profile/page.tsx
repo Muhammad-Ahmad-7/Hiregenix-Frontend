@@ -32,6 +32,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@reduxjs/toolkit/query";
 import { getCompanyOpenJobsApi } from "@/app/api/company/jobs.api";
 import { AxiosError } from "axios";
+import { getCompanyStatsApi } from "@/app/api/company/dashboard.api";
 
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;

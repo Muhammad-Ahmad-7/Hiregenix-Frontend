@@ -16,7 +16,7 @@ interface CompanyProfile {
   companyName: string;
   country: string;
   city: string;
-  foundedYear: number;
+  foundedYear: number | Date;
   ntnNumber: string;
   contactEmail: string;
   logoUrl: string;
@@ -24,6 +24,7 @@ interface CompanyProfile {
   linkedInUrl: string;
   description: string;
   techStack: string[];
+  hiringStatus: "actively_hiring" | "paused" | "not_hiring";
 }
 
 export default function CompanyStep1() {
@@ -31,7 +32,7 @@ export default function CompanyStep1() {
     companyName: "",
     country: "",
     city: "",
-    foundedYear: 2015,
+    foundedYear: new Date().getFullYear(), // FIXED
     ntnNumber: "",
     contactEmail: "",
     logoUrl: "https://example.com/uploads/onyx-logo.png",
@@ -39,8 +40,8 @@ export default function CompanyStep1() {
     linkedInUrl: "",
     description: "",
     techStack: [],
+    hiringStatus: "actively_hiring",
   });
-
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const router = useRouter();

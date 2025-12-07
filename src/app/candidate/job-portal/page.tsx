@@ -16,6 +16,7 @@ import {
   Input,
   Modal,
   DatePicker,
+  message,
 } from "antd";
 import {
   EnvironmentOutlined,
@@ -26,6 +27,10 @@ import {
   CalendarFilled,
   SearchOutlined,
   CloseOutlined,
+  HeartOutlined,
+  HeartFilled,
+  ShareAltOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 
 import UiButton from "@/component/common/CustomButton";
@@ -34,7 +39,10 @@ import IconWrapper from "@/icons/IconWrapper";
 
 import {
   getAllJobsWithScrollingApi,
+  getAllSaveJobsApi,
   getRecommendedJobsApi,
+  saveJobApi,
+  unSaveJobApi,
 } from "@/app/api/candidate/jobs.api";
 
 import dayjs, { Dayjs } from "dayjs";
@@ -42,13 +50,6 @@ import { scheduleInterviewApi } from "@/app/api/candidate/interview.api";
 
 const { Title, Paragraph } = Typography;
 const { Search } = Input;
-
-const items = [
-  { label: "Save Job", key: "0" },
-  { label: "Share", key: "1" },
-  { type: "divider" },
-  { label: "Report", key: "3" },
-];
 
 export interface JobInterface {
   location: { city: string; country: string };
@@ -60,6 +61,7 @@ export interface JobInterface {
     logoUrl: string;
     website: string;
   };
+  isSaved: boolean;
   title: string;
   role: string;
   interviewGuideline: string;
@@ -93,6 +95,50 @@ export interface JobApplication {
   experienceLevel?: string;
 }
 
+export interface JobLocation {
+  city: string;
+  country: string;
+}
+
+export interface SalaryRange {
+  min: number;
+  max: number;
+  currency: string;
+}
+
+export interface JobData {
+  _id: string;
+  location: JobLocation;
+  salaryRange: SalaryRange;
+  companyId: string;
+  title: string;
+  role: string;
+  interviewGuideline: string;
+  experienceLevel: string;
+  description: string;
+  requiredSkills: string[];
+  requirements: string[];
+  workMode: string;
+  deadline: string;
+  aiSummary: string;
+  embeddingSynced: boolean;
+  qdrantId: string | null;
+  isDeleted: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface SavedJobsInterface {
+  _id: string;
+  jobId: JobData;
+  candidateId: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
 export default function JobDashboard() {
   const [selectedJob, setSelectedJob] = useState<JobInterface | null>(null);
   const [jobList, setJobList] = useState<JobInterface[]>([]);
@@ -100,14 +146,18 @@ export default function JobDashboard() {
   const [recommendedJobList, setRecommendedJobList] = useState<
     JobApplication[]
   >([]);
+  const [savedJobsList, setSavedJobsList] = useState<SavedJobsInterface[]>([]);
+  const [savedJobsMeta, setSavedJobsMeta] = useState<any>(null);
+  const [savingJobId, setSavingJobId] = useState<string | null>(null);
 
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingButton, setLoadingButton] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [activeTab, setActiveTab] = useState<"all" | "recommended">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "recommended" | "saved">(
+    "all"
+  );
 
-  // Fix double fetch
   const firstLoadRef = useRef(true);
 
   // Modal states
@@ -124,6 +174,155 @@ export default function JobDashboard() {
   const observerTarget = useRef<HTMLDivElement>(null);
 
   // ---------------------------------------------
+  // Check if job is saved using isSaved field
+  // ---------------------------------------------
+  const isJobSaved = (jobId: string) => {
+    const job = jobList.find((j) => j._id === jobId);
+    if (job) return job.isSaved;
+
+    // Fallback: check in savedJobsList
+    return savedJobsList.some((saved) => saved.jobId._id === jobId);
+  };
+
+  // ---------------------------------------------
+  // Get saved job ID for unsaving
+  // ---------------------------------------------
+  const getSavedJobId = (jobId: string): string | null => {
+    const savedJob = savedJobsList.find((saved) => saved.jobId._id === jobId);
+    return savedJob ? savedJob._id : null;
+  };
+
+  // ---------------------------------------------
+  // Handle Save/Unsave Job
+  // ---------------------------------------------
+  const handleSaveJob = async (jobId: string) => {
+    const isSaved = isJobSaved(jobId);
+
+    try {
+      setSavingJobId(jobId);
+
+      if (isSaved) {
+        // Unsave the job
+        const savedJobId = getSavedJobId(jobId);
+        if (savedJobId) {
+          await unSaveJobApi(savedJobId);
+          message.success("Job unsaved successfully");
+
+          // Update the isSaved field in jobList
+          setJobList((prev) =>
+            prev.map((job) =>
+              job._id === jobId ? { ...job, isSaved: false } : job
+            )
+          );
+
+          // Update selected job if it's the current one
+          if (selectedJob?._id === jobId) {
+            setSelectedJob({ ...selectedJob, isSaved: false });
+          }
+        }
+      } else {
+        // Save the job
+        await saveJobApi(jobId);
+        message.success("Job saved successfully");
+
+        // Update the isSaved field in jobList
+        setJobList((prev) =>
+          prev.map((job) =>
+            job._id === jobId ? { ...job, isSaved: true } : job
+          )
+        );
+
+        // Update selected job if it's the current one
+        if (selectedJob?._id === jobId) {
+          setSelectedJob({ ...selectedJob, isSaved: true });
+        }
+      }
+
+      // Refresh saved jobs list to keep it in sync
+      await fetchSavedJobs();
+    } catch (error) {
+      console.error("Error saving/unsaving job:", error);
+      message.error(isSaved ? "Failed to unsave job" : "Failed to save job");
+    } finally {
+      setSavingJobId(null);
+    }
+  };
+
+  // ---------------------------------------------
+  // Handle Dropdown Menu Actions
+  // ---------------------------------------------
+  const handleMenuClick = (key: string, jobId: string) => {
+    switch (key) {
+      case "save":
+        handleSaveJob(jobId);
+        break;
+      case "share":
+        navigator.clipboard.writeText(window.location.href);
+        message.success("Job link copied to clipboard");
+        break;
+      case "report":
+        message.info("Report functionality coming soon");
+        break;
+    }
+  };
+
+  // ---------------------------------------------
+  // Get dropdown items based on save status
+  // ---------------------------------------------
+  const getDropdownItems = (jobId: string) => {
+    const isSaved = isJobSaved(jobId);
+
+    return [
+      {
+        label: isSaved ? "Unsave Job" : "Save Job",
+        key: "save",
+        icon: isSaved ? (
+          <HeartFilled style={{ color: "#ff4d4f" }} />
+        ) : (
+          <HeartOutlined />
+        ),
+      },
+      {
+        label: "Share",
+        key: "share",
+        icon: <ShareAltOutlined />,
+      },
+      { type: "divider" as const },
+      {
+        label: "Report",
+        key: "report",
+        icon: <WarningOutlined />,
+        danger: true,
+      },
+    ];
+  };
+
+  // ---------------------------------------------
+  // Fetch Saved Jobs
+  // ---------------------------------------------
+  const fetchSavedJobs = async () => {
+    try {
+      setLoading(true);
+      const res = await getAllSaveJobsApi({ limit: 100, page: 1 });
+
+      console.log("✅ Saved Jobs API Response:", res);
+
+      setSavedJobsList(res.data.savedJobs || []);
+      setSavedJobsMeta(res.meta);
+
+      // Update recommended jobs if available
+      if (res.data.recommendedJobs?.recommendedJobs) {
+        setRecommendedJobList(res.data.recommendedJobs.recommendedJobs);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching saved jobs:", error);
+      message.error("Failed to fetch saved jobs");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ---------------------------------------------
   // Fetch Recommended Jobs
   // ---------------------------------------------
   const fetchRecommendedJobs = async () => {
@@ -133,65 +332,23 @@ export default function JobDashboard() {
       setRecommendedJobList(res.data.recommendedJobs.recommendedJobs || []);
     } catch (error) {
       console.error("Error fetching recommended jobs:", error);
+      message.error("Failed to fetch recommended jobs");
     } finally {
       setLoading(false);
     }
   };
 
   // ---------------------------------------------
-  // FIXED FETCH JOBS
-  // ---------------------------------------------
-  // const fetchJobs = async (lastId?: string) => {
-  //   if (loading || !hasMore) return;
-
-  //   // 🔥 Prevent duplicate first fetch
-  //   if (firstLoadRef.current && !lastId) {
-  //     firstLoadRef.current = false; // allow only first call
-  //   } else if (!lastId) {
-  //     return; // block second unwanted call
-  //   }
-
-  //   try {
-  //     setLoading(true);
-
-  //     const res = await getAllJobsWithScrollingApi({
-  //       limit: 10,
-  //       lastId: lastId || null,
-  //     });
-
-  //     const newJobs = res.data.jobs || [];
-
-  //     setNextCursor(res.meta.nextCursor || null);
-
-  //     if (newJobs.length === 0) {
-  //       setHasMore(false);
-  //       return;
-  //     }
-
-  //     setJobList((prev) => [...prev, ...newJobs]);
-
-  //     if (!selectedJob && newJobs.length > 0) {
-  //       setSelectedJob(newJobs[0]);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching jobs:", error);
-  //     setHasMore(false);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-  // ---------------------------------------------
-  // FIXED FETCH JOBS
+  // Fetch Jobs with Scrolling
   // ---------------------------------------------
   const fetchJobs = React.useCallback(
     async (lastId?: string) => {
       if (loading || !hasMore) return;
 
-      // 🔥 Prevent duplicate first fetch
       if (firstLoadRef.current && !lastId) {
-        firstLoadRef.current = false; // allow only first call
+        firstLoadRef.current = false;
       } else if (!lastId) {
-        return; // block second unwanted call
+        return;
       }
 
       try {
@@ -203,7 +360,6 @@ export default function JobDashboard() {
         });
 
         const newJobs = res.data.jobs || [];
-
         setNextCursor(res.meta.nextCursor || null);
 
         if (newJobs.length === 0) {
@@ -227,7 +383,7 @@ export default function JobDashboard() {
   );
 
   // ---------------------------------------------
-  // Filters — Search, Experience, Work Mode, Country
+  // Filters
   // ---------------------------------------------
   useEffect(() => {
     let filtered = [...jobList];
@@ -271,11 +427,17 @@ export default function JobDashboard() {
   useEffect(() => {
     if (activeTab === "all") {
       fetchJobs();
+      fetchSavedJobs(); // Fetch saved jobs to sync isSaved status
+    } else if (activeTab === "saved") {
+      fetchSavedJobs();
+    } else if (activeTab === "recommended") {
+      fetchRecommendedJobs();
     }
-  }, [activeTab, fetchJobs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   // ---------------------------------------------
-  // Infinite Scroll Observer — FIXED
+  // Infinite Scroll Observer
   // ---------------------------------------------
   useEffect(() => {
     if (activeTab !== "all") return;
@@ -328,10 +490,18 @@ export default function JobDashboard() {
       scheduleInterviewApi({
         jobId: selectedJob._id,
         scheduledDate: isoString,
-      }).finally(() => {
-        setLoadingButton(false);
-        handleModalClose();
-      });
+      })
+        .then(() => {
+          message.success("Interview scheduled successfully");
+        })
+        .catch((error) => {
+          console.error("Error scheduling interview:", error);
+          message.error("Failed to schedule interview");
+        })
+        .finally(() => {
+          setLoadingButton(false);
+          handleModalClose();
+        });
     }
   };
 
@@ -342,6 +512,22 @@ export default function JobDashboard() {
     const deadline = dayjs(selectedJob.deadline).endOf("day");
 
     return current < today || current > deadline;
+  };
+
+  // ---------------------------------------------
+  // Convert JobData to JobInterface for display
+  // ---------------------------------------------
+  const convertToJobInterface = (jobData: JobData): JobInterface => {
+    return {
+      ...jobData,
+      companyId: {
+        _id: typeof jobData.companyId === "string" ? jobData.companyId : "",
+        companyName: "Company",
+        logoUrl: "",
+        website: "",
+      },
+      isSaved: false,
+    };
   };
 
   // ---------------------------------------------
@@ -357,9 +543,7 @@ export default function JobDashboard() {
       }}
     >
       <Row gutter={[16, 16]} className="flex gap-10" style={{ height: "100%" }}>
-        {/* --------------------------- */}
         {/* Sidebar */}
-        {/* --------------------------- */}
         <Col xs={24} lg={11} style={{ height: "100%" }}>
           <div
             style={{ height: "100%", display: "flex", flexDirection: "column" }}
@@ -443,7 +627,16 @@ export default function JobDashboard() {
                   </Col>
 
                   <Col xs={12}>
-                    <UiButton className="w-full !text-gray-400">Saved</UiButton>
+                    <UiButton
+                      className={`w-full ${
+                        activeTab === "saved"
+                          ? "!text-blue-600 !bg-blue-50"
+                          : "!text-gray-400"
+                      }`}
+                      onClick={() => setActiveTab("saved")}
+                    >
+                      Saved ({savedJobsList.length})
+                    </UiButton>
                   </Col>
 
                   <Col xs={12}>
@@ -453,12 +646,7 @@ export default function JobDashboard() {
                           ? "!text-blue-600 !bg-blue-50"
                           : "!text-gray-400"
                       }`}
-                      onClick={() => {
-                        setActiveTab("recommended");
-                        if (recommendedJobList.length === 0) {
-                          fetchRecommendedJobs();
-                        }
-                      }}
+                      onClick={() => setActiveTab("recommended")}
                     >
                       Recommended
                     </UiButton>
@@ -496,19 +684,31 @@ export default function JobDashboard() {
                           <List.Item.Meta
                             avatar={
                               <div className="px-4">
-                                <Avatar
-                                  src={item.companyId?.logoUrl}
-                                  size={50}
-                                />
+                                <div className="relative">
+                                  <Avatar
+                                    src={item.companyId?.logoUrl}
+                                    size={50}
+                                  />
+                                  {item.isSaved && (
+                                    <></>
+                                    // <HeartFilled
+                                    //   style={{
+                                    //     position: "absolute",
+                                    //     top: -5,
+                                    //     right: -5,
+                                    //     color: "#ff4d4f",
+                                    //     fontSize: 16,
+                                    //   }}
+                                    // />
+                                  )}
+                                </div>
                                 <div className="mt-2">
                                   <div className="text-blue-600 font-semibold">
                                     {item.title}
                                   </div>
-
                                   <div className="text-gray-500 text-sm">
                                     {item.companyId?.companyName}
                                   </div>
-
                                   <div className="flex gap-2 mt-1">
                                     <Tag color="blue">{item.workMode}</Tag>
                                     <Tag color="green">
@@ -543,50 +743,142 @@ export default function JobDashboard() {
                       </div>
                     )}
                   </>
+                ) : activeTab === "saved" ? (
+                  <>
+                    {/* Saved Jobs Tab */}
+                    {loading ? (
+                      <div style={{ padding: "20px", textAlign: "center" }}>
+                        <Spin />
+                      </div>
+                    ) : savedJobsList.length === 0 ? (
+                      <div
+                        style={{ padding: "40px 20px", textAlign: "center" }}
+                      >
+                        <div className="text-gray-400 text-lg mb-2">
+                          No saved jobs yet
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                          Start saving jobs to view them here
+                        </div>
+                      </div>
+                    ) : (
+                      <List
+                        itemLayout="horizontal"
+                        dataSource={savedJobsList}
+                        renderItem={(savedJob) => {
+                          const job = savedJob.jobId;
+                          return (
+                            <List.Item
+                              className="cursor-pointer hover:bg-gray-100 transition"
+                              onClick={() => {
+                                const fullJob = convertToJobInterface(job);
+                                fullJob.isSaved = true; // Mark as saved
+                                setSelectedJob(fullJob);
+                              }}
+                            >
+                              <List.Item.Meta
+                                avatar={
+                                  <div className="px-4">
+                                    <div className="relative">
+                                      <Avatar
+                                        size={50}
+                                        icon={<BuildFilled />}
+                                      />
+                                      <HeartFilled
+                                        style={{
+                                          position: "absolute",
+                                          top: -5,
+                                          right: -5,
+                                          color: "#ff4d4f",
+                                          fontSize: 16,
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="mt-2">
+                                      <div className="text-blue-600 font-semibold">
+                                        {job.title}
+                                      </div>
+                                      <div className="text-gray-500 text-sm">
+                                        Saved{" "}
+                                        {new Date(
+                                          savedJob.createdAt
+                                        ).toLocaleDateString()}
+                                      </div>
+                                      <div className="flex gap-2 mt-1">
+                                        <Tag color="blue">{job.workMode}</Tag>
+                                        <Tag color="green">
+                                          {job.experienceLevel}
+                                        </Tag>
+                                      </div>
+                                    </div>
+                                  </div>
+                                }
+                              />
+                            </List.Item>
+                          );
+                        }}
+                      />
+                    )}
+                  </>
                 ) : (
                   <>
-                    {/* Recommended Jobs */}
-                    <List
-                      itemLayout="horizontal"
-                      dataSource={recommendedJobList}
-                      renderItem={(item) => (
-                        <List.Item
-                          className={`cursor-pointer hover:bg-gray-100 transition`}
-                          onClick={() => {
-                            const fullJob = jobList.find(
-                              (j) => j._id === item.jobId
-                            );
-
-                            if (fullJob) setSelectedJob(fullJob);
-                          }}
-                        >
-                          <List.Item.Meta
-                            avatar={
-                              <div className="px-4">
-                                <Avatar src={item.companyLogo} size={50} />
-                                <div className="mt-2">
-                                  <div className="text-blue-600 font-semibold">
-                                    {item.title}
-                                  </div>
-                                  <div className="text-gray-500 text-sm">
-                                    {item.companyName}
-                                  </div>
-
-                                  <div className="flex gap-2 mt-1">
-                                    <Tag color="blue">{item.workMode}</Tag>
-                                    {item.experienceLevel && (
-                                      <Tag color="green">
-                                        {item.experienceLevel}
-                                      </Tag>
-                                    )}
+                    {/* Recommended Jobs Tab */}
+                    {loading ? (
+                      <div style={{ padding: "20px", textAlign: "center" }}>
+                        <Spin />
+                      </div>
+                    ) : recommendedJobList.length === 0 ? (
+                      <div
+                        style={{ padding: "40px 20px", textAlign: "center" }}
+                      >
+                        <div className="text-gray-400 text-lg mb-2">
+                          No recommendations yet
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                          We'll recommend jobs based on your profile
+                        </div>
+                      </div>
+                    ) : (
+                      <List
+                        itemLayout="horizontal"
+                        dataSource={recommendedJobList}
+                        renderItem={(item) => (
+                          <List.Item
+                            className="cursor-pointer hover:bg-gray-100 transition"
+                            onClick={() => {
+                              const fullJob = jobList.find(
+                                (j) => j._id === item.jobId
+                              );
+                              if (fullJob) setSelectedJob(fullJob);
+                            }}
+                          >
+                            <List.Item.Meta
+                              avatar={
+                                <div className="px-4">
+                                  <Avatar src={item.companyLogo} size={50} />
+                                  <div className="mt-2">
+                                    <div className="text-blue-600 font-semibold">
+                                      {item.title}
+                                    </div>
+                                    <div className="text-gray-500 text-sm">
+                                      {item.companyName}
+                                    </div>
+                                    <div className="flex gap-2 mt-1">
+                                      <Tag color="blue">{item.workMode}</Tag>
+                                      {item.experienceLevel && (
+                                        <Tag color="green">
+                                          {item.experienceLevel}
+                                        </Tag>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            }
-                          />
-                        </List.Item>
-                      )}
-                    />
+                              }
+                            />
+                          </List.Item>
+                        )}
+                      />
+                    )}
                   </>
                 )}
               </div>
@@ -594,9 +886,7 @@ export default function JobDashboard() {
           </div>
         </Col>
 
-        {/* --------------------------- */}
         {/* Job Details */}
-        {/* --------------------------- */}
         <Col xs={24} lg={12} style={{ height: "100%" }}>
           <Card
             className="shadow-md rounded-2xl"
@@ -629,10 +919,22 @@ export default function JobDashboard() {
                         Apply Now
                       </UiButton>
 
-                      <Dropdown menu={{ items }} trigger={["click"]}>
+                      <Dropdown
+                        menu={{
+                          items: getDropdownItems(selectedJob._id),
+                          onClick: ({ key }) =>
+                            handleMenuClick(key, selectedJob._id),
+                        }}
+                        trigger={["click"]}
+                      >
                         <span onClick={(e) => e.preventDefault()}>
-                          <UiButton className="!rounded-full w-8 h-8">
-                            <EllipsisOutlined />
+                          <UiButton
+                            className="!rounded-full w-8 h-8"
+                            loading={savingJobId === selectedJob._id}
+                          >
+                            {savingJobId === selectedJob._id ? null : (
+                              <EllipsisOutlined />
+                            )}
                           </UiButton>
                         </span>
                       </Dropdown>

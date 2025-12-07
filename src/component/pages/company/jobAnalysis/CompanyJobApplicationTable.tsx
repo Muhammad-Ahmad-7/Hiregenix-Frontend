@@ -91,10 +91,12 @@ const MyJobsTable = () => {
   // Initial fetch
   // -----------------------
   useEffect(() => {
-    if (openJobs === null && closedJobs === null) {
+    if (openJobs === null || closedJobs === null) {
       if (activeTab === "open") {
+        console.log("i am runng opened");
         fetchOpenJobs();
       } else {
+        console.log("i am runng closed");
         fetchClosedJobs();
       }
     }

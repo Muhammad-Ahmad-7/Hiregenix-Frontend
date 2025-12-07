@@ -13,14 +13,15 @@ export default function LoginHeader() {
         <Text className="font-semibold">{INFO.CompanyName}</Text>
       </Col>
       <Col span={12} className="!flex !justify-end">
-        <Select
+        <></>
+        {/* <Select
           defaultValue="en"
           suffixIcon={<GlobalOutlined />}
           options={[
             { value: "en", label: "English" },
             { value: "ur", label: "Urdu" },
           ]}
-        />
+        /> */}
       </Col>
     </Row>
   );

@@ -54,3 +54,30 @@ export const getAllJobsWithScrollingApi = async (params: {
     showToaster: true,
   });
 };
+
+export const saveJobApi = async (jobId: string) => {
+  return safeApiCall({
+    apiCall: () => api.post(`/job/save/${jobId}`),
+    showToaster: true,
+  });
+};
+export const unSaveJobApi = async (savedJobId: string) => {
+  return safeApiCall({
+    apiCall: () => api.delete(`/job/unsave/${savedJobId}`),
+    showToaster: true,
+  });
+};
+// /job/save
+
+export const getAllSaveJobsApi = async (params: {
+  limit: number;
+  page?: number;
+}) => {
+  return safeApiCall({
+    apiCall: () =>
+      api.get("/job/save", {
+        params,
+      }),
+    showToaster: true,
+  });
+};

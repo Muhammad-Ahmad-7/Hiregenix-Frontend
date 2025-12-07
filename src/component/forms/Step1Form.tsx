@@ -25,7 +25,7 @@ type Step1FormProps = {
 export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
   const [form] = Form.useForm();
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
-    initialValues?.profilePictureUrl || null
+    null
   );
   const [uploading, setUploading] = useState(false);
 

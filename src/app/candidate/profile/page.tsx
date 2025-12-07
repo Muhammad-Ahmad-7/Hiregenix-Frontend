@@ -96,7 +96,7 @@ export default function ProfileDashboard() {
 
   // Mock user profile - replace with your Redux state
   const [userProfile, setUserProfile] = useState<UserProfile>({
-    fullName: "Muhammad Taha",
+    fullName: "",
     profilePictureUrl:
       "https://api.dicebear.com/8.x/avataaars/svg?seed=Muhammad",
     tagline: "Full Stack Developer | AI Enthusiast",

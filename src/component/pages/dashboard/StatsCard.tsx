@@ -66,15 +66,16 @@ export default function StatsCard({
               <div className="text-4xl font-semibold text-black">{number}</div>
 
               {badgeText && (
-                <Badge
-                  count={badgeText}
-                  className="rounded-full !mt-2.5"
-                  style={{
-                    backgroundColor: colors.bg,
-                    color: colors.text,
-                    borderColor: colors.border,
-                  }}
-                />
+                <>
+                  {/* <Badge
+                    count={badgeText}
+                    className="rounded-full !mt-2.5"
+                    style={{
+                      color: colors.text,
+                      borderColor: colors.border,
+                    }}
+                  /> */}
+                </>
               )}
             </div>
           </div>

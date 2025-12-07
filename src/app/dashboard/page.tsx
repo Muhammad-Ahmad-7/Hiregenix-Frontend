@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, Table, List, Avatar, Button, Row, Col } from "antd";
 import {
   MessageOutlined,
@@ -10,54 +10,102 @@ import {
   StarFilled,
 } from "@ant-design/icons";
 import StatsCard from "@/component/pages/dashboard/StatsCard";
+import { getCompanyStatsApi } from "../api/company/dashboard.api";
+
+// ---------------------
+// Interfaces
+// ---------------------
+export interface Location {
+  city: string;
+  country: string;
+}
+
+export interface SalaryRange {
+  min: number;
+  max: number;
+  currency: string;
+}
+
+export interface Job {
+  _id: string;
+  companyId: string;
+
+  title: string;
+  role: string;
+
+  location: Location;
+  salaryRange: SalaryRange;
+
+  interviewGuideline: string;
+  experienceLevel: "junior" | "mid" | "senior" | string;
+  description: string;
+
+  requiredSkills: string[];
+  requirements: string[];
+
+  workMode: "remote" | "onsite" | "hybrid" | "full-time" | string;
+
+  deadline: string;
+  aiSummary: string;
+
+  embeddingSynced: boolean;
+  qdrantId: string | null;
+
+  isDeleted: boolean;
+  status: "open" | "closed" | string;
+
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface AiResult {
+  strengths: string[];
+  improvements: string[];
+}
+
+export interface RecentApplication {
+  _id: string;
+  candidateId: string;
+  companyId: string;
+  jobId: string;
+
+  type: "live" | "screening" | string;
+  scheduledDate: string;
+  status: "scheduled" | "completed" | "cancelled" | string;
+
+  aiResult: AiResult;
+
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface CompanyDashboardResponse {
+  postedJobsCount: number;
+  activeJobsCount: number;
+  appliedJobsCount: number;
+  closedJobsCount: number;
+
+  activeJobs: Job[];
+  recentApplications: RecentApplication[];
+}
+
+// ---------------------
+// Component
+// ---------------------
 
 export default function Dashboard() {
-  // Table Data
-  const jobData = [
-    {
-      key: 1,
-      title: "Front-end developer",
-      applications: 127,
-      views: 1400,
-      matches: 32,
-    },
-    {
-      key: 2,
-      title: "Kotlin developer",
-      applications: 45,
-      views: 2345,
-      matches: 12,
-    },
-    {
-      key: 3,
-      title: "Swift developer",
-      applications: 63,
-      views: 1443,
-      matches: 23,
-    },
-    {
-      key: 4,
-      title: "UI Developer",
-      applications: 79,
-      views: 1563,
-      matches: 14,
-    },
-    {
-      key: 5,
-      title: "React developer",
-      applications: 67,
-      views: 945,
-      matches: 25,
-    },
-    {
-      key: 6,
-      title: "Backend NodeJs",
-      applications: 105,
-      views: 1254,
-      matches: 43,
-    },
-  ];
+  const [stats, setStats] = useState<CompanyDashboardResponse | null>(null);
 
+  useEffect(() => {
+    getCompanyStatsApi().then((res) => {
+      console.log("API Stats:", res);
+      setStats(res?.data || res);
+    });
+  }, []);
+
+  // Table Columns
   const jobColumns = [
     {
       title: "Title",
@@ -66,21 +114,23 @@ export default function Dashboard() {
       className: "font-medium",
     },
     {
-      title: "Applications",
-      dataIndex: "applications",
-      key: "applications",
+      title: "Location",
+      key: "location",
+      render: (_: any, job: Job) =>
+        `${job.location.city}, ${job.location.country}`,
       align: "center",
     },
     {
-      title: "Views",
-      dataIndex: "views",
-      key: "views",
+      title: "Salary",
+      key: "salaryRange",
+      render: (_: any, job: Job) =>
+        `${job.salaryRange.min} - ${job.salaryRange.max} ${job.salaryRange.currency}`,
       align: "center",
     },
     {
-      title: "AI matches",
-      dataIndex: "matches",
-      key: "matches",
+      title: "Experience",
+      dataIndex: "experienceLevel",
+      key: "experienceLevel",
       align: "center",
     },
     {
@@ -94,119 +144,67 @@ export default function Dashboard() {
     },
   ];
 
-  // Messages Data
-  const messages = [
-    {
-      name: "Alexa",
-      text: "Hey Adam! Interested in tex...",
-      time: "3m",
-      avatar: "A",
-      unread: true,
-    },
-    {
-      name: "Donald",
-      text: "Hey Adam! Interested in tex...",
-      time: "10m",
-      avatar: "D",
-      unread: true,
-    },
-    {
-      name: "James Drew",
-      text: "Hey Adam! Interested in tex...",
-      time: "30m",
-      avatar: "J",
-      unread: false,
-    },
-    {
-      name: "Alexa",
-      text: "Hey Adam! Is Load more...",
-      time: "30m",
-      avatar: "A",
-      unread: false,
-    },
-  ];
-
-  // Chart data for applications per week
-  const weeklyData = [
-    { day: "Mon", value: 5 },
-    { day: "Tue", value: 9 },
-    { day: "Wed", value: 5 },
-    { day: "Thu", value: 12 },
-    { day: "Fri", value: 6 },
-    { day: "Sat", value: 7 },
-    { day: "Sun", value: 6 },
-  ];
-
-  // const menu = (
-  //   <Menu>
-  //     <Menu.Item key="1">Reply</Menu.Item>
-  //     <Menu.Item key="2">Mark as read</Menu.Item>
-  //     <Menu.Item key="3">Delete</Menu.Item>
-  //   </Menu>
-  // );
+  const todayInterviews =
+    stats?.recentApplications.filter((i) => i.status === "scheduled") || [];
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      {/* <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <Select defaultValue="Front-end developer" className="w-48">
-          <Option value="front-end">Front-end developer</Option>
-          <Option value="backend">Backend developer</Option>
-          <Option value="full-stack">Full-stack developer</Option>
-        </Select>
-      </div> */}
-
-      {/* First Row */}
+      {/* FIRST ROW -------------------------------- */}
       <Row gutter={[16, 16]}>
-        {/* (1,1) nested 2x2 grid */}
         <Col span={12}>
           <Row gutter={[16, 16]}>
             <StatsCard
               icon={<ContainerFilled style={{ color: "white" }} />}
               title="Jobs Posted"
-              number={142}
-              badgeText="45%+ in last 30 days"
+              number={stats?.postedJobsCount || 0}
+              badgeText="Total jobs posted"
               badgeColor="green"
             />
+
             <StatsCard
               icon={<StarFilled className="!text-white" />}
-              title="Jobs Posted"
-              number={142}
-              badgeText="45%+ in last 30 days"
+              title="Active Jobs"
+              number={stats?.activeJobsCount || 0}
+              badgeText="Jobs currently open"
               badgeColor="orange"
             />
-            <StatsCard />
+
             <StatsCard
               icon={<StarFilled className="!text-white" />}
-              title="Jobs Posted"
-              number={142}
-              badgeText="45%+ in last 30 days"
+              title="Closed Jobs"
+              number={stats?.closedJobsCount || 0}
+              badgeText="Jobs closed"
+              badgeColor="orange"
+            />
+
+            <StatsCard
+              icon={<StarFilled className="!text-white" />}
+              title="Total Applications"
+              number={stats?.appliedJobsCount || 0}
+              badgeText="Candidate applications"
               badgeColor="orange"
             />
           </Row>
         </Col>
 
-        {/* (1,2) applications chart */}
+        {/* Right: Weekly Chart */}
         <Col span={12}>
           <Card
             title="Applications received per week"
             className="h-full"
-            extra={
-              <span className="text-sm text-gray-400">
-                September 29 - October 6
-              </span>
-            }
+            extra={<span className="text-sm text-gray-400">Weekly Stats</span>}
           >
             <div className="flex items-end justify-between h-40 px-4 mt-4">
-              {weeklyData.map((item, index) => (
+              {[5, 9, 5, 12, 6, 7, 6].map((value, index) => (
                 <div key={index} className="flex flex-col items-center">
-                  <div className="text-xs text-gray-400 mb-1">{item.value}</div>
+                  <div className="text-xs text-gray-400 mb-1">{value}</div>
                   <div
-                    className="bg-blue-500 rounded-t w-6 flex items-end justify-center"
-                    style={{ height: `${(item.value / 12) * 100}px` }}
+                    className="bg-blue-500 rounded-t w-6"
+                    style={{ height: `${(value / 12) * 100}px` }}
                   ></div>
-                  <div className="text-xs text-gray-400 mt-2">{item.day}</div>
+                  <div className="text-xs text-gray-400 mt-2">
+                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index]}
+                  </div>
                 </div>
               ))}
             </div>
@@ -214,124 +212,58 @@ export default function Dashboard() {
         </Col>
       </Row>
 
-      {/* Second Row */}
+      {/* SECOND ROW -------------------------------- */}
       <Row gutter={[16, 16]} className="mt-6">
-        {/* (2,1) Active Jobs Table */}
+        {/* ACTIVE JOBS TABLE */}
         <Col span={12}>
           <Card
             title="Active Jobs"
-            extra={
-              <RiseOutlined
-                className="text-gray-400"
-                style={{ fontSize: "16px" }}
-              />
-            }
+            extra={<RiseOutlined className="text-gray-400" />}
           >
             <Table
-              dataSource={jobData}
+              dataSource={stats?.activeJobs || []}
               columns={jobColumns}
+              rowKey="_id"
               pagination={false}
               size="small"
             />
           </Card>
         </Col>
 
-        {/* (2,2) Messages + Interview Schedule */}
+        {/* INTERVIEW SCHEDULE */}
         <Col span={12}>
-          <Row gutter={[16, 16]}>
-            <Col span={12}>
-              <Card
-                title="Messages"
-                extra={
-                  <MessageOutlined
-                    className="text-blue-500"
-                    style={{ fontSize: "16px" }}
-                  />
-                }
-                className="h-full"
-              >
-                <List
-                  itemLayout="horizontal"
-                  dataSource={messages}
-                  renderItem={(item) => (
-                    <List.Item
-                      className="hover:bg-gray-50 px-2 rounded"
-                      actions={
-                        [
-                          // <div className="flex items-center gap-2">
-                          //   {item.time && (
-                          //     <span className="text-xs text-gray-400">
-                          //       {item.time}
-                          //     </span>
-                          //   )}
-                          //   <Dropdown overlay={menu} trigger={["click"]}>
-                          //     <MoreOutlined className="text-gray-400 cursor-pointer" />
-                          //   </Dropdown>
-                          // </div>,
-                        ]
-                      }
-                    >
-                      <List.Item.Meta
-                        avatar={
-                          <div className="relative">
-                            <Avatar size={28} className="bg-gray-300 text-sm">
-                              {item.avatar}
-                            </Avatar>
-                            {item.unread && (
-                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white"></div>
-                            )}
-                          </div>
-                        }
-                        title={
-                          <span className="text-sm font-medium">
-                            {item.name}
-                          </span>
-                        }
-                        description={
-                          <span className="text-xs text-gray-500">
-                            {item.text}
-                          </span>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                />
-              </Card>
-            </Col>
+          <Card
+            title="Interviews schedule"
+            extra={<CalendarOutlined className="text-blue-500" />}
+            className="h-full"
+          >
+            <p className="mb-3 font-medium text-sm text-gray-500">Upcoming</p>
 
-            <Col span={12}>
-              <Card
-                title="Interviews schedule"
-                extra={
-                  <CalendarOutlined
-                    className="text-blue-500"
-                    style={{ fontSize: "16px" }}
-                  />
-                }
-                className="h-full"
+            {todayInterviews.length === 0 && (
+              <p className="text-gray-400 text-sm">No interviews scheduled.</p>
+            )}
+
+            {todayInterviews.map((i) => (
+              <div
+                key={i._id}
+                className="flex items-center justify-between p-3 bg-blue-50 rounded-lg mb-2"
               >
-                <p className="mb-3 font-medium text-sm text-gray-500">Today</p>
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <div>
-                      <p className="font-semibold text-sm">
-                        Front-end developer
-                      </p>
-                      <p className="text-gray-500 text-xs">Devsine</p>
-                    </div>
-                  </div>
-                  <Button
-                    type="primary"
-                    size="small"
-                    className="bg-orange-500 border-orange-500 hover:bg-orange-600"
-                  >
-                    Join now
-                  </Button>
+                <div>
+                  <p className="font-semibold text-sm">Job ID: {i.jobId}</p>
+                  <p className="text-gray-500 text-xs">
+                    {new Date(i.scheduledDate).toLocaleString()}
+                  </p>
                 </div>
-              </Card>
-            </Col>
-          </Row>
+                <Button
+                  type="primary"
+                  size="small"
+                  className="bg-blue-500 border-blue-500"
+                >
+                  Join now
+                </Button>
+              </div>
+            ))}
+          </Card>
         </Col>
       </Row>
     </div>

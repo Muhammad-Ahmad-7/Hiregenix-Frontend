@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ReactNode, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Layout, Menu, ConfigProvider, Button } from "antd";
 import {
   MenuFoldOutlined,
@@ -78,7 +78,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const { profile } = useSelector((state: RootState) => state.user);
-
+  const router = useRouter();
   // const {profile,loading} useSelector(state=>state.user)
   //   const dispatch = useDispatch();
 
@@ -240,7 +240,10 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <Button
                 type="text"
                 icon={<LogoutOutlined />}
-                onClick={() => removeToken()}
+                onClick={() => {
+                  removeToken();
+                  router.replace("/");
+                }}
                 className={`w-full font-bold text-left ${
                   collapsed
                     ? "flex justify-center bg-red-600 hover:bg-red-700"
