@@ -15,8 +15,10 @@ import {
   LogoutOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { removeToken } from "@/utils/token";
+import { setLoading, setProfile } from "@/redux/slices/userSlice";
+import { getCompanyProfileApi } from "../api/company/profile.api";
 // import { useDispatch, useSelector } from "react-redux";
 // import type { RootState } from "@/app/store/store";
 // import { logout } from "@/app/store/slices/authSlice";
@@ -80,25 +82,26 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { profile } = useSelector((state: RootState) => state.user);
   const router = useRouter();
   // const {profile,loading} useSelector(state=>state.user)
-  //   const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
-  // useEffect(() => {
-  //   dispatch(setLoading(true));
-  //   if (profile) return;
-  //   getCandidateProfileApi()
-  //     .then((res) => {
-  //       if (res.status === "Success") {
-  //         dispatch(setUserProfile(res.data.candidate));
+  useEffect(() => {
+    // dispatch(setLoading(true));
+    if (profile) return;
+    getCompanyProfileApi()
+      .then((res) => {
+        if (res.status === "Success") {
+          console.log("Dispatch", res.data.company);
+          dispatch(setProfile(res.data.company));
 
-  //         dispatch(setLoading(false));
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       console.log("Error fetching profile:", err);
-  //       router.push("/auth/sign-up");
-  //     })
-  //     .finally(() => {});
-  // }, []);
+          // dispatch(setLoading(false));
+        }
+      })
+      .catch((err) => {
+        console.log("Error fetching profile:", err);
+        router.push("/auth/sign-up");
+      })
+      .finally(() => {});
+  }, []);
 
   //   const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.auth);
 
@@ -160,7 +163,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   //     }
   //   };
   return (
-    !profile && (
+    profile && (
       <ConfigProvider
         theme={{
           components: {

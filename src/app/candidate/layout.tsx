@@ -17,7 +17,7 @@ import {
 import Link from "next/link";
 import { getCandidateProfileApi } from "../api/candidate/profile.api";
 import { useDispatch, useSelector } from "react-redux";
-import { setLoading, setUserProfile } from "@/redux/slices/userSlice";
+import { setLoading, setProfile } from "@/redux/slices/userSlice";
 import { getToken, removeToken } from "@/utils/token";
 // import { useDispatch, useSelector } from "react-redux";
 // import type { RootState } from "@/app/store/store";
@@ -92,7 +92,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       .then((res) => {
         console.log("first", res);
         if (res.status === "Success") {
-          dispatch(setUserProfile(res.data.candidate));
+          dispatch(setProfile(res.data.candidate));
 
           dispatch(setLoading(false));
         }
@@ -247,7 +247,10 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <Button
                 type="text"
                 icon={<LogoutOutlined />}
-                onClick={() => removeToken()}
+                onClick={() => {
+                  removeToken();
+                  router.replace("/");
+                }}
                 className={`w-full font-bold text-left ${
                   collapsed
                     ? "flex justify-center bg-red-600 hover:bg-red-700"

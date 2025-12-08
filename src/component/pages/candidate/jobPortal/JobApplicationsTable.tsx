@@ -1,610 +1,154 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Table, Tabs, Button, Input, Dropdown } from "antd";
 import {
   SearchOutlined,
   PlusOutlined,
   FilterOutlined,
 } from "@ant-design/icons";
+import { getAllInterviewsApi } from "@/app/api/candidate/interview.api";
+
+interface Interview {
+  _id: string;
+  candidateId: string;
+  companyId: {
+    _id: string;
+    companyName: string;
+  };
+  jobId: {
+    _id: string;
+    title: string;
+    workMode: string;
+    deadline: string;
+  };
+  type: string;
+  scheduledDate: string;
+  status: "scheduled" | "under review" | "rejected";
+  aiResult: {
+    strengths: string[];
+    improvements: string[];
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 const JobApplicationsTable = () => {
   const [activeTab, setActiveTab] = useState("all");
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
+  const [meta, setMeta] = useState<PaginationMeta | null>(null);
 
-  const allJobsData = [
-    {
-      key: "1",
-      title: "Java developer",
-      company: "ArtixStudio",
-      type: "Remote",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "--",
-      avgScore: "70%",
-    },
-    {
-      key: "2",
-      title: "C++ Developer",
-      company: "Estrresoft",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "3",
-      title: "Solidity Developer",
-      company: "NetSQL",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Under review",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "4",
-      title: "Front-end developer",
-      company: "Devsinc",
-      type: "Remote",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "5",
-      title: "Kotlin developer",
-      company: "NetSQL",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "text",
-    },
-    {
-      key: "6",
-      title: "Swift developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Rejected",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "7",
-      title: "UI Developer",
-      company: "Meta",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "--",
-      avgScore: "70%",
-    },
-    {
-      key: "8",
-      title: "React developer",
-      company: "Technologix",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "--",
-      avgScore: "70%",
-    },
-    {
-      key: "9",
-      title: "Backend Nodejs",
-      company: "Conira",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Approved",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "10",
-      title: "Three.js developer",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Rejected",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-  ];
+  // ⭐ NEW: Work Mode filter state
+  const [workModeFilter, setWorkModeFilter] = useState<string | null>(null);
 
-  const appliedData = [
-    {
-      key: "1",
-      title: "Java developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "2",
-      title: "UI Designer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "3",
-      title: "C++ Developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "4",
-      title: "Java Full Stack developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "5",
-      title: "Solidity Developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "6",
-      title: "Kotlin developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "7",
-      title: "UI Developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "8",
-      title: "Swift developer",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "9",
-      title: "Backend Nodejs",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "10",
-      title: "Three.js developer",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Applied",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-  ];
-
-  const underReviewData = [
-    {
-      key: "1",
-      title: "Java developer",
-      company: "ArtixStudio",
-      type: "Remote",
-      date: "22-09-25",
-      status: "Under review",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "2",
-      title: "UI Designer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Under review",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "3",
-      title: "C++ Developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Under review",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "4",
-      title: "Java Full Stack developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Under review",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "5",
-      title: "Solidity Developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Under review",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "6",
-      title: "Kotlin developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Under review",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "7",
-      title: "UI Developer",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Under review",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "8",
-      title: "Swift developer",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Under review",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "9",
-      title: "Backend Nodejs",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Under review",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "10",
-      title: "Three.js developer",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Under review",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-  ];
-
-  const rejectedData = [
-    {
-      key: "1",
-      title: "Java developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Rejected",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "2",
-      title: "UI Designer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Rejected",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "3",
-      title: "C++ Developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Rejected",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "4",
-      title: "Java Full Stack developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Rejected",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "5",
-      title: "Solidity Developer",
-      company: "Systems",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Rejected",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "6",
-      title: "Kotlin developer",
-      company: "Technologix",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Rejected",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "7",
-      title: "UI Developer",
-      company: "Technologix",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Rejected",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "8",
-      title: "Swift developer",
-      company: "Technologix",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Rejected",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "9",
-      title: "Backend Nodejs",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Rejected",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "10",
-      title: "Three.js developer",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Rejected",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-  ];
-
-  const savedData = [
-    {
-      key: "1",
-      title: "Java developer",
-      company: "Estrresoft",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "2",
-      title: "UI Designer",
-      company: "Estrresoft",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "3",
-      title: "C++ Developer",
-      company: "Estrresoft",
-      type: "Onsite",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "4",
-      title: "Java Full Stack developer",
-      company: "Technologix",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "5",
-      title: "Solidity Developer",
-      company: "Technologix",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "6",
-      title: "Kotlin developer",
-      company: "Technologix",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "7",
-      title: "UI Developer",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "8",
-      title: "Swift developer",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "9",
-      title: "Backend Nodejs",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-    {
-      key: "10",
-      title: "Three.js developer",
-      company: "Anima Studios",
-      type: "Hybrid",
-      date: "22-09-25",
-      status: "Scheduled",
-      quizScore: "70%",
-      interviewScore: "70%",
-      avgScore: "70%",
-    },
-  ];
-
-  const getDataByTab = () => {
-    switch (activeTab) {
-      case "applied":
-        return appliedData;
-      case "under-review":
-        return underReviewData;
-      case "rejected":
-        return rejectedData;
-      case "saved":
-        return savedData;
-      default:
-        return allJobsData;
+  // Format date helper
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        year: "2-digit",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    } catch {
+      return dateString;
     }
   };
 
-  const getStatusTag = (status) => {
+  useEffect(() => {
+    const fetchInterviews = async () => {
+      try {
+        setLoading(true);
+        const res = await getAllInterviewsApi({ page: 1, limit: 50 });
+        setInterviews(res.data.interviews || []);
+        setMeta(res.meta || null);
+      } catch (err) {
+        console.error("Error fetching interviews:", err);
+        setInterviews([]);
+        setMeta(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInterviews();
+  }, []);
+
+  const getDataByTab = () => {
+    let filteredData = interviews;
+
+    // ⭐ Apply Work Mode Filter
+    if (workModeFilter) {
+      filteredData = filteredData.filter(
+        (item) =>
+          item.jobId?.workMode?.toLowerCase() === workModeFilter.toLowerCase()
+      );
+    }
+
+    // Filter by tab
+    switch (activeTab) {
+      case "scheduled":
+        filteredData = filteredData.filter(
+          (item) => item.status === "scheduled"
+        );
+        break;
+      case "under review":
+        filteredData = filteredData.filter(
+          (item) => item.status === "under review"
+        );
+        break;
+      case "rejected":
+        filteredData = filteredData.filter(
+          (item) => item.status === "rejected"
+        );
+        break;
+      default:
+        break;
+    }
+
+    // Search filter
+    if (searchText) {
+      filteredData = filteredData.filter((item) =>
+        item.jobId?.title?.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    // Map to table format
+    return filteredData.map((interview) => ({
+      key: interview._id,
+      title: interview.jobId?.title || "N/A",
+      company: interview.companyId?.companyName || "N/A",
+      type: interview.jobId?.workMode || "N/A",
+      date: formatDate(interview.scheduledDate),
+      status: interview.status,
+      quizScore: "--",
+      interviewScore: "--",
+      avgScore: "--",
+    }));
+  };
+
+  const getStatusTag = (status: string) => {
     const statusConfig = {
-      Applied: { color: "#fa8c16" },
-      Scheduled: { color: "#1890ff" },
-      "Under review": { color: "#722ed1" },
-      Rejected: { color: "#f5222d" },
-      Approved: { color: "#52c41a" },
+      scheduled: { color: "#1890ff" },
+      "under review": { color: "#722ed1" },
+      rejected: { color: "#f5222d" },
     };
 
     const config = statusConfig[status] || { color: "#666" };
 
     return (
       <span className="text-sm text-gray-700">
-        <span style={{ color: config.color }}>•</span> {status}
+        <span style={{ color: config.color }}>•</span>{" "}
+        {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
   };
@@ -614,7 +158,7 @@ const JobApplicationsTable = () => {
       title: "Title",
       dataIndex: "title",
       key: "title",
-      render: (text) => (
+      render: (text: string) => (
         <a className="text-blue-600 hover:text-blue-700">{text}</a>
       ),
     },
@@ -637,7 +181,7 @@ const JobApplicationsTable = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => getStatusTag(status),
+      render: (status: string) => getStatusTag(status),
     },
     {
       title: "Quiz Score",
@@ -655,7 +199,7 @@ const JobApplicationsTable = () => {
       key: "avgScore",
     },
     {
-      title: "Title",
+      title: "Actions",
       key: "actions",
       render: () => (
         <div className="flex gap-2">
@@ -668,11 +212,12 @@ const JobApplicationsTable = () => {
 
   const tabItems = [
     { key: "all", label: "All jobs" },
-    { key: "applied", label: "Applied" },
-    { key: "under-review", label: "Under review" },
+    { key: "scheduled", label: "Scheduled" },
+    { key: "under review", label: "Under review" },
     { key: "rejected", label: "Rejected" },
-    { key: "saved", label: "Saved" },
   ];
+
+  const tableData = getDataByTab();
 
   return (
     <div className="bg-white p-6">
@@ -685,51 +230,57 @@ const JobApplicationsTable = () => {
 
       <div className="flex items-center justify-between mb-4">
         <div className="text-sm text-gray-600">
-          Results: <span className="font-semibold text-gray-900">19,476</span>{" "}
+          Results:{" "}
+          <span className="font-semibold text-gray-900">
+            {meta?.total || tableData.length}
+          </span>{" "}
           Jobs
         </div>
+
         <div className="flex items-center gap-2">
+          {/* ⭐ UPDATED WORK MODE FILTER DROPDOWN */}
           <Dropdown
             menu={{
+              onClick: ({ key }) =>
+                setWorkModeFilter(key === "all" ? null : key),
               items: [
-                { key: "1", label: "Status" },
-                { key: "2", label: "Date" },
-                { key: "3", label: "Company" },
+                { key: "all", label: "All Work Modes" },
+                { key: "remote", label: "Remote" },
+                { key: "full-time", label: "Full Time" },
+                { key: "part-time", label: "Part Time" },
               ],
             }}
           >
-            <Button icon={<FilterOutlined />}>Filter jobs</Button>
+            <Button icon={<FilterOutlined />}>
+              {workModeFilter ? `Mode: ${workModeFilter}` : "Filter jobs"}
+            </Button>
           </Dropdown>
+
           <Input
-            placeholder="Input search text"
+            placeholder="Search title"
             prefix={<SearchOutlined className="text-gray-400" />}
             className="w-48"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
-          <Button type="primary" icon={<PlusOutlined />}>
-            Add New
-          </Button>
         </div>
       </div>
 
       <Table
         columns={columns}
-        dataSource={getDataByTab()}
+        dataSource={tableData}
+        loading={loading}
         pagination={{
-          current: 6,
-          total: 100,
-          pageSize: 10,
+          current: meta?.page || 1,
+          total: meta?.total || tableData.length,
+          pageSize: meta?.limit || 10,
           showSizeChanger: false,
           className: "flex justify-end",
           itemRender: (page, type, originalElement) => {
-            if (type === "prev") {
-              return <Button size="small">&lt;</Button>;
-            }
-            if (type === "next") {
-              return <Button size="small">&gt;</Button>;
-            }
-            if (type === "jump-prev" || type === "jump-next") {
+            if (type === "prev") return <Button size="small">&lt;</Button>;
+            if (type === "next") return <Button size="small">&gt;</Button>;
+            if (type === "jump-prev" || type === "jump-next")
               return <span className="px-2">...</span>;
-            }
             return originalElement;
           },
         }}
@@ -746,8 +297,9 @@ const JobApplicationsTable = () => {
             ],
           }}
         >
-          <Button size="small">10/page</Button>
+          <Button size="small">{meta?.limit || 10}/page</Button>
         </Dropdown>
+
         <Dropdown
           menu={{
             items: [

@@ -24,6 +24,12 @@ export const deleteJobApi = async (jobId: string) => {
     showToaster: true,
   });
 };
+export const updateJobApi = async ({ jobId, body }) => {
+  return safeApiCall({
+    apiCall: () => api.patch(`/job//job/update-job-by-id/${jobId}`, body),
+    showToaster: true,
+  });
+};
 export const updateCandidateProfileApi = async (body, candidateId) => {
   return safeApiCall({
     apiCall: () => api.patch(`/candidate/update-profile/${candidateId}`, body),

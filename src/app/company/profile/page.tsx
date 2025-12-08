@@ -1,471 +1,379 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Avatar,
   Card,
-  Tag,
   Typography,
   Divider,
-  Button,
   Space,
   Row,
   Col,
-  Timeline,
   Affix,
-  Grid,
-  Upload,
+  Tag,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Button,
   message,
 } from "antd";
 import {
   EditOutlined,
-  PlusOutlined,
-  GithubFilled,
-  LinkedinFilled,
-  PaperClipOutlined,
-  UploadOutlined,
   GlobalOutlined,
+  LinkedinFilled,
 } from "@ant-design/icons";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/redux/store";
 import IconWrapper from "@/icons/IconWrapper";
-import { uploadResumeApi } from "@/app/api/candidate/profile.api";
-import { useSelector } from "react-redux";
-import { RootState } from "@reduxjs/toolkit/query";
-import { getCompanyOpenJobsApi } from "@/app/api/company/jobs.api";
-import { AxiosError } from "axios";
-import { getCompanyStatsApi } from "@/app/api/company/dashboard.api";
+import { updateCompanyProfileApi } from "@/app/api/company/profile.api";
+import { setProfile } from "@/redux/slices/userSlice";
 
 const { Title, Text, Paragraph } = Typography;
-const { useBreakpoint } = Grid;
+const { TextArea } = Input;
 
-interface UserProfile {
-  fullName: string;
-  dateOfBirth: string;
-  gender: string;
-  country: string;
-  city: string;
-  contactNumber: string;
-  profilePictureUrl: string;
-  githubUrl: string;
-  linkedinUrl: string;
-  portfolioUrl: string;
-  skills: string[];
-  bio: string;
-  tagline: string;
-}
-
-const skills = [
-  "Front-end developer",
-  "Backend",
-  "Node.js",
-  "Threads",
-  "Mobile App Development",
+// Tech stack options
+const techStackOptions = [
+  { label: "React", value: "React" },
+  { label: "Node.js", value: "Node.js" },
+  { label: "Python", value: "Python" },
+  { label: "Java", value: "Java" },
+  { label: "TypeScript", value: "TypeScript" },
+  { label: "MongoDB", value: "MongoDB" },
+  { label: "PostgreSQL", value: "PostgreSQL" },
+  { label: "AWS", value: "AWS" },
+  { label: "Docker", value: "Docker" },
+  { label: "Kubernetes", value: "Kubernetes" },
 ];
 
-const experiences = [
-  {
-    title: "Product Engineer",
-    company: "Google Labs",
-    date: "Mar 2023 – Aug 2023",
-    description:
-      "Designed and developed a fully responsive web application using React.js for the front end and Node.js/Express.js for the back end. Integrated REST APIs and implemented MongoDB for data management. Focused on optimizing performance and delivering a smooth user experience.",
-  },
-  {
-    title: "Product Engineer",
-    company: "Google Labs",
-    date: "Mar 2023 – Aug 2023",
-    description:
-      "Designed and developed a fully responsive web application using React.js for the front end and Node.js/Express.js for the back end. Integrated REST APIs and implemented MongoDB for data management. Focused on optimizing performance and delivering a smooth user experience.",
-  },
-];
+export default function CompanyProfile() {
+  const dispatch = useDispatch();
+  const [form] = Form.useForm();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const { profile } = useSelector((state: RootState) => state.user);
 
-export default function ProfileDashboard() {
-  const {
-    profile,
-    //  loading
-  } = useSelector((state: RootState) => state.user);
-  const screens = useBreakpoint();
-  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  if (!profile) return null;
 
-  const [test, setTest] = useState();
-  // Check if screen is large (lg breakpoint and above)
-  const isLargeScreen = screens.lg;
-  const fetchJobs = () => {
-    getCompanyOpenJobsApi()
-      .then((res) => {
-        console.log(res);
-        if (res.status === "Success") {
-          console.log("first:", res);
-          setTest(res);
-        } else {
-          message.error("Failed to fetch open jobs.");
-        }
-      })
-      .finally(() => {
-        console.log(test);
-      });
+  const handleEditClick = () => {
+    form.setFieldsValue({
+      companyName: profile.companyName || "",
+      city: profile.city || "",
+      country: profile.country || "",
+      foundedYear: profile.foundedYear || "",
+      ntnNumber: profile.ntnNumber || "",
+      contactEmail: profile.contactEmail || "",
+      description: profile.description || "",
+      techStack: profile.techStack || [],
+      website: profile.website || "",
+      linkedInUrl: profile.linkedInUrl || "",
+      hiringStatus: profile.hiringStatus || "not_hiring",
+    });
+    setIsEditModalOpen(true);
   };
-  useEffect(() => {
-    console.log(profile);
-    // Set user profile from Redux state
-    if (profile) {
-      setUserProfile(profile as UserProfile);
-    }
-    console.log(test);
-    // Check if profile already has a resume URL
-    if (profile?.resumeUrl) {
-      setResumeUrl(profile.resumeUrl);
-    }
-  }, [profile, test]);
 
-  const handleResumeUpload = async (file: File) => {
-    setUploading(true);
+  const handleEditSave = async (values: any) => {
+    setSaveLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      // Update Redux state locally
+      dispatch(setProfile(values));
 
-      const response = await uploadResumeApi(formData);
-      console.log("API Response:", response);
+      // Update backend
+      await updateCompanyProfileApi(values);
 
-      // Check if response exists and has the expected data structure
-      if (response && response.data && response.data.resumeUrl) {
-        setResumeUrl(response.data.resumeUrl);
-        message.success("Resume uploaded successfully!");
-      } else {
-        // Handle case where API returns but without expected data
-        message.error("Upload failed: Invalid response from server");
-        console.error("Invalid response structure:", response);
-      }
-    } catch (error: unknown) {
-      const err = error as AxiosError<{ message?: string }>;
-
-      const errorMessage =
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to upload resume. Please try again.";
-
-      message.error(errorMessage);
-      console.error("Upload error:", err);
+      message.success("Company profile updated successfully!");
+      setIsEditModalOpen(false);
+    } catch (error) {
+      message.error("Failed to update company profile");
+      console.error(error);
     } finally {
-      setUploading(false);
+      setSaveLoading(false);
     }
   };
 
-  const uploadProps = {
-    beforeUpload: (file: File) => {
-      const isPdf = file.type === "application/pdf";
-      if (!isPdf) {
-        message.error("You can only upload PDF files!");
-        return false;
-      }
-      const isLt5M = file.size / 1024 / 1024 < 5;
-      if (!isLt5M) {
-        message.error("File must be smaller than 5MB!");
-        return false;
-      }
-      handleResumeUpload(file);
-      return false; // Prevent auto upload
-    },
-    showUploadList: false,
-  };
-
-  // Helper function to get year from URL or return default
-  const getYearFromUrl = () =>
-    // url: string
-    {
-      // You can implement logic to extract year from URL or profile data
-      return "2023";
-    };
   const SidebarCard = (
     <Card className="rounded-xl">
       <Space direction="vertical" style={{ width: "100%" }}>
+        {/* Header */}
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Avatar
               size={72}
               src={
-                userProfile?.profilePictureUrl ||
-                "https://api.dicebear.com/8.x/avataaars/svg?seed=default"
+                profile.logoUrl ||
+                "https://api.dicebear.com/8.x/avataaars/svg?seed=company"
               }
             />
+
             <div>
               <Title level={4} style={{ marginBottom: 0 }}>
-                {userProfile?.fullName || "User Name"}
+                {profile.companyName}
               </Title>
               <Text type="secondary">
-                {userProfile?.tagline || "Professional"}
+                {profile.hiringStatus === "actively_hiring"
+                  ? "Actively Hiring"
+                  : "Not Hiring"}
               </Text>
             </div>
           </div>
 
-          <IconWrapper icon={<EditOutlined />} bgColorIcon="default" />
+          <div onClick={handleEditClick} className="cursor-pointer">
+            <IconWrapper icon={<EditOutlined />} bgColorIcon="default" />
+          </div>
         </div>
-        <Divider className=" !my-3" />
-        <Button onClick={fetchJobs}>test Button for api </Button>
-        <div className="flex justify-between items-center">
-          <Text strong>Joined</Text>
-          <Text>August 22, 2025</Text>
-        </div>
+
+        <Divider className="!my-3" />
+
+        {/* Location */}
         <div className="flex justify-between items-center">
           <Text strong>Location</Text>
           <Text>
-            {userProfile?.city && userProfile?.country
-              ? `${userProfile.city}, ${userProfile.country}`
+            {profile.city && profile.country
+              ? `${profile.city}, ${profile.country}`
               : "Not specified"}
           </Text>
         </div>
-        <div className="flex justify-between items-center ">
-          <Text strong className="!w-[35%]">
-            Skills
-          </Text>
-          <Space wrap className="!flex justify-end ">
-            {userProfile?.skills && userProfile.skills.length > 0 ? (
-              userProfile.skills.map((skill, index) => (
-                <Tag key={index} className="rounded-full">
-                  {skill}
-                </Tag>
-              ))
-            ) : (
-              <Text type="secondary">No skills added</Text>
-            )}
-          </Space>
-        </div>
 
-        <Divider className=" !my-3" />
-
-        <Text strong>Bio</Text>
-        <Paragraph>{userProfile?.bio || "No bio available"}</Paragraph>
-
-        <Divider className=" !my-3" />
-
-        <div className="flex flex-col gap-4">
+        {/* Founded Year */}
+        {profile.foundedYear && (
           <div className="flex justify-between items-center">
-            <Text strong>Links</Text>
-            <IconWrapper icon={<PlusOutlined />} bgColorIcon="default" />
+            <Text strong>Founded</Text>
+            <Text>{profile.foundedYear}</Text>
           </div>
+        )}
 
-          {userProfile?.githubUrl && (
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2 items-center">
-                <GithubFilled className="text-3xl" />
-                <a
-                  href={userProfile.githubUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-blue-500"
-                >
-                  <Text strong>GitHub</Text>
-                </a>
-              </div>
-              <Text type="secondary">
-                Since {getYearFromUrl(userProfile.githubUrl)}
-              </Text>
-            </div>
-          )}
+        {/* NTN Number */}
+        {profile.ntnNumber && (
+          <div className="flex justify-between items-center">
+            <Text strong>NTN Number</Text>
+            <Text>{profile.ntnNumber}</Text>
+          </div>
+        )}
 
-          {userProfile?.linkedinUrl && (
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2 items-center">
-                <LinkedinFilled className="text-3xl text-[#0A66C2]" />
-                <a
-                  href={userProfile.linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-blue-500"
-                >
-                  <Text strong>LinkedIn</Text>
-                </a>
-              </div>
-              <Text type="secondary">
-                Since {getYearFromUrl(userProfile.linkedinUrl)}
-              </Text>
-            </div>
-          )}
-
-          {userProfile?.portfolioUrl && (
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2 items-center">
-                <GlobalOutlined className="text-3xl" />
-                <a
-                  href={userProfile.portfolioUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-blue-500"
-                >
-                  <Text strong>Portfolio</Text>
-                </a>
-              </div>
-              <Text type="secondary">Website</Text>
-            </div>
-          )}
-
-          {!userProfile?.githubUrl &&
-            !userProfile?.linkedinUrl &&
-            !userProfile?.portfolioUrl && (
-              <Text type="secondary">No links added</Text>
-            )}
+        {/* Contact Email */}
+        <div className="flex justify-between items-center">
+          <Text strong>Contact Email</Text>
+          <Text>{profile.contactEmail || "No email available"}</Text>
         </div>
+
+        <Divider className="!my-3" />
+
+        {/* About Company */}
+        <Text strong>About Company</Text>
+        <Paragraph>
+          {profile.description || "No company description added yet."}
+        </Paragraph>
+
+        <Divider className="!my-3" />
+
+        {/* Tech Stack */}
+        <Text strong>Tech Stack</Text>
+        <Space wrap>
+          {profile.techStack?.length > 0 ? (
+            profile.techStack.map((tech: string, i: number) => (
+              <Tag key={i} color="blue" className="rounded-full">
+                {tech}
+              </Tag>
+            ))
+          ) : (
+            <Text type="secondary">No tech stack added</Text>
+          )}
+        </Space>
+
+        <Divider className="!my-3" />
+
+        {/* Links */}
+        <Text strong>Links</Text>
+
+        {/* Website */}
+        {profile.website && (
+          <div className="flex items-center gap-2">
+            <GlobalOutlined className="text-2xl" />
+            <a
+              href={profile.website}
+              target="_blank"
+              className="hover:text-blue-500"
+            >
+              <Text strong>Website</Text>
+            </a>
+          </div>
+        )}
+
+        {/* LinkedIn */}
+        {profile.linkedInUrl && (
+          <div className="flex items-center gap-2">
+            <LinkedinFilled className="text-3xl text-[#0A66C2]" />
+            <a
+              href={profile.linkedInUrl}
+              target="_blank"
+              className="hover:text-blue-500"
+            >
+              <Text strong>LinkedIn</Text>
+            </a>
+          </div>
+        )}
+
+        {!profile.website && !profile.linkedInUrl && (
+          <Text type="secondary">No links added</Text>
+        )}
       </Space>
     </Card>
   );
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      <Row gutter={[24, 24]}>
+      <Row gutter={[24, 24]} className="flex justify-center items-center">
         {/* Left Sidebar */}
         <Col xs={24} md={24} lg={9}>
-          {isLargeScreen ? (
-            <Affix offsetTop={80}>{SidebarCard}</Affix>
-          ) : (
-            SidebarCard
-          )}
-        </Col>
-
-        {/* Right Main Section */}
-        <Col xs={24} md={24} lg={15}>
-          <Space direction="vertical" style={{ width: "100%" }} size="large">
-            {/* Resume Upload/Display Card */}
-            <Card className="rounded-xl">
-              <div className="flex justify-between items-center">
-                <div className="">
-                  {resumeUrl ? (
-                    <>
-                      <div>
-                        <Title level={5} style={{ margin: 0 }}>
-                          Resume Uploaded Successfully
-                        </Title>
-                      </div>
-                      <Text type="secondary">
-                        Your resume has been received and is ready for review.
-                      </Text>
-                      <div className="!mt-4 gap-2 flex items-center">
-                        <PaperClipOutlined />
-                        <a
-                          href={resumeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="!text-[#52C41A] hover:!text-[#73D13D]"
-                        >
-                          {userProfile?.fullName
-                            ? `${userProfile.fullName.replace(
-                                /\s+/g,
-                                ""
-                              )}Resume.pdf`
-                            : "Resume.pdf"}
-                        </a>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <Title level={5} style={{ margin: 0 }}>
-                          Upload Your Resume
-                        </Title>
-                      </div>
-                      <Text type="secondary">
-                        Upload your resume in PDF format to complete your
-                        profile.
-                      </Text>
-                      <div className="!mt-4">
-                        <Upload {...uploadProps}>
-                          <Button
-                            icon={<UploadOutlined />}
-                            loading={uploading}
-                            type="primary"
-                          >
-                            {uploading ? "Uploading..." : "Upload Resume"}
-                          </Button>
-                        </Upload>
-                      </div>
-                    </>
-                  )}
-                </div>
-                {resumeUrl && (
-                  <Upload {...uploadProps}>
-                    <IconWrapper
-                      icon={<EditOutlined />}
-                      bgColorIcon="default"
-                    />
-                  </Upload>
-                )}
-              </div>
-            </Card>
-
-            {/* Experience Section */}
-            <Card
-              title={<Title level={5}>Experience</Title>}
-              className="rounded-xl shadow-md"
-            >
-              <Timeline mode="left">
-                {experiences.map((item, index) => (
-                  <Timeline.Item key={index}>
-                    <div className="mb-6" color="gray">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <Text strong className="text-lg">
-                            {item.title} — {item.company}
-                          </Text>
-                          <div>
-                            <Text type="secondary">{item.date}</Text>
-                          </div>
-                        </div>
-                      </div>
-
-                      <Paragraph className="mt-2 mb-3">
-                        {item.description}
-                      </Paragraph>
-
-                      <Space wrap>
-                        {skills.slice(0, 5).map((skill, i) => (
-                          <Tag
-                            key={i}
-                            color="blue"
-                            className="rounded-full text-sm font-medium"
-                          >
-                            {skill}
-                          </Tag>
-                        ))}
-                        {skills.length > 5 && (
-                          <Tag className="rounded-full text-sm font-medium">
-                            +{skills.length - 5}
-                          </Tag>
-                        )}
-                      </Space>
-
-                      {index !== experiences.length - 1 && (
-                        <Divider className="!my-4 border-gray-200" />
-                      )}
-                    </div>
-                  </Timeline.Item>
-                ))}
-              </Timeline>
-
-              <div className="text-center mt-4">
-                <Button type="default">Load More</Button>
-              </div>
-            </Card>
-
-            {/* Certifications */}
-            <Card
-              title={<Title level={5}>Certifications</Title>}
-              style={{
-                borderRadius: 12,
-                boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-              }}
-            >
-              <Paragraph>
-                <Text strong>Product Engineer</Text> — Google Labs (Mar 2023 –
-                Aug 2023)
-              </Paragraph>
-              <Paragraph>
-                Designed and developed a fully responsive web application using
-                React.js and Node.js/Express.js for backend.
-              </Paragraph>
-            </Card>
-          </Space>
+          <Affix offsetTop={80}>{SidebarCard}</Affix>
         </Col>
       </Row>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        title="Edit Company Profile"
+        open={isEditModalOpen}
+        onCancel={() => setIsEditModalOpen(false)}
+        footer={null}
+        width={600}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleEditSave}
+          className="mt-4"
+        >
+          <Form.Item
+            label="Company Name"
+            name="companyName"
+            rules={[{ required: true, message: "Please enter company name" }]}
+          >
+            <Input placeholder="Enter company name" />
+          </Form.Item>
+
+          <Form.Item
+            label="Hiring Status"
+            name="hiringStatus"
+            rules={[{ required: true, message: "Please select hiring status" }]}
+          >
+            <Select placeholder="Select hiring status">
+              <Select.Option value="actively_hiring">
+                Actively Hiring
+              </Select.Option>
+              <Select.Option value="not_hiring">Not Hiring</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="City"
+                name="city"
+                rules={[{ required: true, message: "Please enter city" }]}
+              >
+                <Input placeholder="City" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Country"
+                name="country"
+                rules={[{ required: true, message: "Please enter country" }]}
+              >
+                <Input placeholder="Country" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Founded Year" name="foundedYear">
+                <Input placeholder="e.g., 2020" type="number" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="NTN Number" name="ntnNumber">
+                <Input placeholder="Enter NTN number" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item
+            label="Contact Email"
+            name="contactEmail"
+            rules={[
+              { required: true, message: "Please enter contact email" },
+              { type: "email", message: "Please enter valid email" },
+            ]}
+          >
+            <Input placeholder="contact@company.com" />
+          </Form.Item>
+
+          <Form.Item
+            label="Company Description"
+            name="description"
+            rules={[
+              { required: true, message: "Please enter company description" },
+            ]}
+          >
+            <TextArea
+              rows={4}
+              placeholder="Tell us about your company..."
+              maxLength={500}
+              showCount
+            />
+          </Form.Item>
+
+          <Form.Item
+            label={
+              <span>
+                Tech Stack{" "}
+                <span style={{ color: "rgba(0,0,0,.45)" }}>(up to 10)</span>
+              </span>
+            }
+            name="techStack"
+          >
+            <Select
+              mode="tags"
+              style={{ width: "100%" }}
+              placeholder="Add or select technologies"
+              options={techStackOptions}
+              maxTagCount={10}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Website URL"
+            name="website"
+            rules={[{ type: "url", message: "Please enter a valid URL" }]}
+          >
+            <Input
+              placeholder="https://yourcompany.com"
+              prefix={<GlobalOutlined />}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="LinkedIn URL"
+            name="linkedInUrl"
+            rules={[{ type: "url", message: "Please enter a valid URL" }]}
+          >
+            <Input
+              placeholder="https://linkedin.com/company/yourcompany"
+              prefix={<LinkedinFilled />}
+            />
+          </Form.Item>
+
+          <Form.Item className="mb-0">
+            <Space className="w-full justify-end">
+              <Button onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+              <Button type="primary" htmlType="submit" loading={saveLoading}>
+                Save Changes
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

@@ -19,7 +19,6 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import InterviewCard from "./InterviewCard";
 import {
   getAllInterviewsApi,
   getAllTodaysInterviewsApi,
@@ -41,11 +40,12 @@ export interface Interview {
   };
   type: string;
   scheduledDate: string;
-  status: string;
+  status: "scheduled" | "under review" | "rejected";
   aiResult: {
     strengths: string[];
     improvements: string[];
   };
+
   createdAt: string;
   updatedAt: string;
   __v: number;
@@ -68,6 +68,38 @@ interface InterviewTableRecord {
   interviewStatus: string;
 }
 
+const InterviewCard = ({ title, company, type, deadline, logo, onJoin }) => {
+  return (
+    <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-start gap-3 mb-3">
+        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+          <span className="text-xl font-bold text-gray-400">
+            {company?.charAt(0) || "C"}
+          </span>
+        </div>
+        <div className="flex-1">
+          <h3 className="font-semibold text-gray-900">{title}</h3>
+          <p className="text-sm text-gray-500">{company}</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-gray-500">
+          <Badge color="blue" text={type} />
+          <div className="mt-1">{deadline}</div>
+        </div>
+        <Button
+          type="primary"
+          size="small"
+          onClick={onJoin}
+          className="bg-blue-500 hover:bg-blue-600"
+        >
+          Join
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export default function InterviewsPage() {
   const [activeTab, setActiveTab] = useState("schedule");
   const [searchText, setSearchText] = useState("");
@@ -76,9 +108,7 @@ export default function InterviewsPage() {
   const [loading, setLoading] = useState(true);
   const [allInterviewsMeta, setAllInterviewsMeta] =
     useState<PaginationMeta | null>(null);
-  {
-    console.log(allInterviewsMeta);
-  }
+
   // Format date helper
   const formatDate = (dateString: string) => {
     try {
@@ -98,9 +128,14 @@ export default function InterviewsPage() {
     const fetchAllInterviews = async () => {
       try {
         setLoading(true);
+        // Replace with your actual API call
         const res = await getAllInterviewsApi({ page: 1, limit: 50 });
         setAllInterviews(res.data.interviews || []);
         setAllInterviewsMeta(res.meta || null);
+
+        // Mock data
+        // setAllInterviews([]);
+        // setAllInterviewsMeta(null);
       } catch (err) {
         console.error("Error fetching all interviews:", err);
         setAllInterviews([]);
@@ -113,8 +148,12 @@ export default function InterviewsPage() {
     const fetchTodaysInterviews = async () => {
       try {
         setLoading(true);
+        // Replace with your actual API call
         const res = await getAllTodaysInterviewsApi();
         setTodaysInterviews(res.data.interviews || []);
+
+        // Mock data
+        // setTodaysInterviews([]);
       } catch (err) {
         console.error("Error fetching today's interviews:", err);
         setTodaysInterviews([]);
@@ -126,6 +165,11 @@ export default function InterviewsPage() {
     fetchAllInterviews();
     fetchTodaysInterviews();
   }, []);
+
+  // Filter only scheduled interviews
+  const scheduledInterviews = allInterviews.filter(
+    (interview) => interview.status === "scheduled"
+  );
 
   // Map API data to table format
   const mapInterviewsToTable = (
@@ -141,9 +185,9 @@ export default function InterviewsPage() {
       interviewStatus: i.status,
     }));
 
-  const filteredAllInterviews = mapInterviewsToTable(allInterviews).filter(
-    (i) => i.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filteredAllInterviews = mapInterviewsToTable(
+    scheduledInterviews
+  ).filter((i) => i.name.toLowerCase().includes(searchText.toLowerCase()));
 
   // Columns for Table
   const columns: ColumnsType<InterviewTableRecord> = [
@@ -214,7 +258,7 @@ export default function InterviewsPage() {
   return (
     <div className="w-full bg-gray-50 min-h-screen p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      {/* <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Interviews</h1>
           <p className="text-sm text-gray-600 mt-1">
@@ -237,13 +281,20 @@ export default function InterviewsPage() {
             Schedule Interview
           </Button>
         </Space>
-      </div>
+      </div> */}
 
       {/* Interviews Today Section */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Interviews Today
+        <h2 className="text-xl font-semibold   text-gray-900 ">
+          Interviews Today -
         </h2>
+        <p className="text-sm text-gray-600 ">
+          {new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </p>
 
         {loading ? (
           <div className="flex justify-center items-center py-12">
@@ -283,7 +334,7 @@ export default function InterviewsPage() {
       {/* Interviews Analytics Section */}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Interviews Analytics
+          All Interviews Analytics
         </h2>
 
         {/* Search */}
@@ -302,10 +353,7 @@ export default function InterviewsPage() {
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
-          items={[
-            { label: "Schedule", key: "schedule" },
-            { label: "History", key: "history" },
-          ]}
+          items={[{ label: "Schedule", key: "schedule" }]}
           className="mb-6"
         />
 

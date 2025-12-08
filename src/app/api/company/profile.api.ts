@@ -18,3 +18,9 @@ export const getCompanyProfileApi = async () => {
     showToaster: true,
   });
 };
+export const updateCompanyProfileApi = async (body) => {
+  return safeApiCall({
+    apiCall: () => api.patch(`/company/update-profile`, body),
+    showToaster: true,
+  });
+};

@@ -1,6 +1,46 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+export interface CompanyProfile {
+  _id: string;
+
+  userId: {
+    _id: string;
+    email: string;
+    role: "company";
+  };
+
+  companyName: string;
+  logoUrl: string;
+
+  website?: string;
+  city?: string;
+  country?: string;
+
+  foundedYear?: number;
+  description?: string;
+
+  contactEmail?: string;
+  linkedInUrl?: string;
+
+  techStack: string[];
+
+  isVerified: boolean;
+  hiringStatus: "actively_hiring" | "not_hiring" | "paused";
+
+  ntnNumber?: string;
+
+  isDeleted: boolean | string;
+  isProfileCompleted: boolean;
+
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface UserProfile {
+  userId: {
+    _id: string;
+    email: string;
+    role: "candidate" | "comapny";
+  };
   fullName: string;
   dateOfBirth: string;
   gender: string;
@@ -21,7 +61,7 @@ interface UserState {
   loading: boolean;
 }
 
-const initialState: UserState = {
+const initialState: UserState | CompanyProfile = {
   profile: null,
   loading: false,
 };
@@ -30,8 +70,11 @@ const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    setUserProfile(state, action: PayloadAction<UserProfile>) {
-      state.profile = action.payload;
+    setProfile(state, action: PayloadAction<UserProfile>) {
+      state.profile = {
+        ...state.profile, // keep previous values
+        ...action.payload, // update only changed fields
+      };
     },
     clearUserProfile(state) {
       state.profile = null;
@@ -42,6 +85,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { setUserProfile, clearUserProfile, setLoading } =
-  userSlice.actions;
+export const { setProfile, clearUserProfile, setLoading } = userSlice.actions;
 export default userSlice.reducer;

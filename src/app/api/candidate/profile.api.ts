@@ -21,6 +21,13 @@ export const completeProfileApi = async (body) => {
     showToaster: true,
   });
 };
+// /candidate/update-profile
+export const updateProfileApi = async (body) => {
+  return safeApiCall({
+    apiCall: () => api.patch("/candidate/update-profile", body),
+    showToaster: true,
+  });
+};
 export const uploadResumeApi = async (formData: FormData) => {
   console.log("Uploading resume:", formData.get("file"));
   return safeApiCall({

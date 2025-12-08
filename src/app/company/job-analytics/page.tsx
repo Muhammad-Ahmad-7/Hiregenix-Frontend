@@ -12,19 +12,29 @@ import {
   Card,
   Spin,
   message,
+  Modal,
+  Form,
+  Row,
+  Col,
+  Select,
+  DatePicker,
 } from "antd";
+
 import {
   PlusOutlined,
   SearchOutlined,
   DownOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
+
 import { useDispatch, useSelector } from "react-redux";
 import {
   deleteJobApi,
   getCompanyClosedJobsApi,
   getCompanyOpenJobsApi,
+  updateJobApi,
 } from "@/app/api/company/jobs.api";
+
 import {
   appendClosedJobs,
   appendOpenJobs,
@@ -32,14 +42,16 @@ import {
   setCompanyOpenJobs,
   setLoading,
 } from "@/redux/slices/company/companyJobSlice";
+
 import { RootState } from "@/redux/store";
 import { Job_Interface } from "@/constants/Interfaces/Types/Jobs.interface";
+import dayjs from "dayjs";
 
 const { Title } = Typography;
+const { TextArea } = Input;
 
 const MyJobsTable = () => {
   const dispatch = useDispatch();
-
   const { openJobs, closedJobs, openMeta, closedMeta, loading } = useSelector(
     (state: RootState) => state.companyJob
   );
@@ -47,15 +59,20 @@ const MyJobsTable = () => {
   const [activeTab, setActiveTab] = useState<"open" | "closed">("open");
   const [search, setSearch] = useState("");
 
+  // Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<Job_Interface | null>(null);
+  const [form] = Form.useForm();
+
   // -----------------------
-  // Fetch Jobs API
+  // Fetch Jobs
   // -----------------------
   const fetchOpenJobs = async (page = 1) => {
     try {
       dispatch(setLoading(true));
       const res = await getCompanyOpenJobsApi(page);
 
-      const jobs: Job_Interface[] = res?.data?.findActiveJobs || [];
+      const jobs = res?.data?.findActiveJobs || [];
       const meta = res.meta;
 
       if (page === 1) {
@@ -63,8 +80,7 @@ const MyJobsTable = () => {
       } else {
         dispatch(appendOpenJobs({ jobs, meta }));
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       message.error("Failed to fetch open jobs");
     } finally {
       dispatch(setLoading(false));
@@ -76,7 +92,7 @@ const MyJobsTable = () => {
       dispatch(setLoading(true));
       const res = await getCompanyClosedJobsApi(page);
 
-      const jobs: Job_Interface[] = res?.data?.findClosedJobs || [];
+      const jobs = res?.data?.findClosedJobs || [];
       const meta = res.meta;
 
       if (page === 1) {
@@ -84,31 +100,90 @@ const MyJobsTable = () => {
       } else {
         dispatch(appendClosedJobs({ jobs, meta }));
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       message.error("Failed to fetch closed jobs");
     } finally {
       dispatch(setLoading(false));
     }
   };
 
-  // -----------------------
-  // Initial fetch
-  // -----------------------
   useEffect(() => {
     if (openJobs === null || closedJobs === null) {
-      if (activeTab === "open") {
-        console.log("i am runng opened");
-        fetchOpenJobs();
-      } else {
-        console.log("i am runng closed");
-        fetchClosedJobs();
-      }
+      if (activeTab === "open") fetchOpenJobs();
+      else fetchClosedJobs();
     }
   }, [activeTab]);
 
   // -----------------------
-  // Filtered Jobs for Table
+  // Open Edit Modal
+  // -----------------------
+  const openEditModal = (job: Job_Interface) => {
+    setEditingJob(job);
+
+    form.setFieldsValue({
+      title: job.title,
+      role: job.role,
+      description: job.description,
+      experienceLevel: job.experienceLevel,
+      workMode: job.workMode,
+      requiredSkills: job.requiredSkills,
+      requirements: job.requirements,
+      city: job.location.city,
+      country: job.location.country,
+      salaryMin: job.salaryRange?.min,
+      salaryMax: job.salaryRange?.max,
+      currency: job.salaryRange?.currency,
+      deadline: dayjs(job.deadline),
+    });
+
+    setIsEditModalOpen(true);
+  };
+
+  // -----------------------
+  // Save Job
+  // -----------------------
+  const handleSaveJob = async (values: any) => {
+    if (!editingJob) return;
+
+    const payload = {
+      title: values.title,
+      role: values.role,
+      description: values.description,
+      experienceLevel: values.experienceLevel,
+      workMode: values.workMode,
+      requiredSkills: values.requiredSkills,
+      requirements: values.requirements,
+      location: {
+        city: values.city,
+        country: values.country,
+      },
+      salaryRange: {
+        min: values.salaryMin,
+        max: values.salaryMax,
+        currency: values.currency,
+      },
+      deadline: values.deadline.toISOString(),
+    };
+
+    try {
+      await updateJobApi({
+        jobId: editingJob._id,
+        body: payload,
+      });
+
+      message.success("Job updated successfully!");
+
+      if (activeTab === "open") fetchOpenJobs();
+      else fetchClosedJobs();
+
+      setIsEditModalOpen(false);
+    } catch (err) {
+      message.error("Failed to update job");
+    }
+  };
+
+  // -----------------------
+  // Filtered Jobs
   // -----------------------
   const filteredJobs =
     (activeTab === "open" ? openJobs : closedJobs)?.filter((job) =>
@@ -119,216 +194,289 @@ const MyJobsTable = () => {
   // Table Columns
   // -----------------------
   const columns = [
-    {
-      title: "Title",
-      dataIndex: "title",
-      key: "title",
-      render: (text: string) => (
-        <span className="font-medium text-gray-800">{text}</span>
-      ),
-    },
-    {
-      title: "Role",
-      dataIndex: "role",
-      key: "role",
-    },
+    { title: "Title", dataIndex: "title" },
+    { title: "Role", dataIndex: "role" },
+
     {
       title: "Location",
-      key: "location",
-      render: (_: unknown, record: Job_Interface) => (
-        <span>
-          {record.location?.city}, {record.location?.country}
-        </span>
-      ),
+      render: (_: any, record: Job_Interface) =>
+        `${record.location.city}, ${record.location.country}`,
     },
-    {
-      title: "Work Mode",
-      dataIndex: "workMode",
-      key: "workMode",
-      render: (text: string) => (
-        <span className="capitalize">{text || "N/A"}</span>
-      ),
-    },
-    {
-      title: "Experience",
-      dataIndex: "experienceLevel",
-      key: "experienceLevel",
-      render: (text: string) => <span className="capitalize">{text}</span>,
-    },
+
+    { title: "Work Mode", dataIndex: "workMode" },
+    { title: "Experience", dataIndex: "experienceLevel" },
+
     {
       title: "Salary",
-      key: "salaryRange",
-      render: (_: unknown, record: Job_Interface) => {
-        const salary = record.salaryRange;
-        if (!salary) return "—";
-        return `${salary.min} - ${salary.max} ${salary.currency}`;
+      render: (_: any, record: Job_Interface) => {
+        if (!record.salaryRange) return "—";
+        const s = record.salaryRange;
+        return `${s.min} - ${s.max} ${s.currency}`;
       },
     },
+
     {
       title: "Deadline",
       dataIndex: "deadline",
-      key: "deadline",
-      render: (date: string) =>
-        new Date(date).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }),
+      render: (date: string) => dayjs(date).format("DD MMM YYYY"),
     },
+
     {
       title: "",
       key: "actions",
       align: "center" as const,
-      render: (_: unknown, record: Job_Interface) => (
+      render: (_: any, record: Job_Interface) => (
         <Dropdown
+          trigger={["click"]}
           menu={{
             items: [
+              { key: "1", label: "View Details" },
+
               {
-                key: "view",
-                label: "View Details",
-                onClick: () => {
-                  message.info(`Viewing details for ${record.title}`);
-                  console.log(record._id);
-                },
-              },
-              {
-                key: "edit",
+                key: "2",
                 label: "Edit Job",
-                onClick: () => {
-                  message.info(`Editing ${record.title}`);
-                  // Add edit logic here
-                },
+                onClick: () => openEditModal(record),
               },
+
               {
-                key: "delete",
+                key: "3",
                 label: "Delete Job",
                 danger: true,
-                onClick: () => {
+                onClick: () =>
                   deleteJobApi(record._id)
-                    .then((res) => {
-                      console.log("Delete response:", res);
-                      message.success(`${record.title} deleted successfully`);
-                      // Refresh the jobs list
-                      if (activeTab === "open") {
-                        fetchOpenJobs();
-                      } else {
-                        fetchClosedJobs();
-                      }
+                    .then(() => {
+                      message.success("Job deleted");
+                      activeTab === "open"
+                        ? fetchOpenJobs()
+                        : fetchClosedJobs();
                     })
-                    .catch((err) => {
-                      message.error("Failed to delete job");
-                      console.error(err);
-                    });
-                },
+                    .catch(() => message.error("Delete failed")),
               },
             ],
           }}
-          trigger={["click"]}
         >
-          <Button
-            type="text"
-            icon={<MoreOutlined />}
-            className="hover:bg-gray-100 rounded-full"
-          />
+          <Button type="text" icon={<MoreOutlined />} />
         </Dropdown>
       ),
     },
   ];
 
   // -----------------------
-  // Dropdown Filter (future)
-  // -----------------------
-  const filterMenu = {
-    items: [
-      { key: "1", label: "All" },
-      { key: "2", label: "Internship" },
-      { key: "3", label: "Full-time" },
-      { key: "4", label: "Part-time" },
-    ],
-  };
-
-  // -----------------------
-  // Load More Button
+  // Load More
   // -----------------------
   const loadMoreJobs = () => {
     if (activeTab === "open" && openMeta) {
-      const nextPage = openMeta.page + 1;
-      if (nextPage <= openMeta.totalPages) fetchOpenJobs(nextPage);
+      const next = openMeta.page + 1;
+      if (next <= openMeta.totalPages) fetchOpenJobs(next);
     } else if (activeTab === "closed" && closedMeta) {
-      const nextPage = closedMeta.page + 1;
-      if (nextPage <= closedMeta.totalPages) fetchClosedJobs(nextPage);
+      const next = closedMeta.page + 1;
+      if (next <= closedMeta.totalPages) fetchClosedJobs(next);
     }
   };
 
+  // -----------------------
+  // Edit Modal Component
+  // -----------------------
+  const editModal = (
+    <Modal
+      title="Edit Job"
+      open={isEditModalOpen}
+      onCancel={() => setIsEditModalOpen(false)}
+      footer={null}
+      width={700}
+    >
+      <Form form={form} layout="vertical" onFinish={handleSaveJob}>
+        <Form.Item name="title" label="Job Title" rules={[{ required: true }]}>
+          <Input placeholder="Enter job title" />
+        </Form.Item>
+
+        <Form.Item name="role" label="Role" rules={[{ required: true }]}>
+          <Input placeholder="Enter job role" />
+        </Form.Item>
+
+        <Form.Item
+          name="description"
+          label="Description"
+          rules={[{ required: true }]}
+        >
+          <TextArea rows={4} placeholder="Job description" />
+        </Form.Item>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="experienceLevel"
+              label="Experience Level"
+              rules={[{ required: true }]}
+            >
+              <Select
+                options={[
+                  { label: "Junior", value: "junior" },
+                  { label: "Mid", value: "mid" },
+                  { label: "Senior", value: "senior" },
+                ]}
+              />
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item
+              name="workMode"
+              label="Work Mode"
+              rules={[{ required: true }]}
+            >
+              <Select
+                options={[
+                  { label: "Remote", value: "remote" },
+                  { label: "Hybrid", value: "hybrid" },
+                  { label: "Onsite", value: "onsite" },
+                ]}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Form.Item name="requiredSkills" label="Required Skills">
+          <Select mode="tags" placeholder="Add skills" />
+        </Form.Item>
+
+        <Form.Item name="requirements" label="Requirements">
+          <Select mode="tags" placeholder="Add requirements" />
+        </Form.Item>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item name="city" label="City" rules={[{ required: true }]}>
+              <Input placeholder="City" />
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item
+              name="country"
+              label="Country"
+              rules={[{ required: true }]}
+            >
+              <Input placeholder="Country" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={8}>
+            <Form.Item
+              name="salaryMin"
+              label="Min Salary"
+              rules={[{ required: true }]}
+            >
+              <Input type="number" placeholder="Min" />
+            </Form.Item>
+          </Col>
+
+          <Col span={8}>
+            <Form.Item
+              name="salaryMax"
+              label="Max Salary"
+              rules={[{ required: true }]}
+            >
+              <Input type="number" placeholder="Max" />
+            </Form.Item>
+          </Col>
+
+          <Col span={8}>
+            <Form.Item
+              name="currency"
+              label="Currency"
+              rules={[{ required: true }]}
+            >
+              <Input placeholder="PKR / USD" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Form.Item
+          name="deadline"
+          label="Deadline"
+          rules={[{ required: true }]}
+        >
+          <DatePicker style={{ width: "100%" }} />
+        </Form.Item>
+
+        <div style={{ textAlign: "right" }}>
+          <Button
+            onClick={() => setIsEditModalOpen(false)}
+            style={{ marginRight: 8 }}
+          >
+            Cancel
+          </Button>
+
+          <Button type="primary" htmlType="submit">
+            Save Changes
+          </Button>
+        </div>
+      </Form>
+    </Modal>
+  );
+
   return (
-    <Card className="rounded-2xl shadow-sm p-6">
-      {/* Tabs */}
-      <Tabs
-        activeKey={activeTab}
-        onChange={(key) => setActiveTab(key as "open" | "closed")}
-        tabBarGutter={40}
-        items={[
-          { key: "open", label: "Open Jobs" },
-          { key: "closed", label: "Closed Jobs" },
-        ]}
-        className="mb-4 font-semibold"
-      />
+    <>
+      {editModal}
 
-      {/* Header Controls */}
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
-        <Title level={5} className="!m-0 text-blue-600 font-semibold">
-          Results: {filteredJobs.length} jobs found
-        </Title>
+      <Card className="rounded-2xl shadow-sm p-6">
+        {/* Tabs */}
+        <Tabs
+          activeKey={activeTab}
+          onChange={(key) => setActiveTab(key as "open" | "closed")}
+          items={[
+            { key: "open", label: "Open Jobs" },
+            { key: "closed", label: "Closed Jobs" },
+          ]}
+        />
 
-        <Space>
-          <Dropdown menu={filterMenu} trigger={["click"]}>
-            <Button>
-              Filter <DownOutlined />
-            </Button>
-          </Dropdown>
-
+        {/* Search + Add */}
+        <div className="flex justify-between mb-4">
           <Input
             placeholder="Search jobs..."
             prefix={<SearchOutlined />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: 220 }}
+            style={{ width: 260 }}
           />
 
           <Button type="primary" icon={<PlusOutlined />}>
             Add New
           </Button>
-        </Space>
-      </div>
-
-      {/* Table */}
-      {loading ? (
-        <div className="flex justify-center items-center py-10">
-          <Spin size="large" />
         </div>
-      ) : (
-        <>
-          <Table
-            columns={columns}
-            dataSource={filteredJobs.map((job) => ({ ...job, key: job._id }))}
-            pagination={false} // Using Load More
-            bordered
-            className="rounded-lg overflow-hidden"
-          />
-          {/* Load More */}
-          {(activeTab === "open" ? openMeta : closedMeta)?.page <
-            (activeTab === "open"
-              ? openMeta?.totalPages
-              : closedMeta?.totalPages) && (
-            <div className="flex justify-center mt-4">
-              <Button onClick={loadMoreJobs} type="dashed">
-                Load More
-              </Button>
-            </div>
-          )}
-        </>
-      )}
-    </Card>
+
+        {/* Table */}
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <Spin size="large" />
+          </div>
+        ) : (
+          <>
+            <Table
+              columns={columns}
+              dataSource={filteredJobs.map((job) => ({ ...job, key: job._id }))}
+              pagination={false}
+              bordered
+              className="rounded-lg"
+            />
+
+            {(activeTab === "open" ? openMeta : closedMeta)?.page <
+              (activeTab === "open"
+                ? openMeta?.totalPages
+                : closedMeta?.totalPages) && (
+              <div className="flex justify-center mt-4">
+                <Button onClick={loadMoreJobs} type="dashed">
+                  Load More
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+    </>
   );
 };
 

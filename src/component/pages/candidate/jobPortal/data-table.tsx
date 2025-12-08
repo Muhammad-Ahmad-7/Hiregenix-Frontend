@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Table, Button, Badge, Tabs, Space, Input, Tooltip } from "antd";
 import {
   DeleteOutlined,
@@ -9,6 +9,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
+import { getAllInterviewsApi } from "@/app/api/candidate/interview.api";
 
 interface DataRecord {
   key: string;
@@ -304,13 +305,17 @@ const columns: ColumnsType<DataRecord> = [
 ];
 
 export default function DataTable() {
+  useEffect(() => {
+    getAllInterviewsApi({ page: 1, limit: 50 });
+  });
   const [activeTab, setActiveTab] = useState("all");
   const [searchText, setSearchText] = useState("");
 
   const tabItems = [
     { label: "All", key: "all" },
-    { label: "Applied", key: "applied" },
-    { label: "Under review", key: "under-review" },
+
+    { label: "scheduled", key: "scheduled" },
+    { label: "Under review", key: "under review" },
     { label: "Rejected", key: "rejected" },
     { label: "Saved", key: "saved" },
   ];

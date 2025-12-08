@@ -57,7 +57,7 @@ export default function ProfileDashboard() {
   const screens = useBreakpoint();
   // const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   // const [uploading, setUploading] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfile, setProfile] = useState<UserProfile | null>(null);
 
   // Check if screen is large (lg breakpoint and above)
   const isLargeScreen = screens.lg;
@@ -66,7 +66,7 @@ export default function ProfileDashboard() {
     console.log(profile);
     // Set user profile from Redux state
     if (profile) {
-      setUserProfile(profile as UserProfile);
+      setProfile(profile as UserProfile);
     }
     // Check if profile already has a resume URL
     if (profile?.resumeUrl) {
