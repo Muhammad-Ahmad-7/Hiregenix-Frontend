@@ -25,8 +25,9 @@ export const deleteJobApi = async (jobId: string) => {
   });
 };
 export const updateJobApi = async ({ jobId, body }) => {
+  console.log("first");
   return safeApiCall({
-    apiCall: () => api.patch(`/job//job/update-job-by-id/${jobId}`, body),
+    apiCall: () => api.patch(`/job/update-job-by-id/${jobId}`, body),
     showToaster: true,
   });
 };
