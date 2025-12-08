@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Card,
   Table,
@@ -11,22 +11,35 @@ import {
   Row,
   Col,
   Calendar,
+  Spin,
 } from "antd";
 import {
   CalendarOutlined,
   MoreOutlined,
-  RiseOutlined,
   ContainerFilled,
   StarFilled,
   MessageFilled,
-  ArrowUpOutlined,
 } from "@ant-design/icons";
 import UiButton from "@/component/common/CustomButton";
 import { ROUTES } from "@/constants/routes";
 import StatsCard from "@/component/pages/dashboard/StatsCard";
 import { JobPortalMapCard } from "@/component/pages/candidate/dashboard/JobPortalMapCard";
+import { getCandidateStatsApi } from "@/app/api/candidate/dashboard.api";
+import { ArrowUpOutlined } from "@ant-design/icons";
 
 export default function Dashboard() {
+  const [candidateStats, setCandidateStats] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState<boolean>(true);
+
+  useEffect(() => {
+    getCandidateStatsApi()
+      .then((res) => {
+        setCandidateStats(res.data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
   const jobData = [
     {
       key: 2,
@@ -64,6 +77,18 @@ export default function Dashboard() {
       matches: 43,
     },
   ];
+
+  // 🔥 Final merged table data
+  const activeJobsToShow =
+    candidateStats?.recentAppliedJobs?.length > 0
+      ? candidateStats.recentAppliedJobs.map((job: any, idx: number) => ({
+          key: job._id || idx,
+          title: job.jobId.title,
+          applications: 0, // Only mapped because API doesn't provide counts
+          views: 0,
+          matches: 0,
+        }))
+      : jobData;
 
   const jobColumns = [
     {
@@ -127,6 +152,13 @@ export default function Dashboard() {
     { label: "3rd menu item", key: "3" },
   ];
 
+  if (loading)
+    return (
+      <div className="w-full h-[70vh] flex justify-center items-center">
+        <Spin size="large" />
+      </div>
+    );
+
   return (
     <div className="flex flex-col lg:flex-row gap-2">
       {/* Left Section */}
@@ -137,34 +169,35 @@ export default function Dashboard() {
               <StatsCard
                 icon={<ContainerFilled style={{ color: "white" }} />}
                 title="Applied Jobs"
-                number={142}
+                number={candidateStats?.userAppliedJobsCount || 0}
                 badgeText="45%+ in last 30 days"
                 badgeColor="green"
               />
               <StatsCard
                 icon={<ContainerFilled style={{ color: "white" }} />}
                 title="Resume Score"
-                number={142}
+                number={candidateStats?.resumeScore || 0}
                 badgeText="45%+ in last 30 days"
                 badgeColor="green"
               />
               <StatsCard
-                title="matchedJobs"
+                title="Matched Jobs"
                 icon={<StarFilled className="!text-white" />}
-                number={142}
+                number={candidateStats?.matchedJobsCounts || 0}
                 badgeText="45%+ in last 30 days"
                 badgeColor="orange"
               />
               <StatsCard
                 icon={<StarFilled className="!text-white" />}
                 title="Active Jobs"
-                number={142}
+                number={candidateStats?.userActiveJobsCount || 0}
                 badgeText="45%+ in last 30 days"
                 badgeColor="orange"
               />
             </Row>
           </Col>
 
+          {/* Messages Section */}
           <Col xs={24} lg={10}>
             <div className="h-64 bg-white hover-gray-50 relative rounded-lg">
               <div className="flex gap-2 font-bold text-md px-4 items-center py-2">
@@ -224,6 +257,7 @@ export default function Dashboard() {
                   </List.Item>
                 )}
               />
+
               <div className="absolute bottom-0 right-1.5 flex justify-center w-[96%] py-3 bg-gradient-to-t from-gray-50 to-transparent rounded-b-lg">
                 <UiButton className="!rounded-2xl" href={ROUTES.DASHBOARD}>
                   Load More
@@ -233,7 +267,7 @@ export default function Dashboard() {
           </Col>
         </Row>
 
-        {/* Second Row */}
+        {/* Active Jobs + Map */}
         <Row gutter={[16, 16]} className="mt-2">
           <Col xs={24} lg={14}>
             <Card
@@ -248,7 +282,7 @@ export default function Dashboard() {
               }
             >
               <Table
-                dataSource={jobData}
+                dataSource={activeJobsToShow}
                 columns={jobColumns}
                 pagination={false}
                 size="small"
@@ -280,12 +314,13 @@ export default function Dashboard() {
         </Row>
       </div>
 
-      {/* Right Section */}
+      {/* Right Side - Calendar + Interviews */}
       <div className="w-full lg:w-[28%] bg-white">
         <Row gutter={[16, 16]}>
           <Col span={24}>
             <Calendar fullscreen={false} className="min-h-[200px] w-full" />
           </Col>
+
           <Col span={24}>
             <Card
               title="Interviews schedule"
@@ -298,21 +333,38 @@ export default function Dashboard() {
               className="h-full"
             >
               <p className="mb-3 font-medium text-sm text-gray-500">Today</p>
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <div>
-                    <p className="font-semibold text-sm">Front-end developer</p>
-                    <p className="text-gray-500 text-xs">Devsine</p>
-                  </div>
-                </div>
-                <Button
-                  type="primary"
-                  size="small"
-                  className="bg-orange-500 border-orange-500 hover:bg-orange-600"
-                >
-                  Join now
-                </Button>
+              <div
+                style={{ maxHeight: "180px", overflowY: "auto" }}
+                className="scrollbar-hide"
+              >
+                {(candidateStats?.getTodaysInterview || []).map(
+                  (interview: any) => (
+                    <div
+                      key={interview._id}
+                      className="flex items-center mb-2 justify-between p-3 bg-green-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <div>
+                          <p className="font-semibold text-sm">
+                            {interview.jobId.title}
+                          </p>
+                          <p className="text-gray-500 text-xs">
+                            {interview.companyId.companyName}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="primary"
+                        size="small"
+                        className="bg-orange-500 border-orange-500 hover:bg-orange-600"
+                      >
+                        Join now
+                      </Button>
+                    </div>
+                  )
+                )}
               </div>
             </Card>
           </Col>

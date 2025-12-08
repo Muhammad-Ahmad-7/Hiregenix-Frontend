@@ -179,7 +179,8 @@ const MyJobsTable = () => {
           className="p-0"
           onClick={() => {
             message.info(`Viewing details for ${record.title}`);
-            deleteJobApi({ jobId: record._id }).then((res) => {
+            console.log(record._id);
+            deleteJobApi(record._id).then((res) => {
               console.log("Delete response:", res);
             });
           }}

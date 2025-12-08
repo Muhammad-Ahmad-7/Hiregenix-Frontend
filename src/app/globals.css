@@ -7,6 +7,15 @@
   --background: #ffffff;
   --foreground: #171717;
 }
+/* Hide scrollbar (Chrome, Safari, Edge) */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar (Firefox) */
+.scrollbar-hide {
+  scrollbar-width: none;
+}
 
 /* @media (prefers-color-scheme: dark) {
   :root {

@@ -58,7 +58,10 @@ export const safeApiCall = async <T>({
   returnDataOnly = false,
 }: SafeApiCallProps<T>): Promise<T | ApiResponse<T> | null> => {
   try {
+    console.log("first");
     const response = await apiCall();
+
+    console.log("first2");
     console.log(
       "✅ API Called:",
       response.config?.url,

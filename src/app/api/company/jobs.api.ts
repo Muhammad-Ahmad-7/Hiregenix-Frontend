@@ -15,10 +15,12 @@ export const getCompanyClosedJobsApi = async () => {
   });
 };
 //
-export const deleteJobApi = async (body: { jobId: string }) => {
-  console.log(body);
+export const deleteJobApi = async (jobId: string) => {
   return safeApiCall({
-    apiCall: () => api.delete("/job/delete-job", body),
+    apiCall: () =>
+      api.delete("/job/delete-job", {
+        data: { jobId },
+      }),
     showToaster: true,
   });
 };
