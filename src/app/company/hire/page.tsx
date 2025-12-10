@@ -122,11 +122,11 @@ export default function ProfileDashboard() {
 
   // Helper function to get year from URL or return default
   const getYearFromUrl = () =>
-    // url: string
-    {
-      // You can implement logic to extract year from URL or profile data
-      return "2023";
-    };
+  // url: string
+  {
+    // You can implement logic to extract year from URL or profile data
+    return "2023";
+  };
 
   const SidebarCard = (
     <Card className="rounded-xl">
@@ -187,7 +187,7 @@ export default function ProfileDashboard() {
             type="primary"
             icon={<VideoCameraOutlined />}
             className="!rounded-full font-semibold !w-full  px-5 mx-2 h-10 flex items-center"
-            // onClick={onJoin}
+          // onClick={onJoin}
           >
             Hire
           </Button>
@@ -279,7 +279,7 @@ export default function ProfileDashboard() {
         {/* Left Sidebar */}
         <Col xs={24} md={24} lg={9}>
           {isLargeScreen ? (
-            <Affix offsetTop={80}>{SidebarCard}</Affix>
+            <div className="fixed">{SidebarCard}</div>
           ) : (
             SidebarCard
           )}
