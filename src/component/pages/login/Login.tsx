@@ -117,7 +117,7 @@ export default function LoginScreen() {
           </UiButton>
           <div className="flex justify-center mt-2">
             <Text className="font-normal">
-              Don’t have an account? <Link href="/auth">Sign Up</Link>
+              Don’t have an account? <Link href="/auth/sign-up">Sign Up</Link>
             </Text>
           </div>
         </div>

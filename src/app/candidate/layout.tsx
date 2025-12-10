@@ -249,7 +249,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 icon={<LogoutOutlined />}
                 onClick={() => {
                   removeToken();
-                  router.replace("/");
+                  router.replace("/auth");
                 }}
                 className={`w-full font-bold text-left ${
                   collapsed
