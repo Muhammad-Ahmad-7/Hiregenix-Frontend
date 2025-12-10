@@ -13,39 +13,154 @@ import StatsCard from "@/component/pages/dashboard/StatsCard";
 import { TopIconAndNavigation } from "@/app/candidate/dashboard/page";
 import UiButton from "@/component/common/CustomButton";
 import { ROUTES } from "@/constants/routes";
+import { useEffect, useState } from "react";
+import { getCompanyStatsApi } from "@/app/api/company/dashboard.api";
+
+export interface CompanyDashboardResponse {
+  postedJobsCount: number;
+  activeJobsCount: number;
+  appliedJobsCount: number;
+  closedJobsCount: number;
+
+  activeJobs: {
+    _id: string;
+    companyId: string;
+    title: string;
+    role: string;
+    interviewGuideline: string;
+    experienceLevel: "junior" | "mid" | "senior";
+    description: string;
+    requiredSkills: string[];
+    requirements: string[];
+    workMode: string;
+    deadline: string;
+    aiSummary: string;
+    embeddingSynced: boolean;
+    qdrantId: string | null;
+    isDeleted: boolean;
+    status: "open" | "closed";
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+
+    location: {
+      city: string;
+      country: string;
+    };
+
+    salaryRange: {
+      min: number;
+      max: number;
+      currency: string;
+    };
+  }[];
+
+  recentApplications: {
+    _id: string;
+    companyId: string;
+    type: string;
+    scheduledDate: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+
+    aiResult: {
+      strengths: string[];
+      improvements: string[];
+    };
+
+    candidateId: {
+      _id: string;
+      userId: string;
+      fullName: string;
+      dateOfBirth: string;
+      gender: string;
+      country: string;
+      city: string;
+      contactNumber: string;
+      profilePictureUrl: string;
+      githubUrl: string;
+      linkedinUrl: string;
+      portfolioUrl: string;
+      skills: string[];
+      bio: string;
+      tagline: string;
+      resumeId: string;
+      isProfileCompleted: boolean;
+      isDeleted: string;
+      aiDescription: string;
+      embeddingSync: boolean;
+      qdrantId: string;
+      createdAt: string;
+      updatedAt: string;
+      __v: number;
+    };
+
+    jobId: {
+      _id: string;
+      companyId: string;
+      title: string;
+      role: string;
+      interviewGuideline: string;
+      experienceLevel: string;
+      description: string;
+      requiredSkills: string[];
+      requirements: string[];
+      workMode: string;
+      deadline: string;
+      aiSummary: string;
+      embeddingSynced: boolean;
+      qdrantId: string | null;
+      isDeleted: boolean;
+      status: string;
+      createdAt: string;
+      updatedAt: string;
+      __v: number;
+
+      location: {
+        city: string;
+        country: string;
+      };
+
+      salaryRange: {
+        min: number;
+        max: number;
+        currency: string;
+      };
+    };
+  }[];
+}
 
 export default function Dashboard() {
-  // Table Data
-  const jobData = [
-    {
-      key: 3,
-      title: "Swift developer",
-      applications: 63,
-      views: 1443,
-      matches: 23,
-    },
-    {
-      key: 4,
-      title: "UI Developer",
-      applications: 79,
-      views: 1563,
-      matches: 14,
-    },
-    {
-      key: 5,
-      title: "React developer",
-      applications: 67,
-      views: 945,
-      matches: 25,
-    },
-    {
-      key: 6,
-      title: "Backend NodeJs",
-      applications: 105,
-      views: 1254,
-      matches: 43,
-    },
-  ];
+  const [companyStats, setCompanyStats] =
+    useState<CompanyDashboardResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    getCompanyStatsApi()
+      .then((res) => {
+        console.log("Company Dashboard Stats:", res.data);
+        setCompanyStats(res.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching company stats:", error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  // Transform active jobs data for table
+  const jobData =
+    companyStats?.activeJobs?.map((job, index) => ({
+      key: job._id,
+      title: job.title,
+      applications: 0, // You may need to add this to your API response
+      views: 0, // You may need to add this to your API response
+      matches: 0, // You may need to add this to your API response
+    })) || [];
 
   const jobColumns = [
     {
@@ -58,19 +173,19 @@ export default function Dashboard() {
       title: "Applications",
       dataIndex: "applications",
       key: "applications",
-      align: "center",
+      align: "center" as const,
     },
     {
       title: "Views",
       dataIndex: "views",
       key: "views",
-      align: "center",
+      align: "center" as const,
     },
     {
       title: "AI matches",
       dataIndex: "matches",
       key: "matches",
-      align: "center",
+      align: "center" as const,
     },
     {
       title: "",
@@ -83,7 +198,7 @@ export default function Dashboard() {
     },
   ];
 
-  // Messages Data
+  // Messages Data (keep as is per your request)
   const messages = [
     {
       name: "Alexa",
@@ -115,7 +230,7 @@ export default function Dashboard() {
     },
   ];
 
-  // Chart data for applications per week
+  // Chart data for applications per week (keep as is per your request)
   const weeklyData = [
     { day: "Mon", value: 5 },
     { day: "Tue", value: 9 },
@@ -126,56 +241,45 @@ export default function Dashboard() {
     { day: "Sun", value: 6 },
   ];
 
-  // const menu = (
-  //   <Menu>
-  //     <Menu.Item key="1">Reply</Menu.Item>
-  //     <Menu.Item key="2">Mark as read</Menu.Item>
-  //     <Menu.Item key="3">Delete</Menu.Item>
-  //   </Menu>
-  // );
+  // Get the most recent application
+  const recentApplication = companyStats?.recentApplications?.[0];
 
   return (
     <div className=" bg-gray-50 min-h-screen">
-      {/* Header */}
-      {/* <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <Select defaultValue="Front-end developer" className="w-48">
-          <Option value="front-end">Front-end developer</Option>
-          <Option value="backend">Backend developer</Option>
-          <Option value="full-stack">Full-stack developer</Option>
-        </Select>
-      </div> */}
-
       {/* First Row */}
       <Row gutter={[8, 8]} className="sm:gutter-[16] md:gutter-[16]">
         {/* (1,1) nested 2x2 grid */}
         <Col xs={24} sm={24} md={24} lg={12}>
           <Row gutter={[8, 8]} className="sm:gutter-[16] md:gutter-[16]">
             <StatsCard
+              arrow={{ shown: true, href: "/company/job-analytics" }}
               icon={<ContainerFilled style={{ color: "white" }} />}
               title="Jobs Posted"
-              number={142}
+              number={companyStats?.postedJobsCount || 0}
               badgeText="45%+ in last 30 days"
               badgeColor="green"
             />
             <StatsCard
+              arrow={{ shown: true, href: "/company/job-applications" }}
               icon={<StarFilled className="!text-white" />}
-              title="Active Jobs"
-              number={142}
+              title="Jobs Applications"
+              number={companyStats?.activeJobsCount || 0}
               badgeText="45%+ in last 30 days"
               badgeColor="orange"
             />
             <StatsCard
+              arrow={{ shown: true, href: "/company/job-analytics" }}
               title="Applied Jobs"
               icon={<StarFilled className="!text-white" />}
-              number={142}
+              number={companyStats?.appliedJobsCount || 0}
               badgeText="45%+ in last 30 days"
               badgeColor="orange"
             />
             <StatsCard
+              arrow={{ shown: true, href: "/company/job-analytics" }}
               icon={<StarFilled className="!text-white" />}
               title="Closed Jobs"
-              number={142}
+              number={companyStats?.closedJobsCount || 0}
               badgeText="45%+ in last 30 days"
               badgeColor="orange"
             />
@@ -217,6 +321,8 @@ export default function Dashboard() {
         {/* (2,1) Active Jobs Table */}
         <Col xs={24} sm={24} md={24} lg={12}>
           <Card
+            style={{ height: "340px", maxHeight: "340px", overflowY: "auto" }}
+            // className="scrollbar-hide"
             title="Active Jobs"
             extra={
               <UiButton
@@ -233,6 +339,7 @@ export default function Dashboard() {
               pagination={false}
               size="small"
               scroll={{ x: 600 }}
+              loading={loading}
             />
           </Card>
         </Col>
@@ -319,26 +426,35 @@ export default function Dashboard() {
                   />
                 }
                 className="h-full"
+                loading={loading}
               >
                 <p className="mb-3 font-medium text-sm text-gray-500">Today</p>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-                    <div>
-                      <p className="font-semibold text-sm">
-                        Front-end developer
-                      </p>
-                      <p className="text-gray-500 text-xs">Devsine</p>
+                {recentApplication ? (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-green-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                      <div>
+                        <p className="font-semibold text-sm">
+                          {recentApplication.jobId?.title || "N/A"}
+                        </p>
+                        <p className="text-gray-500 text-xs">
+                          {recentApplication.candidateId?.fullName || "Unknown"}
+                        </p>
+                      </div>
                     </div>
+                    <Button
+                      type="primary"
+                      size="small"
+                      className="bg-orange-500 border-orange-500 hover:bg-orange-600 w-full sm:w-auto"
+                    >
+                      View Details
+                    </Button>
                   </div>
-                  <Button
-                    type="primary"
-                    size="small"
-                    className="bg-orange-500 border-orange-500 hover:bg-orange-600 w-full sm:w-auto"
-                  >
-                    Join now
-                  </Button>
-                </div>
+                ) : (
+                  <div className="text-center text-gray-500 py-4">
+                    No recent applications
+                  </div>
+                )}
               </Card>
             </Col>
           </Row>
