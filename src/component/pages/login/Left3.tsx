@@ -94,7 +94,7 @@ export default function Left3({ role }: { role: "company" | "candidate" }) {
           </UiButton>
           <div className="flex justify-center mt-2">
             <Text className="font-normal">
-              Already have an account? <Link href="/">Sign In</Link>
+              Already have an account? <Link href="/auth">Sign In</Link>
             </Text>
           </div>
         </div>
