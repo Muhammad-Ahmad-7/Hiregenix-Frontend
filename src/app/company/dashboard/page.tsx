@@ -326,7 +326,7 @@ export default function Dashboard() {
             title="Active Jobs"
             extra={
               <UiButton
-                href={"#"}
+                href={"/company/job-analytics"}
                 className="group !w-8 !h-8 !rounded-full flex items-center justify-center bg-white border border-gray-300 transition-all duration-300 hover:!bg-blue-500"
               >
                 <ArrowUpOutlined className="text-gray-600 transform rotate-45 transition-all duration-300 ease-in-out group-hover:!text-white group-hover:rotate-90" />

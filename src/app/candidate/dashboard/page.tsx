@@ -167,6 +167,7 @@ export default function Dashboard() {
           <Col xs={24} lg={14}>
             <Row gutter={[16, 16]}>
               <StatsCard
+                arrow={{ shown: true, href: "/candidate/job-analytics" }}
                 icon={<ContainerFilled style={{ color: "white" }} />}
                 title="Applied Jobs"
                 number={candidateStats?.userAppliedJobsCount || 0}
@@ -174,6 +175,7 @@ export default function Dashboard() {
                 badgeColor="green"
               />
               <StatsCard
+                arrow={{ shown: true, href: "/candidate/profile" }}
                 icon={<ContainerFilled style={{ color: "white" }} />}
                 title="Resume Score"
                 number={candidateStats?.resumeScore || 0}
@@ -181,13 +183,16 @@ export default function Dashboard() {
                 badgeColor="green"
               />
               <StatsCard
+                arrow={{ shown: true, href: "/candidate/job-portal" }}
                 title="Matched Jobs"
                 icon={<StarFilled className="!text-white" />}
                 number={candidateStats?.matchedJobsCounts || 0}
                 badgeText="45%+ in last 30 days"
                 badgeColor="orange"
               />
+
               <StatsCard
+                arrow={{ shown: true, href: "/candidate/interview-section" }}
                 icon={<StarFilled className="!text-white" />}
                 title="Active Jobs"
                 number={candidateStats?.userActiveJobsCount || 0}
@@ -204,7 +209,7 @@ export default function Dashboard() {
                 <TopIconAndNavigation
                   icon={<MessageFilled size={36} style={{ color: "white" }} />}
                   title="Messages"
-                  arrow={{ shown: false }}
+                  arrow={{ shown: true, href: "/candidate/chat" }}
                 />
               </div>
 
@@ -274,7 +279,7 @@ export default function Dashboard() {
               title="Active Jobs"
               extra={
                 <UiButton
-                  href={"#"}
+                  href={"/candidate/job-portal"}
                   className="group !w-8 !h-8 !rounded-full flex items-center justify-center bg-white border border-gray-300 transition-all duration-300 hover:!bg-blue-500"
                 >
                   <ArrowUpOutlined className="text-gray-600 transform rotate-45 transition-all duration-300 ease-in-out group-hover:!text-white group-hover:rotate-90" />

@@ -71,7 +71,7 @@ export const safeApiCall = async <T>({
     console.log("response", response);
     const { data } = response;
     console.log("data", data);
-    if (showToaster && data.status == "Success") {
+    if (!showToaster && data.status == "Success") {
       console.log("i am working ");
       toast.success(data.message);
       return response.data;

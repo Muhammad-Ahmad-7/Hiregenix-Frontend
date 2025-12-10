@@ -46,6 +46,7 @@ import {
 import { RootState } from "@/redux/store";
 import { Job_Interface } from "@/constants/Interfaces/Types/Jobs.interface";
 import dayjs from "dayjs";
+import UiButton from "@/component/common/CustomButton";
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -443,9 +444,13 @@ const MyJobsTable = () => {
             style={{ width: 260 }}
           />
 
-          <Button type="primary" icon={<PlusOutlined />}>
+          <UiButton
+            href={"/company/create-job"}
+            type="primary"
+            icon={<PlusOutlined />}
+          >
             Add New
-          </Button>
+          </UiButton>
         </div>
 
         {/* Table */}
