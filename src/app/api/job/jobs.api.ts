@@ -1,17 +1,21 @@
 // auth.api.ts
 
+import {
+  JobPosting,
+  JobResponse,
+} from "@/constants/Interfaces/Types/Jobs.interface";
 import api, { safeApiCall } from "../base.api";
 
-export const createJobApi = async (body) => {
+export const createJobApi = async (body: JobPosting) => {
   console.log("body", body);
-  return safeApiCall({
+  return safeApiCall<{ job: JobResponse }>({
     apiCall: () => api.post("/job/create-job", body),
     showToaster: true,
   });
 };
-export const getAllJobsApi = async (params = {}) => {
-  console.log("params", params);
-  return safeApiCall({
-    apiCall: () => api.get(`/job/get-all-jobs`, { params }),
-  });
-};
+// export const getAllJobsApi = async (params = {}) => {
+//   console.log("params", params);
+//   return safeApiCall({
+//     apiCall: () => api.get(`/job/get-all-jobs`, { params }),
+//   });
+// };

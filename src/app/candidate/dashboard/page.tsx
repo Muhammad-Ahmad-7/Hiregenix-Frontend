@@ -19,28 +19,57 @@ import {
   ContainerFilled,
   StarFilled,
   MessageFilled,
+  ArrowUpOutlined,
 } from "@ant-design/icons";
 import UiButton from "@/component/common/CustomButton";
 import { ROUTES } from "@/constants/routes";
 import StatsCard from "@/component/pages/dashboard/StatsCard";
 import { JobPortalMapCard } from "@/component/pages/candidate/dashboard/JobPortalMapCard";
 import { getCandidateStatsApi } from "@/app/api/candidate/dashboard.api";
-import { ArrowUpOutlined } from "@ant-design/icons";
+import type { ColumnsType } from "antd/es/table";
+import type { MenuProps } from "antd";
+import { CandidateDashboardResponse } from "@/constants/Interfaces/Types/Dashboard.interface";
+
+// Type definitions
+interface JobData {
+  key: string | number;
+  title: string;
+  applications: number;
+  views: number;
+  matches: number;
+}
+
+interface MessageItem {
+  name: string;
+  text: string;
+  time: string;
+  avatar: string;
+  unread: boolean;
+}
+
+interface TopIconAndNavigationProps {
+  icon: React.ReactNode;
+  title: string;
+  arrow?: { shown?: boolean; href?: string };
+  bgColorIcon?: string;
+}
 
 export default function Dashboard() {
-  const [candidateStats, setCandidateStats] = React.useState<any>(null);
+  const [candidateStats, setCandidateStats] =
+    React.useState<CandidateDashboardResponse | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
 
   useEffect(() => {
     getCandidateStatsApi()
       .then((res) => {
+        if (!res || !res.data) return;
         setCandidateStats(res.data);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, []);
 
-  const jobData = [
+  const jobData: JobData[] = [
     {
       key: 2,
       title: "Kotlin developer",
@@ -79,9 +108,10 @@ export default function Dashboard() {
   ];
 
   // 🔥 Final merged table data
-  const activeJobsToShow =
-    candidateStats?.recentAppliedJobs?.length > 0
-      ? candidateStats.recentAppliedJobs.map((job: any, idx: number) => ({
+  const activeJobsToShow: JobData[] =
+    candidateStats?.recentAppliedJobs &&
+    candidateStats.recentAppliedJobs.length > 0
+      ? candidateStats.recentAppliedJobs.map((job, idx: number) => ({
           key: job._id || idx,
           title: job.jobId.title,
           applications: 0, // Only mapped because API doesn't provide counts
@@ -90,7 +120,7 @@ export default function Dashboard() {
         }))
       : jobData;
 
-  const jobColumns = [
+  const jobColumns: ColumnsType<JobData> = [
     {
       title: "Title",
       dataIndex: "title",
@@ -101,14 +131,19 @@ export default function Dashboard() {
       title: "Applications",
       dataIndex: "applications",
       key: "applications",
-      align: "center",
+      align: "center" as const,
     },
-    { title: "Views", dataIndex: "views", key: "views", align: "center" },
+    {
+      title: "Views",
+      dataIndex: "views",
+      key: "views",
+      align: "center" as const,
+    },
     {
       title: "AI matches",
       dataIndex: "matches",
       key: "matches",
-      align: "center",
+      align: "center" as const,
     },
     {
       title: "",
@@ -121,7 +156,7 @@ export default function Dashboard() {
     },
   ];
 
-  const messages = [
+  const messages: MessageItem[] = [
     {
       name: "Donald",
       text: "Hey Adam! Interested in tex hoas asdo ashdoas hasdha asdoash haoshdoas haosdhaoshd ",
@@ -145,7 +180,7 @@ export default function Dashboard() {
     },
   ];
 
-  const items = [
+  const items: MenuProps["items"] = [
     { label: <a href="#">1st menu item</a>, key: "0" },
     { label: <a href="#">2nd menu item</a>, key: "1" },
     { type: "divider" },
@@ -207,7 +242,7 @@ export default function Dashboard() {
             <div className="h-64 bg-white hover-gray-50 relative rounded-lg">
               <div className="flex gap-2 font-bold text-md px-4 items-center py-2">
                 <TopIconAndNavigation
-                  icon={<MessageFilled size={36} style={{ color: "white" }} />}
+                  icon={<MessageFilled style={{ color: "white" }} />}
                   title="Messages"
                   arrow={{ shown: true, href: "/candidate/chat" }}
                 />
@@ -342,34 +377,32 @@ export default function Dashboard() {
                 style={{ maxHeight: "180px", overflowY: "auto" }}
                 className="scrollbar-hide"
               >
-                {(candidateStats?.getTodaysInterview || []).map(
-                  (interview: any) => (
-                    <div
-                      key={interview._id}
-                      className="flex items-center mb-2 justify-between p-3 bg-green-50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <div>
-                          <p className="font-semibold text-sm">
-                            {interview.jobId.title}
-                          </p>
-                          <p className="text-gray-500 text-xs">
-                            {interview.companyId.companyName}
-                          </p>
-                        </div>
+                {(candidateStats?.getTodaysInterview || []).map((interview) => (
+                  <div
+                    key={interview._id}
+                    className="flex items-center mb-2 justify-between p-3 bg-green-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <div>
+                        <p className="font-semibold text-sm">
+                          {interview.jobId.title}
+                        </p>
+                        <p className="text-gray-500 text-xs">
+                          {interview.companyId.companyName}
+                        </p>
                       </div>
-
-                      <Button
-                        type="primary"
-                        size="small"
-                        className="bg-orange-500 border-orange-500 hover:bg-orange-600"
-                      >
-                        Join now
-                      </Button>
                     </div>
-                  )
-                )}
+
+                    <Button
+                      type="primary"
+                      size="small"
+                      className="bg-orange-500 border-orange-500 hover:bg-orange-600"
+                    >
+                      Join now
+                    </Button>
+                  </div>
+                ))}
               </div>
             </Card>
           </Col>
@@ -385,7 +418,7 @@ const jobsStats = [
   { title: "Recommended", value: 12450 },
 ];
 
-export const TopIconAndNavigation = ({
+export const TopIconAndNavigation: React.FC<TopIconAndNavigationProps> = ({
   icon,
   title,
   arrow = { shown: true, href: "" },

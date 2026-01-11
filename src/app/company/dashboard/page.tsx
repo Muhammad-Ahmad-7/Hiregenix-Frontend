@@ -1,8 +1,8 @@
 "use client";
+
 import { Card, Table, List, Avatar, Button, Row, Col, Dropdown } from "antd";
 import {
   CalendarOutlined,
-  RiseOutlined,
   ContainerFilled,
   StarFilled,
   MessageFilled,
@@ -15,122 +15,7 @@ import UiButton from "@/component/common/CustomButton";
 import { ROUTES } from "@/constants/routes";
 import { useEffect, useState } from "react";
 import { getCompanyStatsApi } from "@/app/api/company/dashboard.api";
-
-export interface CompanyDashboardResponse {
-  postedJobsCount: number;
-  activeJobsCount: number;
-  appliedJobsCount: number;
-  closedJobsCount: number;
-
-  activeJobs: {
-    _id: string;
-    companyId: string;
-    title: string;
-    role: string;
-    interviewGuideline: string;
-    experienceLevel: "junior" | "mid" | "senior";
-    description: string;
-    requiredSkills: string[];
-    requirements: string[];
-    workMode: string;
-    deadline: string;
-    aiSummary: string;
-    embeddingSynced: boolean;
-    qdrantId: string | null;
-    isDeleted: boolean;
-    status: "open" | "closed";
-    createdAt: string;
-    updatedAt: string;
-    __v: number;
-
-    location: {
-      city: string;
-      country: string;
-    };
-
-    salaryRange: {
-      min: number;
-      max: number;
-      currency: string;
-    };
-  }[];
-
-  recentApplications: {
-    _id: string;
-    companyId: string;
-    type: string;
-    scheduledDate: string;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
-    __v: number;
-
-    aiResult: {
-      strengths: string[];
-      improvements: string[];
-    };
-
-    candidateId: {
-      _id: string;
-      userId: string;
-      fullName: string;
-      dateOfBirth: string;
-      gender: string;
-      country: string;
-      city: string;
-      contactNumber: string;
-      profilePictureUrl: string;
-      githubUrl: string;
-      linkedinUrl: string;
-      portfolioUrl: string;
-      skills: string[];
-      bio: string;
-      tagline: string;
-      resumeId: string;
-      isProfileCompleted: boolean;
-      isDeleted: string;
-      aiDescription: string;
-      embeddingSync: boolean;
-      qdrantId: string;
-      createdAt: string;
-      updatedAt: string;
-      __v: number;
-    };
-
-    jobId: {
-      _id: string;
-      companyId: string;
-      title: string;
-      role: string;
-      interviewGuideline: string;
-      experienceLevel: string;
-      description: string;
-      requiredSkills: string[];
-      requirements: string[];
-      workMode: string;
-      deadline: string;
-      aiSummary: string;
-      embeddingSynced: boolean;
-      qdrantId: string | null;
-      isDeleted: boolean;
-      status: string;
-      createdAt: string;
-      updatedAt: string;
-      __v: number;
-
-      location: {
-        city: string;
-        country: string;
-      };
-
-      salaryRange: {
-        min: number;
-        max: number;
-        currency: string;
-      };
-    };
-  }[];
-}
+import { CompanyDashboardResponse } from "@/constants/Interfaces/Types/Dashboard.interface";
 
 export default function Dashboard() {
   const [companyStats, setCompanyStats] =
@@ -141,6 +26,7 @@ export default function Dashboard() {
     setLoading(true);
     getCompanyStatsApi()
       .then((res) => {
+        if (!res || !res.data) return;
         console.log("Company Dashboard Stats:", res.data);
         setCompanyStats(res.data);
       })
@@ -154,7 +40,7 @@ export default function Dashboard() {
 
   // Transform active jobs data for table
   const jobData =
-    companyStats?.activeJobs?.map((job, index) => ({
+    companyStats?.activeJobs?.map((job) => ({
       key: job._id,
       title: job.title,
       applications: 0, // You may need to add this to your API response
@@ -377,7 +263,7 @@ export default function Dashboard() {
                               {item.time}
                             </span>
                           )}
-                          <Dropdown menu={{ item }} trigger={["click"]}>
+                          <Dropdown trigger={["click"]}>
                             <MoreOutlined className="!text-[#202020] cursor-pointer" />
                           </Dropdown>
                         </div>,

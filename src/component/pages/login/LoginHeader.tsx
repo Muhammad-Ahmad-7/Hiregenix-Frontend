@@ -1,7 +1,6 @@
 "use client";
 import { INFO } from "@/constants/info";
-import { GlobalOutlined } from "@ant-design/icons";
-import { Col, Image, Row, Select, Typography } from "antd";
+import { Col, Image, Row, Typography } from "antd";
 import React from "react";
 
 const { Text } = Typography;

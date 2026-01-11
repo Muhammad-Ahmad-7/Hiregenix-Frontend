@@ -40,7 +40,11 @@ import {
   updateProfileApi,
   uploadResumeApi,
 } from "@/app/api/candidate/profile.api";
+import { CandidateProfileResponse } from "@/constants/Interfaces/Types/Profile.interface";
+import { CandidateResume } from "@/constants/Interfaces/Types/Resume.interface";
+import { RootState } from "@/redux/store";
 import { setProfile } from "@/redux/slices/userSlice";
+import type { UploadProps } from "antd";
 
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
@@ -72,8 +76,8 @@ interface ResumeProject {
 }
 
 interface ResumeCertification {
-  name: string;
-  issuer: string;
+  name?: string;
+  issuer?: string;
   date?: string;
 }
 
@@ -89,7 +93,7 @@ interface ResumeParsedData {
   experience: ResumeExperience[];
   education: ResumeEducation[];
   projects: ResumeProject[];
-  certifications: ResumeCertification[];
+  certifications?: ResumeCertification[];
 }
 
 interface ResumeData {
@@ -112,6 +116,15 @@ interface UserProfile {
   resumeUrl?: string;
 }
 
+// Type guard to check if profile is a candidate
+const isCandidateProfile = (
+  profile: CandidateProfileResponse | unknown
+): profile is CandidateProfileResponse => {
+  return (
+    profile !== null && typeof profile === "object" && "fullName" in profile
+  );
+};
+
 export default function ProfileDashboard() {
   const screens = useBreakpoint();
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
@@ -119,8 +132,8 @@ export default function ProfileDashboard() {
   const [loading, setLoading] = useState(true);
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [form] = Form.useForm();
-  const { profile } = useSelector((state: any) => state.user);
+  const [form] = Form.useForm<CandidateProfileResponse>();
+  const { profile } = useSelector((state: RootState) => state.user);
   const dispatch = useDispatch();
 
   const [userProfile, setUserProfile] = useState<UserProfile>({
@@ -138,7 +151,7 @@ export default function ProfileDashboard() {
 
   const isLargeScreen = screens.lg;
 
-  const mapApiResumeToState = (apiResume: any): ResumeData => {
+  const mapApiResumeToState = (apiResume: CandidateResume): ResumeData => {
     const parsed = apiResume.parsedData || {};
 
     return {
@@ -163,7 +176,7 @@ export default function ProfileDashboard() {
   };
 
   useEffect(() => {
-    const fetchResumeData = async () => {
+    const fetchResumeData = async (): Promise<void> => {
       try {
         setLoading(true);
 
@@ -201,7 +214,7 @@ export default function ProfileDashboard() {
     fetchResumeData();
   }, []);
 
-  const handleResumeUpload = async (file: File) => {
+  const handleResumeUpload = async (file: File): Promise<void> => {
     setUploading(true);
     try {
       const formData = new FormData();
@@ -235,7 +248,7 @@ export default function ProfileDashboard() {
     }
   };
 
-  const uploadProps = {
+  const uploadProps: UploadProps = {
     beforeUpload: (file: File) => {
       const isPdf = file.type === "application/pdf";
       if (!isPdf) {
@@ -253,7 +266,7 @@ export default function ProfileDashboard() {
     showUploadList: false,
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       month: "short",
@@ -261,29 +274,36 @@ export default function ProfileDashboard() {
     });
   };
 
-  const handleEditClick = () => {
-    form.setFieldsValue({
-      fullName: profile?.fullName || resumeData?.parsedData.name || "",
-      tagline: profile?.tagline || "",
-      email: profile?.userId?.email || resumeData?.parsedData.email || "",
-      phone: profile?.contactNumber || resumeData?.parsedData.phone || "",
-      city: profile?.city || "",
-      country: profile?.country || "",
-      bio: profile?.bio || "",
-      githubUrl: profile?.githubUrl || resumeData?.parsedData.github || "",
-      linkedinUrl:
-        profile?.linkedinUrl || resumeData?.parsedData.linkedin || "",
-      portfolioUrl:
-        profile?.portfolioUrl || resumeData?.parsedData.portfolio || "",
-      skills: profile?.skills || resumeData?.parsedData.skills || [],
-    });
+  const handleEditClick = (): void => {
+    if (isCandidateProfile(profile)) {
+      form.setFieldsValue({
+        fullName: profile?.fullName || resumeData?.parsedData.name || "",
+        tagline: profile?.tagline || "",
+        email: profile?.userId?.email || resumeData?.parsedData.email || "",
+        phone: profile?.contactNumber || resumeData?.parsedData.phone || "",
+        city: profile?.city || "",
+        country: profile?.country || "",
+        bio: profile?.bio || "",
+        githubUrl: profile?.githubUrl || resumeData?.parsedData.github || "",
+        linkedinUrl:
+          profile?.linkedinUrl || resumeData?.parsedData.linkedin || "",
+        portfolioUrl:
+          profile?.portfolioUrl || resumeData?.parsedData.portfolio || "",
+        skills: profile?.skills || resumeData?.parsedData.skills || [],
+      } as Partial<CandidateProfileResponse>);
+    }
     setIsEditModalOpen(true);
   };
 
-  const handleEditSave = async (values: any) => {
+  const handleEditSave = async (
+    values: CandidateProfileResponse
+  ): Promise<void> => {
     try {
       // Update Redux state locally
-      dispatch(setProfile(values));
+      const valuesWithUserType: CandidateProfileResponse & {
+        userType: "candidate";
+      } = { ...values, userType: "candidate" };
+      dispatch(setProfile(valuesWithUserType));
 
       // Update backend
       await updateProfileApi(values);
@@ -299,18 +319,18 @@ export default function ProfileDashboard() {
     } catch (error) {
       message.error("Failed to update profile");
       console.error(error);
-    } finally {
     }
   };
 
-  // Build skill options from existing skills (Option A)
+  // Build skill options from existing skills
   const skillOptions =
-    (profile?.skills || resumeData?.parsedData.skills || []).map(
-      (s: string) => ({
-        label: s,
-        value: s,
-      })
-    ) || [];
+    (isCandidateProfile(profile)
+      ? profile?.skills || resumeData?.parsedData.skills || []
+      : resumeData?.parsedData.skills || []
+    ).map((s: string) => ({
+      label: s,
+      value: s,
+    })) || [];
 
   const SidebarCard = (
     <Card className="rounded-xl">
@@ -320,17 +340,24 @@ export default function ProfileDashboard() {
             <Avatar
               size={72}
               src={
-                profile?.profilePictureUrl ||
-                "https://api.dicebear.com/8.x/avataaars/svg?seed=user"
+                isCandidateProfile(profile)
+                  ? profile?.profilePictureUrl
+                  : "https://api.dicebear.com/8.x/avataaars/svg?seed=user"
               }
             />
 
             <div>
               <Title level={4} style={{ marginBottom: 0 }}>
-                {profile?.fullName || resumeData?.parsedData.name || "No Name"}
+                {isCandidateProfile(profile)
+                  ? profile?.fullName ||
+                    resumeData?.parsedData.name ||
+                    "No Name"
+                  : resumeData?.parsedData.name || "No Name"}
               </Title>
               <Text type="secondary">
-                {profile?.tagline || "No tagline available"}
+                {isCandidateProfile(profile)
+                  ? profile?.tagline || "No tagline available"
+                  : "No tagline available"}
               </Text>
             </div>
           </div>
@@ -347,9 +374,11 @@ export default function ProfileDashboard() {
         <div className="flex justify-between items-center">
           <Text strong>Email</Text>
           <Text>
-            {profile?.userId?.email ||
-              resumeData?.parsedData.email ||
-              "Not specified"}
+            {isCandidateProfile(profile)
+              ? profile?.userId?.email ||
+                resumeData?.parsedData.email ||
+                "Not specified"
+              : resumeData?.parsedData.email || "Not specified"}
           </Text>
         </div>
 
@@ -357,9 +386,11 @@ export default function ProfileDashboard() {
         <div className="flex justify-between items-center">
           <Text strong>Phone</Text>
           <Text>
-            {profile?.contactNumber ||
-              resumeData?.parsedData.phone ||
-              "Not specified"}
+            {isCandidateProfile(profile)
+              ? profile?.contactNumber ||
+                resumeData?.parsedData.phone ||
+                "Not specified"
+              : resumeData?.parsedData.phone || "Not specified"}
           </Text>
         </div>
 
@@ -367,7 +398,7 @@ export default function ProfileDashboard() {
         <div className="flex justify-between items-center">
           <Text strong>Location</Text>
           <Text>
-            {profile?.city && profile?.country
+            {isCandidateProfile(profile) && profile?.city && profile?.country
               ? `${profile.city}, ${profile.country}`
               : "Not specified"}
           </Text>
@@ -380,7 +411,10 @@ export default function ProfileDashboard() {
           </Text>
 
           <Space wrap className="!flex justify-end">
-            {(profile?.skills || resumeData?.parsedData.skills || [])
+            {(isCandidateProfile(profile)
+              ? profile?.skills || resumeData?.parsedData.skills || []
+              : resumeData?.parsedData.skills || []
+            )
               .slice(0, 8)
               .map((skill: string, index: number) => (
                 <Tag key={index} className="rounded-full" color="blue">
@@ -388,14 +422,16 @@ export default function ProfileDashboard() {
                 </Tag>
               ))}
 
-            {(profile?.skills?.length ||
-              resumeData?.parsedData.skills?.length ||
-              0) > 8 && (
+            {(isCandidateProfile(profile)
+              ? profile?.skills?.length ||
+                resumeData?.parsedData.skills?.length ||
+                0
+              : resumeData?.parsedData.skills?.length || 0) > 8 && (
               <Tag className="rounded-full">
                 +
                 {Math.max(
                   resumeData?.parsedData.skills?.length || 0,
-                  profile?.skills?.length || 0
+                  isCandidateProfile(profile) ? profile?.skills?.length || 0 : 0
                 ) - 8}
               </Tag>
             )}
@@ -406,7 +442,11 @@ export default function ProfileDashboard() {
 
         {/* Bio */}
         <Text strong>Bio</Text>
-        <Paragraph>{profile?.bio || "No bio available"}</Paragraph>
+        <Paragraph>
+          {isCandidateProfile(profile)
+            ? profile?.bio || "No bio available"
+            : "No bio available"}
+        </Paragraph>
 
         <Divider className="!my-3" />
 
@@ -418,12 +458,15 @@ export default function ProfileDashboard() {
           </div>
 
           {(() => {
-            const githubUrl =
-              profile?.githubUrl || resumeData?.parsedData.github;
-            const linkedinUrl =
-              profile?.linkedinUrl || resumeData?.parsedData.linkedin;
-            const portfolioUrl =
-              profile?.portfolioUrl || resumeData?.parsedData.portfolio;
+            const githubUrl = isCandidateProfile(profile)
+              ? profile?.githubUrl || resumeData?.parsedData.github
+              : resumeData?.parsedData.github;
+            const linkedinUrl = isCandidateProfile(profile)
+              ? profile?.linkedinUrl || resumeData?.parsedData.linkedin
+              : resumeData?.parsedData.linkedin;
+            const portfolioUrl = isCandidateProfile(profile)
+              ? profile?.portfolioUrl || resumeData?.parsedData.portfolio
+              : resumeData?.parsedData.portfolio;
 
             return (
               <>
@@ -546,10 +589,11 @@ export default function ProfileDashboard() {
                           rel="noopener noreferrer"
                           className="!text-[#52C41A] hover:!text-[#73D13D]"
                         >
-                          {(
-                            profile?.fullName ||
-                            userProfile.fullName ||
-                            "Resume"
+                          {(isCandidateProfile(profile)
+                            ? profile?.fullName ||
+                              userProfile.fullName ||
+                              "Resume"
+                            : userProfile.fullName || "Resume"
                           ).replace(/\s+/g, "")}
                           Resume.pdf
                         </a>

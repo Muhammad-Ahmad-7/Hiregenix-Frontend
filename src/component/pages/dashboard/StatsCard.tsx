@@ -1,5 +1,5 @@
 import React from "react";
-import { Col, Badge } from "antd";
+import { Col } from "antd";
 import { ProfileFilled } from "@ant-design/icons";
 import { TopIconAndNavigation } from "@/app/candidate/dashboard/page";
 
@@ -21,27 +21,27 @@ export default function StatsCard({
   title = "Applicants",
   number = 23,
   badgeText,
-  badgeColor = "orange",
+  // badgeColor = "orange",
   arrow = {
     shown: true,
     href: "",
   },
   bgColorIcon = "#1890FF",
 }: StatsCardProps) {
-  const colorMap = {
-    green: {
-      bg: "#F6FFED",
-      text: "#52C41A",
-      border: "#52C41A",
-    },
-    orange: {
-      bg: "#FFF7E6",
-      text: "#FA8C16",
-      border: "#FA8C16",
-    },
-  };
+  // const colorMap = {
+  //   green: {
+  //     bg: "#F6FFED",
+  //     text: "#52C41A",
+  //     border: "#52C41A",
+  //   },
+  //   orange: {
+  //     bg: "#FFF7E6",
+  //     text: "#FA8C16",
+  //     border: "#FA8C16",
+  //   },
+  // };
 
-  const colors = colorMap[badgeColor];
+  // const colors = colorMap[badgeColor];
 
   return (
     <Col

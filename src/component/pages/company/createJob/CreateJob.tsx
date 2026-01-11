@@ -6,6 +6,8 @@ import { LabelInput, LabelSelect, LabelDatePicker } from "../../../common";
 import UiButton from "../../../common/CustomButton";
 import { createJobApi } from "@/app/api/job/jobs.api";
 import { Dayjs } from "dayjs";
+import { JobPosting } from "@/constants/Interfaces/Types/Jobs.interface";
+import { ExperienceLevel, JobStatus, WorkMode } from "@/constants/enums";
 
 const { Title } = Typography;
 
@@ -24,28 +26,6 @@ interface CreateJobFormValues {
   maxSalary: number;
   currency: string;
   deadline: Dayjs;
-  status: string;
-}
-
-interface JobData {
-  title: string;
-  role: string;
-  interviewGuideline: string;
-  experienceLevel: string;
-  description: string;
-  requiredSkills: string[];
-  requirements: string[];
-  workMode: string;
-  location: {
-    city: string;
-    country: string;
-  };
-  salaryRange: {
-    min: number;
-    max: number;
-    currency: string;
-  };
-  deadline: string | null;
   status: string;
 }
 
@@ -130,15 +110,15 @@ export default function CreateJob() {
   ];
 
   const onFinish = async (values: CreateJobFormValues) => {
-    const jobData: JobData = {
+    const jobData: JobPosting = {
       title: values.title,
       role: values.role,
       interviewGuideline: values.interviewGuideline,
-      experienceLevel: values.experienceLevel,
+      experienceLevel: values.experienceLevel as ExperienceLevel,
       description: values.description,
       requiredSkills: values.skills || [],
       requirements: values.requirements || [],
-      workMode: values.workMode,
+      workMode: values.workMode as WorkMode,
       location: {
         city: values.city,
         country: values.country,
@@ -148,8 +128,8 @@ export default function CreateJob() {
         max: Number(values.maxSalary),
         currency: values.currency,
       },
-      deadline: values.deadline?.toDate?.().toISOString() || null,
-      status: values.status,
+      deadline: values.deadline?.toDate?.().toISOString() || undefined,
+      status: values.status as JobStatus,
     };
 
     console.log("🟢 Final Job Data:", jobData);
@@ -158,7 +138,7 @@ export default function CreateJob() {
       setLoading(true);
       const res = await createJobApi(jobData);
       console.log("🔵 API Response:", res);
-
+      if (!res) return;
       if (res.status === "Success") {
         message.success("✅ Job created successfully!");
         form.resetFields();
@@ -299,14 +279,14 @@ export default function CreateJob() {
           label="Job Description"
           placeholder="Describe the role..."
           required
-          textArea
+          // textArea
         />
 
         <LabelInput
           name="interviewGuideline"
           label="Interview Guideline"
           placeholder="Explain what the interviewer should focus on..."
-          textArea
+          // textArea
           required
         />
 

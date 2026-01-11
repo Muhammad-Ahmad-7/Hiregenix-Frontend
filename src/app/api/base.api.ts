@@ -1,5 +1,8 @@
 import { getToken } from "@/utils/token";
-import axios from "axios";
+import axios, {
+  // Axios, AxiosError,
+  Method,
+} from "axios";
 import toast from "react-hot-toast";
 
 // Create Axios instance
@@ -27,23 +30,30 @@ api.interceptors.request.use(
 
 // Define API response and helper types
 export interface Meta {
-  totalitems: number;
-  itemsperpage: number;
-  currentpage: number;
-  totalpage: number;
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
   hasMore?: boolean;
   nextCursor?: string;
 }
-
-export interface ApiResponse<T> {
-  success: boolean;
-  statusCode: number;
-  message: string;
-  data: T | null;
-  meta?: Meta | null;
+export interface AxiosResponse<T> {
+  data: ApiResponse<T>;
+  config: {
+    url?: string;
+    method?: Method;
+  };
 }
 
-type ApiCall<T> = () => Promise<ApiResponse<T>>;
+export interface ApiResponse<T> {
+  status: string;
+  message: string;
+  statusCode: number;
+  data?: T;
+  meta?: Meta;
+}
+
+type ApiCall<T> = () => Promise<AxiosResponse<T>>;
 
 interface SafeApiCallProps<T> {
   apiCall: ApiCall<T>;
@@ -52,11 +62,60 @@ interface SafeApiCallProps<T> {
 }
 
 // // Safe API call wrapper function
+// export const safeApiCall = async ({
+//   apiCall,
+//   showToaster = false,
+//   returnDataOnly = false,
+// }: SafeApiCallProps<"any">) => {
+//   try {
+//     console.log("first");
+
+//     // ✅ Temporarily cast response as any to avoid TS errors
+//     const response = await apiCall();
+
+//     console.log("first2");
+//     console.log(
+//       "✅ API Called:",
+//       response.config?.url,
+//       "| Method:",
+//       response.config?.method
+//     );
+
+//     console.log("response", response);
+//     const { data } = response;
+//     console.log("data", data);
+
+//     if (!data || data?.status == null || data?.message == null) return;
+
+//     if (!showToaster && data?.status === "Success") {
+//       toast.success(data.message);
+//       return response.data;
+//     }
+
+//     return returnDataOnly ? response.data.data : response.data;
+//   } catch (error: unknown) {
+//     // Type guard to check if error is an Axios error
+//     let errorMsg = "Something went wrong";
+
+//     if (axios.isAxiosError(error)) {
+//       // Now TypeScript knows this is an AxiosError
+//       errorMsg = error.response?.data?.message || error.message || errorMsg;
+//     } else if (error instanceof Error) {
+//       // Regular Error object
+//       errorMsg = error.message;
+//     }
+
+//     console.log(errorMsg);
+//     toast.error(errorMsg, { duration: 3000 });
+//     return null;
+//   }
+// };
+
 export const safeApiCall = async <T>({
   apiCall,
   showToaster = "default",
   returnDataOnly = false,
-}: SafeApiCallProps<T>): Promise<T | ApiResponse<T> | null> => {
+}: SafeApiCallProps<T>): Promise<ApiResponse<T> | null> => {
   try {
     console.log("first");
     const response = await apiCall();
@@ -76,9 +135,19 @@ export const safeApiCall = async <T>({
       toast.success(data.message);
       return response.data;
     }
-    return returnDataOnly ? response.data.data : response.data;
-  } catch (error) {
-    const errorMsg = error?.response?.data.message ?? "Something went wrong";
+    return returnDataOnly ? response.data : response.data;
+  } catch (error: unknown) {
+    // Type guard to check if error is an Axios error
+    let errorMsg = "Something went wrong";
+
+    if (axios.isAxiosError(error)) {
+      // Now TypeScript knows this is an AxiosError
+      errorMsg = error.response?.data?.message || error.message || errorMsg;
+    } else if (error instanceof Error) {
+      // Regular Error object
+      errorMsg = error.message;
+    }
+
     console.log(errorMsg);
     toast.error(errorMsg, {
       duration: 3000,
@@ -87,5 +156,4 @@ export const safeApiCall = async <T>({
     return null;
   }
 };
-
 export default api;

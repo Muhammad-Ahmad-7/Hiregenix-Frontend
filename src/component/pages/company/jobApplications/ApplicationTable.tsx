@@ -48,7 +48,7 @@ interface InterviewRecord {
   aiResult?: AIResult;
   applicationScore?: number;
   interviewScore?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface ApplicationTableProps {
@@ -192,7 +192,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
     {
       title: "Avg Score",
       key: "avgScore",
-      render: (_: any, record: InterviewRecord) => {
+      render: (_, record: InterviewRecord) => {
         const avgScore = calculateAvgScore(record);
         return (
           <div
@@ -218,7 +218,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
     {
       title: "AI Analysis",
       key: "aiResult",
-      render: (_: any, record: InterviewRecord) => {
+      render: (_, record: InterviewRecord) => {
         if (!record.aiResult) return <span className="text-gray-400">N/A</span>;
 
         const strengthCount = record.aiResult.strengths?.length || 0;
@@ -236,7 +236,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       title: "",
       key: "actions",
       align: "center" as const,
-      render: (_: any, record: InterviewRecord) => (
+      render: (_, record: InterviewRecord) => (
         <Dropdown
           menu={{
             items: [

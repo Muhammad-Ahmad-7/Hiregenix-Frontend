@@ -42,112 +42,27 @@ import {
   getAllSaveJobsApi,
   getRecommendedJobsApi,
   saveJobApi,
+  SavedJobs,
   unSaveJobApi,
+  RecommendedJob,
 } from "@/app/api/candidate/jobs.api";
 
 import dayjs, { Dayjs } from "dayjs";
 import { scheduleInterviewApi } from "@/app/api/candidate/interview.api";
+import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
 
 const { Title, Paragraph } = Typography;
 const { Search } = Input;
 
-export interface JobInterface {
-  location: { city: string; country: string };
-  salaryRange: { min: number; max: number; currency: string };
-  _id: string;
-  companyId: {
-    _id: string;
-    companyName: string;
-    logoUrl: string;
-    website: string;
-  };
-  isSaved: boolean;
-  title: string;
-  role: string;
-  interviewGuideline: string;
-  experienceLevel: string;
-  description: string;
-  requiredSkills: string[];
-  requirements: string[];
-  workMode: string;
-  deadline: string;
-  aiSummary: string;
-  embeddingSynced: boolean;
-  qdrantId: string | null;
-  isDeleted: boolean;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-}
-
-export interface JobApplication {
-  _id: string;
-  jobId: string;
-  title: string;
-  role: string;
-  companyName: string;
-  companyLogo: string;
-  workMode: string;
-  aiSummary: string;
-  createdAt: string;
-  updatedAt: string;
-  experienceLevel?: string;
-}
-
-export interface JobLocation {
-  city: string;
-  country: string;
-}
-
-export interface SalaryRange {
-  min: number;
-  max: number;
-  currency: string;
-}
-
-export interface JobData {
-  _id: string;
-  location: JobLocation;
-  salaryRange: SalaryRange;
-  companyId: string;
-  title: string;
-  role: string;
-  interviewGuideline: string;
-  experienceLevel: string;
-  description: string;
-  requiredSkills: string[];
-  requirements: string[];
-  workMode: string;
-  deadline: string;
-  aiSummary: string;
-  embeddingSynced: boolean;
-  qdrantId: string | null;
-  isDeleted: boolean;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-}
-
-export interface SavedJobsInterface {
-  _id: string;
-  jobId: JobData;
-  candidateId: string;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-}
-
 export default function JobDashboard() {
-  const [selectedJob, setSelectedJob] = useState<JobInterface | null>(null);
-  const [jobList, setJobList] = useState<JobInterface[]>([]);
-  const [filteredJobList, setFilteredJobList] = useState<JobInterface[]>([]);
+  const [selectedJob, setSelectedJob] = useState<JobResponse | null>(null);
+  const [jobList, setJobList] = useState<JobResponse[]>([]);
+  const [filteredJobList, setFilteredJobList] = useState<JobResponse[]>([]);
   const [recommendedJobList, setRecommendedJobList] = useState<
-    JobApplication[]
+    RecommendedJob[]
   >([]);
-  const [savedJobsList, setSavedJobsList] = useState<SavedJobsInterface[]>([]);
-  const [savedJobsMeta, setSavedJobsMeta] = useState<any>(null);
+  const [savedJobsList, setSavedJobsList] = useState<SavedJobs[]>([]);
+  // const [savedJobsMeta, setSavedJobsMeta] = useState<any>(null);
   const [savingJobId, setSavingJobId] = useState<string | null>(null);
 
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -306,14 +221,15 @@ export default function JobDashboard() {
       const res = await getAllSaveJobsApi({ limit: 100, page: 1 });
 
       console.log("✅ Saved Jobs API Response:", res);
+      if (!res || !res.data) return;
 
       setSavedJobsList(res.data.savedJobs || []);
-      setSavedJobsMeta(res.meta);
+      // setSavedJobsMeta(res.meta);
 
       // Update recommended jobs if available
-      if (res.data.recommendedJobs?.recommendedJobs) {
-        setRecommendedJobList(res.data.recommendedJobs.recommendedJobs);
-      }
+      // if (res.data.recommendedJobs?.recommendedJobs) {
+      //   setRecommendedJobList(res.data.recommendedJobs.recommendedJobs);
+      // }
     } catch (error) {
       console.error("❌ Error fetching saved jobs:", error);
       message.error("Failed to fetch saved jobs");
@@ -329,6 +245,13 @@ export default function JobDashboard() {
     try {
       setLoading(true);
       const res = await getRecommendedJobsApi();
+      if (
+        !res ||
+        !res.data ||
+        !res.data.recommendedJobs ||
+        !res.data.recommendedJobs.recommendedJobs
+      )
+        return;
       setRecommendedJobList(res.data.recommendedJobs.recommendedJobs || []);
     } catch (error) {
       console.error("Error fetching recommended jobs:", error);
@@ -356,9 +279,12 @@ export default function JobDashboard() {
 
         const res = await getAllJobsWithScrollingApi({
           limit: 10,
-          lastId: lastId || null,
+          lastId: lastId || undefined,
         });
-
+        if (!res || !res.data || !res.meta) {
+          setHasMore(false);
+          return;
+        }
         const newJobs = res.data.jobs || [];
         setNextCursor(res.meta.nextCursor || null);
 
@@ -835,7 +761,7 @@ export default function JobDashboard() {
                           No recommendations yet
                         </div>
                         <div className="text-gray-400 text-sm">
-                          We'll recommend jobs based on your profile
+                          We will recommend jobs based on your profile
                         </div>
                       </div>
                     ) : (

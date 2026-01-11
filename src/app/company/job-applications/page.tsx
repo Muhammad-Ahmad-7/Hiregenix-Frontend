@@ -56,7 +56,7 @@ export interface MetaData {
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<JobInterface[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [interviewsData, setInterviewsData] = useState<any[]>([]);
+  const [interviewsData, setInterviewsData] = useState<unknown[]>([]);
   const [metaData, setMetaData] = useState<MetaData>({
     total: 0,
     page: 1,
@@ -178,7 +178,7 @@ export default function ApplicationsPage() {
       bestMatches: job.bestMatchCount || 0,
     };
     return acc;
-  }, {} as Record<string, any>);
+  }, {} as Record<string, unknown>);
 
   // Get selected job info
   const selectedJob = applications.find((job) => job._id === selectedJobId);

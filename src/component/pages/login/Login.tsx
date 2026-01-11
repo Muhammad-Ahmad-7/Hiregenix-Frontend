@@ -41,7 +41,8 @@ export default function LoginScreen() {
       });
       console.log(res);
       console.log("Response:", res);
-      if (res.status == "Success") {
+
+      if (res && res.data && res.status == "Success") {
         console.log("first");
         storeToken(res.data.accessToken);
         const role = res.data.user.role;

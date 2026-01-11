@@ -28,7 +28,7 @@ import {
   setLoading,
 } from "@/redux/slices/company/companyJobSlice";
 import { RootState } from "@/redux/store";
-import { Job_Interface } from "@/constants/Interfaces/Types/Jobs.interface";
+import { Job } from "@/constants/Interfaces/Types/Jobs.interface";
 
 const { Title } = Typography;
 
@@ -50,13 +50,15 @@ const MyJobsTable = () => {
       dispatch(setLoading(true));
       const res = await getCompanyOpenJobsApi(page);
 
-      const jobs: Job_Interface[] = res?.data?.findActiveJobs || [];
-      const meta = res.meta;
+      const jobs: Job[] = res?.data?.findActiveJobs || [];
+      if (res?.meta != null) {
+        const meta = res?.meta;
 
-      if (page === 1) {
-        dispatch(setCompanyOpenJobs({ jobs, meta }));
-      } else {
-        dispatch(appendOpenJobs({ jobs, meta }));
+        if (page === 1) {
+          dispatch(setCompanyOpenJobs({ jobs, meta }));
+        } else {
+          dispatch(appendOpenJobs({ jobs, meta }));
+        }
       }
     } catch (err) {
       console.error(err);
@@ -71,7 +73,7 @@ const MyJobsTable = () => {
       dispatch(setLoading(true));
       const res = await getCompanyClosedJobsApi(page);
 
-      const jobs: Job_Interface[] = res?.data?.findClosedJobs || [];
+      const jobs: Job[] = res?.data?.findClosedJobs || [];
       const meta = res.meta;
 
       if (page === 1) {
@@ -130,7 +132,7 @@ const MyJobsTable = () => {
     {
       title: "Location",
       key: "location",
-      render: (_: unknown, record: Job_Interface) => (
+      render: (_: unknown, record: Job) => (
         <span>
           {record.location?.city}, {record.location?.country}
         </span>
@@ -153,7 +155,7 @@ const MyJobsTable = () => {
     {
       title: "Salary",
       key: "salaryRange",
-      render: (_: unknown, record: Job_Interface) => {
+      render: (_: unknown, record: Job) => {
         const salary = record.salaryRange;
         if (!salary) return "—";
         return `${salary.min} - ${salary.max} ${salary.currency}`;
@@ -173,7 +175,7 @@ const MyJobsTable = () => {
     {
       title: "Details",
       key: "details",
-      render: (_: unknown, record: Job_Interface) => (
+      render: (_: unknown, record: Job) => (
         <Button
           type="link"
           className="p-0"

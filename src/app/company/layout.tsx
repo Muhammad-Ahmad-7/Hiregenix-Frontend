@@ -17,8 +17,10 @@ import {
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { removeToken } from "@/utils/token";
-import { setLoading, setProfile } from "@/redux/slices/userSlice";
+import { setProfile } from "@/redux/slices/userSlice";
 import { getCompanyProfileApi } from "../api/company/profile.api";
+import { RootState } from "@/redux/store";
+import { CandidateProfileResponse, CompanyResponse } from "@/constants/Interfaces/Types/Profile.interface";
 // import { useDispatch, useSelector } from "react-redux";
 // import type { RootState } from "@/app/store/store";
 // import { logout } from "@/app/store/slices/authSlice";
@@ -89,9 +91,17 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     if (profile) return;
     getCompanyProfileApi()
       .then((res) => {
+        if (!res || !res.data) return;
         if (res.status === "Success") {
           console.log("Dispatch", res.data.company);
-          dispatch(setProfile(res.data.company));
+          if (!res || !res.data || !res.data.company !profile.userType==company) return;
+          const valuesWithUserType: CompanyResponse & {
+            userType: "company";
+          } = {
+            ...res.data.company,
+            userType: "company",
+          };
+          dispatch(setProfile(valuesWithUserType));
 
           // dispatch(setLoading(false));
         }
@@ -101,7 +111,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         router.push("/auth/sign-up");
       })
       .finally(() => {});
-  }, []);
+  }, [profile, dispatch, router]);
 
   //   const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.auth);
 

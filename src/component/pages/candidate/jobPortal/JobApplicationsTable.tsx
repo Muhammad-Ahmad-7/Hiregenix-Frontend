@@ -2,36 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { Table, Tabs, Button, Input, Dropdown } from "antd";
-import {
-  SearchOutlined,
-  PlusOutlined,
-  FilterOutlined,
-} from "@ant-design/icons";
+import { SearchOutlined, FilterOutlined } from "@ant-design/icons";
 import { getAllInterviewsApi } from "@/app/api/candidate/interview.api";
-
-interface Interview {
-  _id: string;
-  candidateId: string;
-  companyId: {
-    _id: string;
-    companyName: string;
-  };
-  jobId: {
-    _id: string;
-    title: string;
-    workMode: string;
-    deadline: string;
-  };
-  type: string;
-  scheduledDate: string;
-  status: "scheduled" | "under review" | "rejected";
-  aiResult: {
-    strengths: string[];
-    improvements: string[];
-  };
-  createdAt: string;
-  updatedAt: string;
-}
+import { ScheduledInterview } from "@/constants/Interfaces/Types/Jobs.interface";
 
 interface PaginationMeta {
   total: number;
@@ -42,7 +15,7 @@ interface PaginationMeta {
 
 const JobApplicationsTable = () => {
   const [activeTab, setActiveTab] = useState("all");
-  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [interviews, setInterviews] = useState<ScheduledInterview[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
@@ -69,6 +42,11 @@ const JobApplicationsTable = () => {
       try {
         setLoading(true);
         const res = await getAllInterviewsApi({ page: 1, limit: 50 });
+        if (!res || !res.data || !res.data.interviews) {
+          setInterviews([]);
+          setMeta(null);
+          return;
+        }
         setInterviews(res.data.interviews || []);
         setMeta(res.meta || null);
       } catch (err) {
@@ -103,12 +81,12 @@ const JobApplicationsTable = () => {
         break;
       case "under review":
         filteredData = filteredData.filter(
-          (item) => item.status === "under review"
+          (item) => item.status === "completed"
         );
         break;
       case "rejected":
         filteredData = filteredData.filter(
-          (item) => item.status === "rejected"
+          (item) => item.status === "cancelled"
         );
         break;
       default:
@@ -137,14 +115,13 @@ const JobApplicationsTable = () => {
   };
 
   const getStatusTag = (status: string) => {
-    const statusConfig = {
+    const statusConfig: Record<string, { color: string }> = {
       scheduled: { color: "#1890ff" },
-      "under review": { color: "#722ed1" },
-      rejected: { color: "#f5222d" },
+      completed: { color: "#722ed1" },
+      cancelled: { color: "#f5222d" },
     };
 
     const config = statusConfig[status] || { color: "#666" };
-
     return (
       <span className="text-sm text-gray-700">
         <span style={{ color: config.color }}>•</span>{" "}

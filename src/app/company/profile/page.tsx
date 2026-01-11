@@ -72,7 +72,7 @@ export default function CompanyProfile() {
     setIsEditModalOpen(true);
   };
 
-  const handleEditSave = async (values: any) => {
+  const handleEditSave = async (values) => {
     setSaveLoading(true);
     try {
       // Update Redux state locally

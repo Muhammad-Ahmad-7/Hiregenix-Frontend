@@ -57,7 +57,7 @@ const defaultStatsData: Record<string, StatsData> = {
 export const JobApplicationStats: React.FC<JobApplicationStatsProps> = ({
   jobRoles = defaultJobRoles,
   totalApplications,
-  statsData = defaultStatsData,
+  // statsData = defaultStatsData,
   onJobRoleChange,
 }) => {
   const [selectedRole, setSelectedRole] = useState<string>("");
@@ -74,11 +74,11 @@ export const JobApplicationStats: React.FC<JobApplicationStatsProps> = ({
     onJobRoleChange?.(value);
   };
 
-  const currentStats = statsData[selectedRole] || {
-    totalApplications: 0,
-    totalViews: 0,
-    bestMatches: 0,
-  };
+  // const currentStats = statsData[selectedRole] || {
+  //   totalApplications: 0,
+  //   totalViews: 0,
+  //   bestMatches: 0,
+  // };
 
   return (
     <div className="w-full py-2 mb-2 rounded-lg">

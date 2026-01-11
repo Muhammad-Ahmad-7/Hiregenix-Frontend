@@ -13,11 +13,7 @@ import {
   Col,
   Spin,
 } from "antd";
-import {
-  PlusOutlined,
-  SearchOutlined,
-  CalendarOutlined,
-} from "@ant-design/icons";
+import { SearchOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import {
   getAllInterviewsApi,
@@ -68,7 +64,14 @@ interface InterviewTableRecord {
   interviewStatus: string;
 }
 
-const InterviewCard = ({ title, company, type, deadline, logo, onJoin }) => {
+const InterviewCard = ({
+  title,
+  company,
+  type,
+  deadline,
+  //  logo,
+  onJoin,
+}) => {
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3 mb-3">
@@ -111,6 +114,7 @@ export default function InterviewsPage() {
 
   // Format date helper
   const formatDate = (dateString: string) => {
+    console.log(allInterviewsMeta);
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString("en-US", {

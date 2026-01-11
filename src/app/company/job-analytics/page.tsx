@@ -7,8 +7,6 @@ import {
   Input,
   Button,
   Dropdown,
-  Space,
-  Typography,
   Card,
   Spin,
   message,
@@ -20,12 +18,7 @@ import {
   DatePicker,
 } from "antd";
 
-import {
-  PlusOutlined,
-  SearchOutlined,
-  DownOutlined,
-  MoreOutlined,
-} from "@ant-design/icons";
+import { PlusOutlined, SearchOutlined, MoreOutlined } from "@ant-design/icons";
 
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -48,7 +41,6 @@ import { Job_Interface } from "@/constants/Interfaces/Types/Jobs.interface";
 import dayjs from "dayjs";
 import UiButton from "@/component/common/CustomButton";
 
-const { Title } = Typography;
 const { TextArea } = Input;
 
 const MyJobsTable = () => {
@@ -74,10 +66,12 @@ const MyJobsTable = () => {
       const res = await getCompanyOpenJobsApi(page);
 
       const jobs = res?.data?.findActiveJobs || [];
-      const meta = res.meta;
+      const meta = res?.meta;
 
       if (page === 1) {
-        dispatch(setCompanyOpenJobs({ jobs, meta }));
+        if (meta != null && meta != undefined) {
+          dispatch(setCompanyOpenJobs({ jobs, meta }));
+        }
       } else {
         dispatch(appendOpenJobs({ jobs, meta }));
       }
@@ -143,7 +137,7 @@ const MyJobsTable = () => {
   // -----------------------
   // Save Job
   // -----------------------
-  const handleSaveJob = async (values: any) => {
+  const handleSaveJob = async (values) => {
     if (!editingJob) return;
 
     const payload = {
@@ -200,7 +194,7 @@ const MyJobsTable = () => {
 
     {
       title: "Location",
-      render: (_: any, record: Job_Interface) =>
+      render: (_, record: Job_Interface) =>
         `${record.location.city}, ${record.location.country}`,
     },
 
@@ -209,7 +203,7 @@ const MyJobsTable = () => {
 
     {
       title: "Salary",
-      render: (_: any, record: Job_Interface) => {
+      render: (_, record: Job_Interface) => {
         if (!record.salaryRange) return "—";
         const s = record.salaryRange;
         return `${s.min} - ${s.max} ${s.currency}`;
@@ -226,7 +220,7 @@ const MyJobsTable = () => {
       title: "",
       key: "actions",
       align: "center" as const,
-      render: (_: any, record: Job_Interface) => (
+      render: (_, record: Job_Interface) => (
         <Dropdown
           trigger={["click"]}
           menu={{

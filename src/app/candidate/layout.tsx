@@ -18,14 +18,9 @@ import Link from "next/link";
 import { getCandidateProfileApi } from "../api/candidate/profile.api";
 import { useDispatch, useSelector } from "react-redux";
 import { setLoading, setProfile } from "@/redux/slices/userSlice";
-import { getToken, removeToken } from "@/utils/token";
-// import { useDispatch, useSelector } from "react-redux";
-// import type { RootState } from "@/app/store/store";
-// import { logout } from "@/app/store/slices/authSlice";
-// import Cookies from "js-cookie";
-// import { logoutUser } from "@/app/api/backend/auth";
-// import { toast } from "react-hot-toast";
-
+import { removeToken } from "@/utils/token";
+import { RootState } from "@/redux/store";
+import { CandidateProfileResponse } from "@/constants/Interfaces/Types/Profile.interface";
 const { Header, Content, Sider } = Layout;
 
 const items = [
@@ -59,11 +54,6 @@ const items = [
     icon: <MailOutlined />,
     label: <Link href="/candidate/interview-section">Interview Sections</Link>,
   },
-  // {
-  //   key: "/dashboard/admin/setting",
-  //   icon: <SettingOutlined />,
-  //   label: <Link href="/dashboard/admin/setting">Settings</Link>,
-  // },
 ];
 
 type DashboardLayoutProps = {
@@ -91,8 +81,16 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     getCandidateProfileApi()
       .then((res) => {
         console.log("first", res);
+        if (!res || !res.data) return;
         if (res.status === "Success") {
-          dispatch(setProfile(res.data.candidate));
+          const valuesWithUserType: CandidateProfileResponse & {
+            userType: "candidate";
+          } = {
+            ...res.data.candidate,
+            userType: "candidate",
+          };
+          console.log("Profile data:", valuesWithUserType);
+          dispatch(setProfile(valuesWithUserType));
 
           dispatch(setLoading(false));
         }
@@ -105,7 +103,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         // router.push("/auth/sign-up");
       })
       .finally(() => {});
-  }, []);
+  }, [profile, dispatch, router]);
 
   //   const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.auth);
 
