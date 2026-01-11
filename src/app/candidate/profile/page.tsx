@@ -421,7 +421,6 @@ export default function ProfileDashboard() {
                   {skill}
                 </Tag>
               ))}
-
             {(isCandidateProfile(profile)
               ? profile?.skills?.length ||
                 resumeData?.parsedData.skills?.length ||
@@ -527,6 +526,7 @@ export default function ProfileDashboard() {
         <Col xs={24} md={24} lg={9}>
           {isLargeScreen ? (
             <Affix offsetTop={80}>{SidebarCard}</Affix>
+            // <div className="fixed">{SidebarCard}</div>
           ) : (
             SidebarCard
           )}
@@ -654,7 +654,7 @@ export default function ProfileDashboard() {
               className="rounded-xl"
             >
               {resumeData?.parsedData.experience &&
-              resumeData.parsedData.experience.length > 0 ? (
+                resumeData.parsedData.experience.length > 0 ? (
                 <Timeline>
                   {resumeData.parsedData.experience.map((exp) => (
                     <Timeline.Item key={exp._id}>
@@ -688,7 +688,7 @@ export default function ProfileDashboard() {
               className="rounded-xl"
             >
               {resumeData?.parsedData.education &&
-              resumeData.parsedData.education.length > 0 ? (
+                resumeData.parsedData.education.length > 0 ? (
                 <Timeline>
                   {resumeData.parsedData.education.map((edu) => (
                     <Timeline.Item key={edu._id}>
@@ -720,7 +720,7 @@ export default function ProfileDashboard() {
               className="rounded-xl"
             >
               {resumeData?.parsedData.projects &&
-              resumeData.parsedData.projects.length > 0 ? (
+                resumeData.parsedData.projects.length > 0 ? (
                 <Space
                   direction="vertical"
                   style={{ width: "100%" }}

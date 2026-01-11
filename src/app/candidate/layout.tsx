@@ -170,13 +170,12 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         theme={{
           components: {
             Menu: {
-              itemBorderRadius: 12,
               fontSize: 16,
               itemColor: "black",
               itemBg: "#fff",
               itemHoverBg: "#fff",
               itemHoverColor: "#114046",
-              itemSelectedBg: "black",
+              itemSelectedBg: "#2869eb",
               itemSelectedColor: "white",
             },
           },
@@ -249,11 +248,10 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   removeToken();
                   router.replace("/auth");
                 }}
-                className={`w-full font-bold text-left ${
-                  collapsed
-                    ? "flex justify-center bg-red-600 hover:bg-red-700"
-                    : "bg-red-600 hover:bg-red-700 text-white"
-                }`}
+                className={`w-full font-bold text-left ${collapsed
+                  ? "flex justify-center bg-red-600 hover:bg-red-700"
+                  : "bg-red-600 hover:bg-red-700 text-white"
+                  }`}
               >
                 {!collapsed && "Logout"}
               </Button>

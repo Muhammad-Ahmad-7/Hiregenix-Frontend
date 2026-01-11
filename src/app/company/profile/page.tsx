@@ -101,7 +101,7 @@ export default function CompanyProfile() {
               size={72}
               src={
                 profile.logoUrl ||
-                "https://api.dicebear.com/8.x/avataaars/svg?seed=company"
+                "data:image/jpeg;base64,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"
               }
             />
 
@@ -221,11 +221,12 @@ export default function CompanyProfile() {
   );
 
   return (
-    <div style={{ minHeight: "100vh" }}>
+    <div style={{ minHeight: "100vh" }} className="fixed mx-auto w-full">
       <Row gutter={[24, 24]} className="flex justify-center items-center">
         {/* Left Sidebar */}
         <Col xs={24} md={24} lg={9}>
-          <Affix offsetTop={80}>{SidebarCard}</Affix>
+          {/* <Affix offsetTop={80}>{SidebarCard}</Affix> */}
+          <div className="fixed">{SidebarCard}</div>
         </Col>
       </Row>
 

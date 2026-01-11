@@ -131,7 +131,7 @@ export default function Dashboard() {
   const recentApplication = companyStats?.recentApplications?.[0];
 
   return (
-    <div className=" bg-gray-50 min-h-screen">
+    <div className=" bg-gray-50 min-h-screen fixed mr-5">
       {/* First Row */}
       <Row gutter={[8, 8]} className="sm:gutter-[16] md:gutter-[16]">
         {/* (1,1) nested 2x2 grid */}
