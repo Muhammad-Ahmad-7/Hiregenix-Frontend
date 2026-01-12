@@ -326,14 +326,17 @@ export default function JobDashboard() {
     }
 
     if (workModeFilter.length > 0) {
-      filtered = filtered.filter((job) =>
-        workModeFilter.includes(job.workMode.toLowerCase())
+      filtered = filtered.filter(
+        (job) =>
+          job.workMode && workModeFilter.includes(job.workMode.toLowerCase())
       );
     }
 
     if (experienceFilter.length > 0) {
-      filtered = filtered.filter((job) =>
-        experienceFilter.includes(job.experienceLevel.toLowerCase())
+      filtered = filtered.filter(
+        (job) =>
+          job.experienceLevel &&
+          experienceFilter.includes(job.experienceLevel.toLowerCase())
       );
     }
 
@@ -443,17 +446,19 @@ export default function JobDashboard() {
   // ---------------------------------------------
   // Convert JobData to JobInterface for display
   // ---------------------------------------------
-  const convertToJobInterface = (jobData: JobData): JobInterface => {
+  const convertToJobInterface = (
+    jobData: Partial<JobResponse>
+  ): JobResponse => {
     return {
       ...jobData,
       companyId: {
         _id: typeof jobData.companyId === "string" ? jobData.companyId : "",
         companyName: "Company",
         logoUrl: "",
-        website: "",
+        // website: "",
       },
       isSaved: false,
-    };
+    } as JobResponse;
   };
 
   // ---------------------------------------------
@@ -903,7 +908,11 @@ export default function JobDashboard() {
                       <div className="ml-4">
                         <div className="text-sm text-gray-400">Deadline</div>
                         <div className="font-semibold">
-                          {new Date(selectedJob.deadline).toLocaleDateString()}
+                          {selectedJob.deadline
+                            ? new Date(
+                                selectedJob.deadline
+                              ).toLocaleDateString()
+                            : "N/A"}
                         </div>
                       </div>
                     </div>

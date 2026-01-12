@@ -139,7 +139,7 @@ import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
 
 // Define proper types for form values
-interface Step4FormValues {
+export interface Step4FormValues {
   extractData?: string[];
   dataPolicy?: string[];
   terms?: string[];

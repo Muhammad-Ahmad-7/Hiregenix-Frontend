@@ -1,17 +1,22 @@
 "use client";
 
 import { completeProfileApi } from "@/app/api/candidate/profile.api";
-import Step1Form from "@/component/forms/Step1Form";
-import Step2Form from "@/component/forms/Step2Form";
-import Step3Form from "@/component/forms/Step3Form";
+import Step1Form, {
+  FormattedStep1Values,
+  Step1FormValues,
+} from "@/component/forms/Step1Form";
+import Step2Form, { Step2FormValues } from "@/component/forms/Step2Form";
+import Step3Form, { Step3FormValues } from "@/component/forms/Step3Form";
 import Step4Form from "@/component/forms/Step4Form";
 import { Col, Typography, Spin } from "antd";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import { CompleteCandidateProfile } from "@/constants/Interfaces/Types/Profile.interface";
+import { Gender } from "@/constants/enums";
 
 const { Title, Text } = Typography;
 
-interface Profile {
+type Profile = {
   fullName: string;
   dateOfBirth: string;
   gender: string;
@@ -25,7 +30,7 @@ interface Profile {
   skills: string[];
   bio: string;
   tagline: string;
-}
+};
 
 export default function StepperForm() {
   const [profile, setProfile] = useState<Profile>({
@@ -47,7 +52,13 @@ export default function StepperForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const next = (values?: Partial<Profile>) => {
+  const next = (
+    values?:
+      | Partial<Profile>
+      | FormattedStep1Values
+      | Step2FormValues
+      | Step3FormValues
+  ) => {
     console.log(values);
     if (values) setProfile((prev) => ({ ...prev, ...values }));
     setCurrentStep((prev) => prev + 1);
@@ -60,13 +71,16 @@ export default function StepperForm() {
     setCurrentStep((prev) => prev - 1);
   };
 
-  const handleComplete = async (values: Partial<Profile>) => {
+  const handleComplete = async () => {
     console.log(profile);
-    const finalProfile = { ...profile, ...values };
+    const finalProfile: CompleteCandidateProfile = {
+      ...profile,
+      gender: profile.gender as Gender,
+    };
     setLoading(true);
     try {
       const res = await completeProfileApi(finalProfile);
-      if (res.status === "Success") {
+      if (res?.status === "Success") {
         router.push("/candidate/profile");
       }
     } finally {
@@ -77,7 +91,16 @@ export default function StepperForm() {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <Step1Form onNext={next} initialValues={profile} />;
+        return (
+          <Step1Form
+            onNext={next}
+            initialValues={{
+              ...profile,
+              contactNumber:
+                undefined as unknown as Step1FormValues["contactNumber"],
+            }}
+          />
+        );
       case 2:
         return (
           <Step2Form onNext={next} onBack={back} initialValues={profile} />
@@ -91,7 +114,7 @@ export default function StepperForm() {
           <Step4Form
             onNext={handleComplete}
             onBack={back}
-            initialValues={profile}
+            initialValues={undefined}
           />
         );
       default:

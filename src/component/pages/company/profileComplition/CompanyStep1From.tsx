@@ -238,7 +238,7 @@ import { AxiosError } from "axios";
 const { Text } = Typography;
 
 // Define proper types for form values
-interface CompanyStep1FormValues {
+export interface CompanyStep1FormValues {
   companyName: string;
   country: string;
   city: string;

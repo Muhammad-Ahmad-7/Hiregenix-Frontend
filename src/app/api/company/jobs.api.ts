@@ -10,15 +10,25 @@ import {
   CompleteCompanyProfile,
 } from "@/constants/Interfaces/Types/Profile.interface";
 
-export const getCompanyOpenJobsApi = async () => {
+export const getCompanyOpenJobsApi = async (page: number) => {
   return safeApiCall<{ findActiveJobs: JobResponse[] }>({
-    apiCall: () => api.get("/job/get-company-jobs/open"),
+    apiCall: () =>
+      api.get("/job/get-company-jobs/open", {
+        params: {
+          page: page,
+        },
+      }),
     showToaster: true,
   });
 };
-export const getCompanyClosedJobsApi = async () => {
+export const getCompanyClosedJobsApi = async (page: number) => {
   return safeApiCall<{ findClosedJobs: JobResponse[] }>({
-    apiCall: () => api.get("/job/get-company-jobs/closed"),
+    apiCall: () =>
+      api.get("/job/get-company-jobs/closed", {
+        params: {
+          page: page,
+        },
+      }),
     showToaster: true,
   });
 };

@@ -20,7 +20,7 @@ import { removeToken } from "@/utils/token";
 import { setProfile } from "@/redux/slices/userSlice";
 import { getCompanyProfileApi } from "../api/company/profile.api";
 import { RootState } from "@/redux/store";
-import { CandidateProfileResponse, CompanyResponse } from "@/constants/Interfaces/Types/Profile.interface";
+import { CompanyResponse } from "@/constants/Interfaces/Types/Profile.interface";
 // import { useDispatch, useSelector } from "react-redux";
 // import type { RootState } from "@/app/store/store";
 // import { logout } from "@/app/store/slices/authSlice";
@@ -94,7 +94,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         if (!res || !res.data) return;
         if (res.status === "Success") {
           console.log("Dispatch", res.data.company);
-          if (!res || !res.data || !res.data.company !profile.userType==company) return;
+          if (!res || !res.data || !res.data.company) return;
           const valuesWithUserType: CompanyResponse & {
             userType: "company";
           } = {
@@ -256,10 +256,11 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   removeToken();
                   router.replace("/auth");
                 }}
-                className={`w-full font-bold text-left ${collapsed
-                  ? "flex justify-center bg-red-600 hover:bg-red-700"
-                  : "bg-red-600 hover:bg-red-700 text-white"
-                  }`}
+                className={`w-full font-bold text-left ${
+                  collapsed
+                    ? "flex justify-center bg-red-600 hover:bg-red-700"
+                    : "bg-red-600 hover:bg-red-700 text-white"
+                }`}
               >
                 {!collapsed && "Logout"}
               </Button>

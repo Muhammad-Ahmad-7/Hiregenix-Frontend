@@ -120,7 +120,7 @@ import LabelTextArea from "../common/LabelTextArea";
 import type { SelectProps } from "antd";
 
 // Define proper types for form values
-interface Step3FormValues {
+export interface Step3FormValues {
   skills: string[];
   bio: string;
   tagline?: string;

@@ -19,34 +19,9 @@ import {
   getAllInterviewsApi,
   getAllTodaysInterviewsApi,
 } from "@/app/api/candidate/interview.api";
+import { ScheduledInterview } from "@/constants/Interfaces/Types/Jobs.interface";
 
 // Interfaces
-export interface Interview {
-  _id: string;
-  candidateId: string;
-  companyId: {
-    _id: string;
-    companyName: string;
-  };
-  jobId: {
-    _id: string;
-    title: string;
-    workMode: string;
-    deadline: string;
-  };
-  type: string;
-  scheduledDate: string;
-  status: "scheduled" | "under review" | "rejected";
-  aiResult: {
-    strengths: string[];
-    improvements: string[];
-  };
-
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-}
-
 export interface PaginationMeta {
   total: number;
   page: number;
@@ -64,6 +39,15 @@ interface InterviewTableRecord {
   interviewStatus: string;
 }
 
+interface InterviewCardProps {
+  title: string;
+  company: string;
+  type: string;
+  deadline: string;
+  logo?: string;
+  onJoin: () => void;
+}
+
 const InterviewCard = ({
   title,
   company,
@@ -71,7 +55,7 @@ const InterviewCard = ({
   deadline,
   //  logo,
   onJoin,
-}) => {
+}: InterviewCardProps) => {
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3 mb-3">
@@ -106,8 +90,9 @@ const InterviewCard = ({
 export default function InterviewsPage() {
   const [activeTab, setActiveTab] = useState("schedule");
   const [searchText, setSearchText] = useState("");
-  const [todaysInterviews, setTodaysInterviews] = useState<Interview[]>([]);
-  const [allInterviews, setAllInterviews] = useState<Interview[]>([]);
+  const [todaysInterviews, setTodaysInterviews] =
+    useState<ScheduledInterview[]>([]);
+  const [allInterviews, setAllInterviews] = useState<ScheduledInterview[]>([]);
   const [loading, setLoading] = useState(true);
   const [allInterviewsMeta, setAllInterviewsMeta] =
     useState<PaginationMeta | null>(null);
@@ -134,6 +119,11 @@ export default function InterviewsPage() {
         setLoading(true);
         // Replace with your actual API call
         const res = await getAllInterviewsApi({ page: 1, limit: 50 });
+        if (!res || !res.data) {
+          setAllInterviews([]);
+          setAllInterviewsMeta(null);
+          return;
+        }
         setAllInterviews(res.data.interviews || []);
         setAllInterviewsMeta(res.meta || null);
 
@@ -154,6 +144,10 @@ export default function InterviewsPage() {
         setLoading(true);
         // Replace with your actual API call
         const res = await getAllTodaysInterviewsApi();
+        if (!res || !res.data) {
+          setTodaysInterviews([]);
+          return;
+        }
         setTodaysInterviews(res.data.interviews || []);
 
         // Mock data
@@ -177,7 +171,7 @@ export default function InterviewsPage() {
 
   // Map API data to table format
   const mapInterviewsToTable = (
-    interviews: Interview[]
+    interviews: ScheduledInterview[]
   ): InterviewTableRecord[] =>
     interviews.map((i) => ({
       key: i._id,

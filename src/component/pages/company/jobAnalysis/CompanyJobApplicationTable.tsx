@@ -28,7 +28,7 @@ import {
   setLoading,
 } from "@/redux/slices/company/companyJobSlice";
 import { RootState } from "@/redux/store";
-import { Job } from "@/constants/Interfaces/Types/Jobs.interface";
+import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
 
 const { Title } = Typography;
 
@@ -50,9 +50,11 @@ const MyJobsTable = () => {
       dispatch(setLoading(true));
       const res = await getCompanyOpenJobsApi(page);
 
-      const jobs: Job[] = res?.data?.findActiveJobs || [];
+      if (!res) return;
+
+      const jobs: JobResponse[] = res?.data?.findActiveJobs || [];
       if (res?.meta != null) {
-        const meta = res?.meta;
+        const meta = res.meta;
 
         if (page === 1) {
           dispatch(setCompanyOpenJobs({ jobs, meta }));
@@ -73,13 +75,17 @@ const MyJobsTable = () => {
       dispatch(setLoading(true));
       const res = await getCompanyClosedJobsApi(page);
 
-      const jobs: Job[] = res?.data?.findClosedJobs || [];
+      if (!res) return;
+
+      const jobs: JobResponse[] = res?.data?.findClosedJobs || [];
       const meta = res.meta;
 
-      if (page === 1) {
-        dispatch(setCompanyClosedJobs({ jobs, meta }));
-      } else {
-        dispatch(appendClosedJobs({ jobs, meta }));
+      if (meta) {
+        if (page === 1) {
+          dispatch(setCompanyClosedJobs({ jobs, meta }));
+        } else {
+          dispatch(appendClosedJobs({ jobs, meta }));
+        }
       }
     } catch (err) {
       console.error(err);
@@ -102,6 +108,9 @@ const MyJobsTable = () => {
         fetchClosedJobs();
       }
     }
+    // Intentionally only depend on activeTab to avoid infinite loops
+    // fetchOpenJobs and fetchClosedJobs are stable functions that use dispatch
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   // -----------------------
@@ -132,7 +141,7 @@ const MyJobsTable = () => {
     {
       title: "Location",
       key: "location",
-      render: (_: unknown, record: Job) => (
+      render: (_: unknown, record: JobResponse) => (
         <span>
           {record.location?.city}, {record.location?.country}
         </span>
@@ -155,7 +164,7 @@ const MyJobsTable = () => {
     {
       title: "Salary",
       key: "salaryRange",
-      render: (_: unknown, record: Job) => {
+      render: (_: unknown, record: JobResponse) => {
         const salary = record.salaryRange;
         if (!salary) return "—";
         return `${salary.min} - ${salary.max} ${salary.currency}`;
@@ -175,7 +184,7 @@ const MyJobsTable = () => {
     {
       title: "Details",
       key: "details",
-      render: (_: unknown, record: Job) => (
+      render: (_: unknown, record: JobResponse) => (
         <Button
           type="link"
           className="p-0"
@@ -274,10 +283,10 @@ const MyJobsTable = () => {
             className="rounded-lg overflow-hidden"
           />
           {/* Load More */}
-          {(activeTab === "open" ? openMeta : closedMeta)?.page <
-            (activeTab === "open"
+          {((activeTab === "open" ? openMeta : closedMeta)?.page ?? 0) <
+            ((activeTab === "open"
               ? openMeta?.totalPages
-              : closedMeta?.totalPages) && (
+              : closedMeta?.totalPages) ?? 0) && (
             <div className="flex justify-center mt-4">
               <Button onClick={loadMoreJobs} type="dashed">
                 Load More

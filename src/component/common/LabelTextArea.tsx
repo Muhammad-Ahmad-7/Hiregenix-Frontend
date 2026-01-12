@@ -10,7 +10,7 @@ type LabelTextAreaProps = React.ComponentProps<typeof TextArea> & {
   label: string;
   name: string;
   required?: boolean;
-  itemProps?: unknown; // for tooltip, rules, etc
+  itemProps?: Record<string, string | number | boolean | object>; // for tooltip, rules, etc
 };
 
 const LabelTextArea: React.FC<LabelTextAreaProps> = ({

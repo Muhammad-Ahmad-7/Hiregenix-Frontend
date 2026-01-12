@@ -4,7 +4,9 @@ import {
   getAllJobsApplicationsApi,
   getSpecificJobApplicationsApi,
 } from "@/app/api/company/applications.api";
-import ApplicationTable from "@/component/pages/company/jobApplications/ApplicationTable";
+import ApplicationTable, {
+  InterviewRecord,
+} from "@/component/pages/company/jobApplications/ApplicationTable";
 import JobApplicationStats from "@/component/pages/company/jobApplications/JobApplicationStats";
 import React, { useEffect, useState } from "react";
 
@@ -19,7 +21,7 @@ export interface SalaryRange {
   currency: string;
 }
 
-export interface JobInterface {
+export interface JobResponse {
   _id: string;
   companyId: string;
   title: string;
@@ -53,10 +55,22 @@ export interface MetaData {
   totalPages: number;
 }
 
+export interface StatsData {
+  totalApplications: number;
+  totalViews: number;
+  bestMatches: number;
+}
+
+type JobWithStats = Pick<JobResponse, "_id" | "title"> & {
+  applicationCount?: number;
+  viewCount?: number;
+  bestMatchCount?: number;
+};
+
 export default function ApplicationsPage() {
-  const [applications, setApplications] = useState<JobInterface[]>([]);
+  const [applications, setApplications] = useState<JobWithStats[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [interviewsData, setInterviewsData] = useState<unknown[]>([]);
+  const [interviewsData, setInterviewsData] = useState<InterviewRecord[]>([]);
   const [metaData, setMetaData] = useState<MetaData>({
     total: 0,
     page: 1,
@@ -70,7 +84,13 @@ export default function ApplicationsPage() {
     const fetchData = async () => {
       try {
         const res = await getAllJobsApplicationsApi();
-        const jobs = res.data.jobs || [];
+
+        if (!res || !res.data) {
+          setApplications([]);
+          return;
+        }
+
+        const jobs = (res.data.jobs as unknown as JobWithStats[]) || [];
         setApplications(jobs);
 
         // Set first job as selected by default if available
@@ -79,6 +99,7 @@ export default function ApplicationsPage() {
         }
       } catch (error) {
         console.error("Error fetching job applications:", error);
+        setApplications([]);
       }
     };
 
@@ -97,12 +118,25 @@ export default function ApplicationsPage() {
           limit: metaData.limit,
         });
 
+        if (!res || !res.data) {
+          setInterviewsData([]);
+          setMetaData({
+            total: 0,
+            page: 1,
+            limit: 10,
+            totalPages: 0,
+          });
+          return;
+        }
+
         // Set interviews data from res.data.interviews
-        setInterviewsData(res.data.interviews || []);
+        setInterviewsData(
+          (res.data.interviews as unknown as InterviewRecord[]) || []
+        );
 
         // Set pagination meta from res.meta
         setMetaData(
-          res.meta || {
+          res?.meta || {
             total: 0,
             page: 1,
             limit: 10,
@@ -124,7 +158,7 @@ export default function ApplicationsPage() {
     };
 
     fetchApplications();
-  }, [selectedJobId]);
+  }, [selectedJobId, metaData.page, metaData.limit]);
 
   // Handle job role change from stats component
   const handleJobRoleChange = (jobId: string) => {
@@ -144,12 +178,19 @@ export default function ApplicationsPage() {
         limit: pageSize,
       });
 
+        if (!res || !res.data) {
+          setInterviewsData([]);
+          return;
+        }
+
       // Set interviews data from res.data.interviews
-      setInterviewsData(res.data.interviews || []);
+        setInterviewsData(
+          (res.data.interviews as unknown as InterviewRecord[]) || []
+        );
 
       // Set pagination meta from res.meta
       setMetaData(
-        res.meta || {
+        res?.meta || {
           total: 0,
           page,
           limit: pageSize,
@@ -178,7 +219,7 @@ export default function ApplicationsPage() {
       bestMatches: job.bestMatchCount || 0,
     };
     return acc;
-  }, {} as Record<string, unknown>);
+  }, {} as Record<string, StatsData>);
 
   // Get selected job info
   const selectedJob = applications.find((job) => job._id === selectedJobId);

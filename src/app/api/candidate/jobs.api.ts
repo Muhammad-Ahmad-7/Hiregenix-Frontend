@@ -4,6 +4,7 @@
 
 import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
 import api, { safeApiCall } from "../base.api";
+import { ExperienceLevel } from "@/constants/enums";
 
 export const getRecommendedJobsApi = async () => {
   return safeApiCall<{ recommendedJobs: RecommendedJobsResponse }>({
@@ -97,6 +98,7 @@ export interface RecommendedJob {
   title: string;
   role: string;
   companyName: string;
+  experienceLevel: ExperienceLevel;
   companyLogo: string;
   workMode: "remote" | "onsite" | "hybrid";
   aiSummary: string;

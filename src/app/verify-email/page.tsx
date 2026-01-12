@@ -30,6 +30,7 @@ export default function Page() {
         console.log("Response from verify:", res);
 
         if (res?.status === "Success") {
+          if (!res.data?.accessToken) return;
           storeToken(res.data.accessToken);
           setStatus("success");
 

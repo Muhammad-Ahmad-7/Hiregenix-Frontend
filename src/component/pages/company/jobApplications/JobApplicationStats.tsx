@@ -31,29 +31,6 @@ const defaultJobRoles: JobRole[] = [
   { value: "devops", label: "DevOps Engineer" },
 ];
 
-const defaultStatsData: Record<string, StatsData> = {
-  frontend: {
-    totalApplications: 128,
-    totalViews: 596,
-    bestMatches: 2,
-  },
-  backend: {
-    totalApplications: 95,
-    totalViews: 420,
-    bestMatches: 1,
-  },
-  fullstack: {
-    totalApplications: 156,
-    totalViews: 712,
-    bestMatches: 3,
-  },
-  devops: {
-    totalApplications: 42,
-    totalViews: 189,
-    bestMatches: 0,
-  },
-};
-
 export const JobApplicationStats: React.FC<JobApplicationStatsProps> = ({
   jobRoles = defaultJobRoles,
   totalApplications,

@@ -55,6 +55,7 @@ export default function StatsCard({
           {/* Top Section */}
           <TopIconAndNavigation
             icon={icon}
+            title={title}
             arrow={arrow}
             bgColorIcon={bgColorIcon}
           />

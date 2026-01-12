@@ -9,7 +9,7 @@ import { CompanyResponse } from "./Profile.interface";
 
 export interface JobResponse extends JobPosting {
   _id: string;
-  companyId: string;
+  companyId: CompanyMini;
   aiSummary: string;
   embeddingSynced: boolean;
   qdrantId: string | null;
@@ -95,6 +95,7 @@ export interface ScheduledInterviewSimple {
 export interface CompanyMini {
   _id: string;
   companyName: string;
+  logoUrl: string;
 }
 export interface JobMini {
   _id: string;

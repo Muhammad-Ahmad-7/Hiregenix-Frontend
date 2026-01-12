@@ -99,7 +99,7 @@ import UiButton from "../../../common/CustomButton";
 import LeftArrow from "@/icons/LeftArrow";
 
 // Define proper types for form values
-interface CompanyStep2FormValues {
+export interface CompanyStep2FormValues {
   linkedInUrl: string;
   website: string;
 }

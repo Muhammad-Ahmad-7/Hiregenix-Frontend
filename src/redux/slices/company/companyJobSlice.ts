@@ -1,5 +1,9 @@
+// ===========================
+// File 1: companyJobSlice.ts
+// ===========================
+
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Job_Interface } from "@/constants/Interfaces/Types/Jobs.interface";
+import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
 
 // ------------------------
 // Pagination Interface
@@ -14,40 +18,36 @@ export interface PaginationMeta {
 // ------------------------
 // Slice State
 // ------------------------
-interface CompanyState {
-  openJobs: Job_Interface[] | null;
-  closedJobs: Job_Interface[] | null;
-
+interface CompanyJobState {
+  openJobs: JobResponse[] | null;
+  closedJobs: JobResponse[] | null;
   openMeta: PaginationMeta | null;
   closedMeta: PaginationMeta | null;
-
   loading: boolean;
 }
 
 // ------------------------
 // Initial State
 // ------------------------
-const initialState: CompanyState = {
+const initialState: CompanyJobState = {
   openJobs: null,
   closedJobs: null,
-
   openMeta: null,
   closedMeta: null,
-
   loading: false,
 };
 
 // ------------------------
 // Slice
 // ------------------------
-const companySlice = createSlice({
+const companyJobSlice = createSlice({
   name: "companyJobs",
   initialState,
   reducers: {
     // ------------------------
     // Loading
     // ------------------------
-    setLoading(state, action: PayloadAction<boolean>) {
+    setLoading(state, action: PayloadAction<boolean>): void {
       state.loading = action.payload;
     },
 
@@ -56,16 +56,16 @@ const companySlice = createSlice({
     // ------------------------
     setCompanyOpenJobs(
       state,
-      action: PayloadAction<{ jobs: Job_Interface[]; meta: PaginationMeta }>
-    ) {
+      action: PayloadAction<{ jobs: JobResponse[]; meta: PaginationMeta }>
+    ): void {
       state.openJobs = action.payload.jobs;
       state.openMeta = action.payload.meta;
     },
 
     setCompanyClosedJobs(
       state,
-      action: PayloadAction<{ jobs: Job_Interface[]; meta: PaginationMeta }>
-    ) {
+      action: PayloadAction<{ jobs: JobResponse[]; meta: PaginationMeta }>
+    ): void {
       state.closedJobs = action.payload.jobs;
       state.closedMeta = action.payload.meta;
     },
@@ -75,8 +75,8 @@ const companySlice = createSlice({
     // ------------------------
     appendOpenJobs(
       state,
-      action: PayloadAction<{ jobs: Job_Interface[]; meta: PaginationMeta }>
-    ) {
+      action: PayloadAction<{ jobs: JobResponse[]; meta: PaginationMeta }>
+    ): void {
       state.openJobs = state.openJobs
         ? [...state.openJobs, ...action.payload.jobs]
         : action.payload.jobs;
@@ -86,8 +86,8 @@ const companySlice = createSlice({
 
     appendClosedJobs(
       state,
-      action: PayloadAction<{ jobs: Job_Interface[]; meta: PaginationMeta }>
-    ) {
+      action: PayloadAction<{ jobs: JobResponse[]; meta: PaginationMeta }>
+    ): void {
       state.closedJobs = state.closedJobs
         ? [...state.closedJobs, ...action.payload.jobs]
         : action.payload.jobs;
@@ -98,7 +98,7 @@ const companySlice = createSlice({
     // ------------------------
     // Delete Job
     // ------------------------
-    deleteJob(state, action: PayloadAction<string>) {
+    deleteJob(state, action: PayloadAction<string>): void {
       const jobId = action.payload;
 
       if (state.openJobs) {
@@ -112,7 +112,7 @@ const companySlice = createSlice({
     // ------------------------
     // Move Job: Open → Closed
     // ------------------------
-    moveJobToClosed(state, action: PayloadAction<string>) {
+    moveJobToClosed(state, action: PayloadAction<string>): void {
       const jobId = action.payload;
       if (!state.openJobs) return;
 
@@ -129,7 +129,7 @@ const companySlice = createSlice({
     // ------------------------
     // Move Job: Closed → Open
     // ------------------------
-    moveJobToOpen(state, action: PayloadAction<string>) {
+    moveJobToOpen(state, action: PayloadAction<string>): void {
       const jobId = action.payload;
       if (!state.closedJobs) return;
 
@@ -146,7 +146,7 @@ const companySlice = createSlice({
     // ------------------------
     // Update Job Details
     // ------------------------
-    updateJobDetails(state, action: PayloadAction<Job_Interface>) {
+    updateJobDetails(state, action: PayloadAction<JobResponse>): void {
       const updatedJob = action.payload;
 
       if (state.openJobs) {
@@ -177,6 +177,6 @@ export const {
   moveJobToOpen,
   updateJobDetails,
   setLoading,
-} = companySlice.actions;
+} = companyJobSlice.actions;
 
-export default companySlice.reducer;
+export default companyJobSlice.reducer;

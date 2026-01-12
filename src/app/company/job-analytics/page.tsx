@@ -37,30 +37,52 @@ import {
 } from "@/redux/slices/company/companyJobSlice";
 
 import { RootState } from "@/redux/store";
-import { Job_Interface } from "@/constants/Interfaces/Types/Jobs.interface";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import UiButton from "@/component/common/CustomButton";
+import type { ColumnsType } from "antd/es/table";
+import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
+import { ExperienceLevel, WorkMode } from "@/constants/enums";
 
 const { TextArea } = Input;
 
-const MyJobsTable = () => {
+interface EditJobFormValues {
+  title: string;
+  role: string;
+  description: string;
+  experienceLevel: string;
+  workMode: string;
+  requiredSkills: string[];
+  requirements: string[];
+  city: string;
+  country: string;
+  salaryMin: number;
+  salaryMax: number;
+  currency: string;
+  deadline: Dayjs;
+}
+
+interface JobWithKey extends JobResponse {
+  key: string;
+}
+
+const MyJobsTable: React.FC = () => {
   const dispatch = useDispatch();
   const { openJobs, closedJobs, openMeta, closedMeta, loading } = useSelector(
     (state: RootState) => state.companyJob
   );
 
   const [activeTab, setActiveTab] = useState<"open" | "closed">("open");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState<string>("");
 
   // Modal State
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingJob, setEditingJob] = useState<Job_Interface | null>(null);
-  const [form] = Form.useForm();
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [editingJob, setEditingJob] = useState<JobResponse | null>(null);
+  const [form] = Form.useForm<EditJobFormValues>();
 
   // -----------------------
   // Fetch Jobs
   // -----------------------
-  const fetchOpenJobs = async (page = 1) => {
+  const fetchOpenJobs = async (page: number = 1): Promise<void> => {
     try {
       dispatch(setLoading(true));
       const res = await getCompanyOpenJobsApi(page);
@@ -73,7 +95,9 @@ const MyJobsTable = () => {
           dispatch(setCompanyOpenJobs({ jobs, meta }));
         }
       } else {
-        dispatch(appendOpenJobs({ jobs, meta }));
+        if (meta != null && meta != undefined) {
+          dispatch(appendOpenJobs({ jobs, meta }));
+        }
       }
     } catch {
       message.error("Failed to fetch open jobs");
@@ -82,18 +106,22 @@ const MyJobsTable = () => {
     }
   };
 
-  const fetchClosedJobs = async (page = 1) => {
+  const fetchClosedJobs = async (page: number = 1): Promise<void> => {
     try {
       dispatch(setLoading(true));
       const res = await getCompanyClosedJobsApi(page);
 
       const jobs = res?.data?.findClosedJobs || [];
-      const meta = res.meta;
+      const meta = res?.meta;
 
       if (page === 1) {
-        dispatch(setCompanyClosedJobs({ jobs, meta }));
+        if (meta != null && meta != undefined) {
+          dispatch(setCompanyClosedJobs({ jobs, meta }));
+        }
       } else {
-        dispatch(appendClosedJobs({ jobs, meta }));
+        if (meta != null && meta != undefined) {
+          dispatch(appendClosedJobs({ jobs, meta }));
+        }
       }
     } catch {
       message.error("Failed to fetch closed jobs");
@@ -107,12 +135,13 @@ const MyJobsTable = () => {
       if (activeTab === "open") fetchOpenJobs();
       else fetchClosedJobs();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   // -----------------------
   // Open Edit Modal
   // -----------------------
-  const openEditModal = (job: Job_Interface) => {
+  const openEditModal = (job: JobResponse): void => {
     setEditingJob(job);
 
     form.setFieldsValue({
@@ -137,15 +166,15 @@ const MyJobsTable = () => {
   // -----------------------
   // Save Job
   // -----------------------
-  const handleSaveJob = async (values) => {
+  const handleSaveJob = async (values: EditJobFormValues): Promise<void> => {
     if (!editingJob) return;
 
     const payload = {
       title: values.title,
       role: values.role,
       description: values.description,
-      experienceLevel: values.experienceLevel,
-      workMode: values.workMode,
+      experienceLevel: values.experienceLevel as ExperienceLevel,
+      workMode: values.workMode as WorkMode,
       requiredSkills: values.requiredSkills,
       requirements: values.requirements,
       location: {
@@ -158,6 +187,7 @@ const MyJobsTable = () => {
         currency: values.currency,
       },
       deadline: values.deadline.toISOString(),
+      status: editingJob.status,
     };
 
     try {
@@ -172,7 +202,7 @@ const MyJobsTable = () => {
       else fetchClosedJobs();
 
       setIsEditModalOpen(false);
-    } catch (err) {
+    } catch {
       message.error("Failed to update job");
     }
   };
@@ -188,22 +218,22 @@ const MyJobsTable = () => {
   // -----------------------
   // Table Columns
   // -----------------------
-  const columns = [
-    { title: "Title", dataIndex: "title" },
-    { title: "Role", dataIndex: "role" },
+  const columns: ColumnsType<JobWithKey> = [
+    { title: "Title", dataIndex: "title" as const },
+    { title: "Role", dataIndex: "role" as const },
 
     {
       title: "Location",
-      render: (_, record: Job_Interface) =>
+      render: (_: unknown, record: JobResponse) =>
         `${record.location.city}, ${record.location.country}`,
     },
 
-    { title: "Work Mode", dataIndex: "workMode" },
-    { title: "Experience", dataIndex: "experienceLevel" },
+    { title: "Work Mode", dataIndex: "workMode" as const },
+    { title: "Experience", dataIndex: "experienceLevel" as const },
 
     {
       title: "Salary",
-      render: (_, record: Job_Interface) => {
+      render: (_: unknown, record: JobResponse) => {
         if (!record.salaryRange) return "—";
         const s = record.salaryRange;
         return `${s.min} - ${s.max} ${s.currency}`;
@@ -212,7 +242,7 @@ const MyJobsTable = () => {
 
     {
       title: "Deadline",
-      dataIndex: "deadline",
+      dataIndex: "deadline" as const,
       render: (date: string) => dayjs(date).format("DD MMM YYYY"),
     },
 
@@ -220,7 +250,7 @@ const MyJobsTable = () => {
       title: "",
       key: "actions",
       align: "center" as const,
-      render: (_, record: Job_Interface) => (
+      render: (_: unknown, record: JobResponse) => (
         <Dropdown
           trigger={["click"]}
           menu={{
@@ -241,9 +271,11 @@ const MyJobsTable = () => {
                   deleteJobApi(record._id)
                     .then(() => {
                       message.success("Job deleted");
-                      activeTab === "open"
-                        ? fetchOpenJobs()
-                        : fetchClosedJobs();
+                      if (activeTab === "open") {
+                        fetchOpenJobs();
+                      } else {
+                        fetchClosedJobs();
+                      }
                     })
                     .catch(() => message.error("Delete failed")),
               },
@@ -259,7 +291,7 @@ const MyJobsTable = () => {
   // -----------------------
   // Load More
   // -----------------------
-  const loadMoreJobs = () => {
+  const loadMoreJobs = (): void => {
     if (activeTab === "open" && openMeta) {
       const next = openMeta.page + 1;
       if (next <= openMeta.totalPages) fetchOpenJobs(next);
@@ -462,16 +494,18 @@ const MyJobsTable = () => {
               className="rounded-lg"
             />
 
-            {(activeTab === "open" ? openMeta : closedMeta)?.page <
-              (activeTab === "open"
-                ? openMeta?.totalPages
-                : closedMeta?.totalPages) && (
-              <div className="flex justify-center mt-4">
-                <Button onClick={loadMoreJobs} type="dashed">
-                  Load More
-                </Button>
-              </div>
-            )}
+            {openMeta &&
+              closedMeta &&
+              (activeTab === "open" ? openMeta : closedMeta)?.page <
+                (activeTab === "open"
+                  ? openMeta?.totalPages
+                  : closedMeta?.totalPages) && (
+                <div className="flex justify-center mt-4">
+                  <Button onClick={loadMoreJobs} type="dashed">
+                    Load More
+                  </Button>
+                </div>
+              )}
           </>
         )}
       </Card>

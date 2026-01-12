@@ -9,30 +9,18 @@ import CompanyStep1From from "./CompanyStep1From";
 import CompanyStep2From from "./CompanyStep2From";
 import CompanyStep3From from "./CompanyStep3From";
 import { completeCompanyProfileApi } from "@/app/api/company/profile.api";
+import { CompleteCompanyProfile } from "@/constants/Interfaces/Types/Profile.interface";
 
 const { Title, Text } = Typography;
 
-interface CompanyProfile {
-  companyName: string;
-  country: string;
-  city: string;
-  foundedYear: number | Date;
-  ntnNumber: string;
-  contactEmail: string;
-  logoUrl: string;
-  website: string;
-  linkedInUrl: string;
-  description: string;
-  techStack: string[];
-  hiringStatus: "actively_hiring" | "paused" | "not_hiring";
-}
+type CompanyProfile = CompleteCompanyProfile;
 
 export default function CompanyStep1() {
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile>({
     companyName: "",
     country: "",
     city: "",
-    foundedYear: new Date().getFullYear(), // FIXED
+    foundedYear: new Date().getFullYear(),
     ntnNumber: "",
     contactEmail: "",
     logoUrl: "https://example.com/uploads/onyx-logo.png",
@@ -53,12 +41,14 @@ export default function CompanyStep1() {
 
   const back = () => setCurrentStep((prev) => prev - 1);
 
-  const handleComplete = async (values: Partial<CompanyProfile>) => {
-    const finalProfile = { ...companyProfile, ...values };
+  const handleComplete = async () => {
+    const finalProfile: CompleteCompanyProfile = {
+      ...companyProfile,
+    };
     setLoading(true);
     try {
       const res = await completeCompanyProfileApi(finalProfile);
-      if (res.status === "Success") {
+      if (res?.status === "Success") {
         toast.success("Company profile completed successfully!");
         router.push("/company/profile");
       }
@@ -74,14 +64,28 @@ export default function CompanyStep1() {
     switch (currentStep) {
       case 1:
         return (
-          <CompanyStep1From onNext={next} initialValues={companyProfile} />
+          <CompanyStep1From
+            onNext={next}
+            initialValues={{
+              companyName: companyProfile.companyName,
+              country: companyProfile.country,
+              city: companyProfile.city,
+              foundedYear: companyProfile.foundedYear,
+              ntnNumber: companyProfile.ntnNumber,
+              contactEmail: companyProfile.contactEmail,
+              logoUrl: companyProfile.logoUrl,
+            }}
+          />
         );
       case 2:
         return (
           <CompanyStep2From
             onNext={next}
             onBack={back}
-            initialValues={companyProfile}
+            initialValues={{
+              linkedInUrl: companyProfile.linkedInUrl,
+              website: companyProfile.website,
+            }}
           />
         );
       case 3:
@@ -89,7 +93,11 @@ export default function CompanyStep1() {
           <CompanyStep3From
             onNext={next}
             onBack={back}
-            initialValues={companyProfile}
+            initialValues={{
+              techStack: companyProfile.techStack,
+              description: companyProfile.description,
+              hiringStatus: companyProfile.hiringStatus,
+            }}
           />
         );
       case 4:
@@ -97,7 +105,7 @@ export default function CompanyStep1() {
           <Step4Form
             onNext={handleComplete}
             onBack={back}
-            initialValues={companyProfile}
+            initialValues={undefined}
           />
         );
       default:

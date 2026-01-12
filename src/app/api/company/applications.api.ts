@@ -5,7 +5,7 @@ import api, { safeApiCall } from "../base.api";
 
 export const getAllJobsApplicationsApi = async () => {
   console.log("body");
-  return safeApiCall<{ interviews: ScheduledInterviewWithCandidate[] }>({
+  return safeApiCall<{ jobs: ScheduledInterviewWithCandidate[] }>({
     apiCall: () => api.get("/job/get-company-jobs"),
     showToaster: true,
   });

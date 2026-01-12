@@ -19,13 +19,13 @@ import { Dayjs } from "dayjs";
 const { Text } = Typography;
 
 // Type definitions
-interface PhoneNumber {
+export interface PhoneNumber {
   countryCode: string;
   areaCode: string;
   phoneNumber: string;
 }
 
-interface Step1FormValues {
+export interface Step1FormValues {
   fullName: string;
   dateOfBirth: Dayjs | string;
   gender: string;
@@ -35,7 +35,7 @@ interface Step1FormValues {
   profilePictureUrl: string;
 }
 
-interface FormattedStep1Values {
+export interface FormattedStep1Values {
   fullName: string;
   dateOfBirth: string;
   gender: string;

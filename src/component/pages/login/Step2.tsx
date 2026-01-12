@@ -16,7 +16,7 @@ export default function Step1() {
           Social Information
         </Title>
         {/* <Step1Form /> */}
-        <Step2Form />
+        <Step2Form onNext={() => {}} onBack={() => {}} />
       </div>
     </Col>
   );

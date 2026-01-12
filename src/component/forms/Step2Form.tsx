@@ -117,7 +117,7 @@ import UiButton from "../common/CustomButton";
 import LeftArrow from "@/icons/LeftArrow";
 
 // Define proper types for form values
-interface Step2FormValues {
+export interface Step2FormValues {
   githubUrl: string;
   linkedinUrl?: string;
   portfolioUrl?: string;

@@ -7,7 +7,7 @@ import LabelTextArea from "../../../common/LabelTextArea";
 import type { SelectProps } from "antd";
 
 // Define proper types for form values
-interface CompanyStep3FormValues {
+export interface CompanyStep3FormValues {
   techStack: string[];
   description: string;
   hiringStatus?: "actively_hiring" | "paused" | "not_hiring";

@@ -24,18 +24,18 @@ import type { TablePaginationConfig } from "antd";
 
 const { Title } = Typography;
 
-interface CandidateInfo {
+export interface CandidateInfo {
   _id: string;
   fullName: string;
   profilePictureUrl?: string;
 }
 
-interface AIResult {
+export interface AIResult {
   strengths: string[];
   improvements: string[];
 }
 
-interface InterviewRecord {
+export interface InterviewRecord {
   _id: string;
   candidateId: CandidateInfo;
   companyId: string;
@@ -192,7 +192,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
     {
       title: "Avg Score",
       key: "avgScore",
-      render: (_, record: InterviewRecord) => {
+      render: (_: unknown, record: InterviewRecord) => {
         const avgScore = calculateAvgScore(record);
         return (
           <div
@@ -218,7 +218,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
     {
       title: "AI Analysis",
       key: "aiResult",
-      render: (_, record: InterviewRecord) => {
+      render: (_: unknown, record: InterviewRecord) => {
         if (!record.aiResult) return <span className="text-gray-400">N/A</span>;
 
         const strengthCount = record.aiResult.strengths?.length || 0;
@@ -236,7 +236,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       title: "",
       key: "actions",
       align: "center" as const,
-      render: (_, record: InterviewRecord) => (
+      render: () => (
         <Dropdown
           menu={{
             items: [
