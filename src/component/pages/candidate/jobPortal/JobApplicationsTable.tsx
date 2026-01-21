@@ -197,7 +197,7 @@ const JobApplicationsTable = () => {
   const tableData = getDataByTab();
 
   return (
-    <div className="bg-white p-6">
+    <div className="bg-white">
       <Tabs
         activeKey={activeTab}
         onChange={setActiveTab}
@@ -261,7 +261,7 @@ const JobApplicationsTable = () => {
             return originalElement;
           },
         }}
-        className="border border-gray-200 rounded-lg"
+        className="border border-gray-200 rounded-lg overflow-x-auto"
       />
 
       <div className="flex justify-end items-center gap-4 mt-4">

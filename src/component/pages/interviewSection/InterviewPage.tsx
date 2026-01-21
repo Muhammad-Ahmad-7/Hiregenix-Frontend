@@ -20,6 +20,7 @@ import {
   getAllTodaysInterviewsApi,
 } from "@/app/api/candidate/interview.api";
 import { ScheduledInterview } from "@/constants/Interfaces/Types/Jobs.interface";
+import { useRouter } from "next/navigation";
 
 // Interfaces
 export interface PaginationMeta {
@@ -96,6 +97,8 @@ export default function InterviewsPage() {
   const [loading, setLoading] = useState(true);
   const [allInterviewsMeta, setAllInterviewsMeta] =
     useState<PaginationMeta | null>(null);
+
+  const router = useRouter();
 
   // Format date helper
   const formatDate = (dateString: string) => {
@@ -187,6 +190,11 @@ export default function InterviewsPage() {
     scheduledInterviews
   ).filter((i) => i.name.toLowerCase().includes(searchText.toLowerCase()));
 
+  const handleJoinInterview = (interviewId: string) => () => {
+    // Implement join interview logic here
+    router.push(`/candidate/interview-section/${interviewId}`);
+  }
+
   // Columns for Table
   const columns: ColumnsType<InterviewTableRecord> = [
     {
@@ -224,8 +232,8 @@ export default function InterviewsPage() {
           status === "scheduled"
             ? "processing"
             : status === "completed"
-            ? "success"
-            : "error";
+              ? "success"
+              : "error";
         return (
           <Badge
             status={color}
@@ -254,7 +262,7 @@ export default function InterviewsPage() {
   ];
 
   return (
-    <div className="w-full bg-gray-50 min-h-screen p-6">
+    <div className="w-full bg-gray-50 min-h-screen">
       {/* Header */}
       {/* <div className="flex items-center justify-between mb-8">
         <div>
@@ -310,9 +318,7 @@ export default function InterviewsPage() {
                     interview.jobId?.deadline || interview.scheduledDate
                   )}
                   logo="/logo.png"
-                  onJoin={() =>
-                    alert(`Joining interview for ${interview.jobId?.title}`)
-                  }
+                  onJoin={handleJoinInterview(interview._id)}
                 />
               </Col>
             ))}
