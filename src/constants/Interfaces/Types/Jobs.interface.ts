@@ -100,6 +100,7 @@ export interface CompanyMini {
 export interface JobMini {
   _id: string;
   title: string;
+  role: string;
   workMode: "remote" | "onsite" | "hybrid";
   deadline: string; // ISO string
 }
@@ -121,4 +122,20 @@ export interface CandidateMini {
   _id: string;
   fullName: string;
   profilePictureUrl: string;
+}
+
+
+export interface GetInterviewDataByIdApiResponse {
+  _id: string;
+  candidateId: string;
+  companyId: CompanyMini;
+  jobId: JobMini;
+  type: "live";
+  questions: string[];
+  createdAt: string;
+  updatedAt: string;
+  scheduledDate: string;
+  status: "scheduled" | "completed" | "cancelled";
+  aiResult: AiResult;
+  __v: number;
 }

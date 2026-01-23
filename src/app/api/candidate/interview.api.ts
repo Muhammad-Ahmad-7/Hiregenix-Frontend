@@ -3,14 +3,17 @@
 // auth.api.ts
 
 import {
+  GetInterviewDataByIdApiResponse,
   ScheduledInterview,
   ScheduledInterviewSimple,
 } from "@/constants/Interfaces/Types/Jobs.interface";
 import api, { safeApiCall } from "../base.api";
 
+const BASE_API = "/interview";
+
 export const getAllTodaysInterviewsApi = async () => {
   return safeApiCall<{ interviews: ScheduledInterview[] }>({
-    apiCall: () => api.get("/interview/candidate-interviews/today"),
+    apiCall: () => api.get(`${BASE_API}/candidate-interviews/today`),
     showToaster: true,
   });
 };
@@ -20,7 +23,7 @@ export const getAllInterviewsApi = async (params: {
 }) => {
   return safeApiCall<{ interviews: ScheduledInterview[] }>({
     apiCall: () =>
-      api.get("/interview/candidate-interviews", {
+      api.get(`${BASE_API}/candidate-interviews`, {
         params,
       }),
     showToaster: true,
@@ -36,7 +39,15 @@ export const scheduleInterviewApi = async ({
 }) => {
   return safeApiCall<{ interview: ScheduledInterviewSimple }>({
     apiCall: () =>
-      api.post(`/interview/schedule-interview/${jobId}`, { scheduledDate }),
+      api.post(`${BASE_API}/schedule-interview/${jobId}`, { scheduledDate }),
     showToaster: true,
   });
 };
+
+export const getInterviewByIdApi = async (
+  interviewId: string
+) => {
+  return safeApiCall<{ interview: GetInterviewDataByIdApiResponse }>({
+    apiCall: () => api.get(`${BASE_API}/candidate-interviews/${interviewId}`),
+  });
+}
