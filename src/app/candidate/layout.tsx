@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ReactNode, useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { redirect, usePathname, useRouter } from "next/navigation";
 import { Layout, Menu, ConfigProvider, Button } from "antd";
 import {
   MenuFoldOutlined,
@@ -74,7 +74,9 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     getCandidateProfileApi()
       .then((res) => {
         console.log("first", res);
-        if (!res || !res.data) return;
+        if (!res || !res.data) {
+          redirect("/auth");
+        };
         if (res.status === "Success") {
           const valuesWithUserType: CandidateProfileResponse & {
             userType: "candidate";
@@ -89,6 +91,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       })
       .catch((err) => {
         console.log("Error fetching profile:", err);
+        redirect("/auth");
       })
       .finally(() => { });
   }, [profile, dispatch, router]);
@@ -210,8 +213,8 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   router.replace("/auth");
                 }}
                 className={`w-full font-bold text-left ${collapsed && !isMobile
-                    ? "flex justify-center bg-red-600 hover:bg-red-700"
-                    : "bg-red-600 hover:bg-red-700 text-white"
+                  ? "flex justify-center bg-red-600 hover:bg-red-700"
+                  : "bg-red-600 hover:bg-red-700 text-white"
                   }`}
               >
                 {(!collapsed || isMobile) && "Logout"}

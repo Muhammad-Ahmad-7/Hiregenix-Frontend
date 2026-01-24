@@ -4,6 +4,7 @@
 
 import {
   GetInterviewDataByIdApiResponse,
+  InterviewQuestionResultApiResponse,
   ScheduledInterview,
   ScheduledInterviewSimple,
 } from "@/constants/Interfaces/Types/Jobs.interface";
@@ -51,3 +52,22 @@ export const getInterviewByIdApi = async (
     apiCall: () => api.get(`${BASE_API}/candidate-interviews/${interviewId}`),
   });
 }
+
+export const createInterviewQuestionResultApi = async (
+  { interviewId, questionId, questionText, file }:
+    { interviewId: string, questionId: string, questionText: string, file: File }
+) => {
+  const formData = new FormData();
+  formData.append('questionId', questionId);
+  formData.append('file', file);
+  formData.append('interviewId', interviewId);
+  formData.append('questionText', questionText);
+
+  return safeApiCall<{ questionResult: InterviewQuestionResultApiResponse }>({
+    apiCall: () => api.post(`${BASE_API}/submit-answer`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+  });
+};

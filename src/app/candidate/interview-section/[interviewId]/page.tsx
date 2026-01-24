@@ -5,7 +5,7 @@ import {
     ThunderboltFilled, LoadingOutlined, CheckCircleFilled, CloseCircleFilled,
 } from '@ant-design/icons';
 import { Button, Avatar, Spin, Card, Typography, Alert } from 'antd';
-import { getInterviewByIdApi } from '@/app/api/candidate/interview.api';
+import { createInterviewQuestionResultApi, getInterviewByIdApi } from '@/app/api/candidate/interview.api';
 import { useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { GetInterviewDataByIdApiResponse } from '@/constants/Interfaces/Types/Jobs.interface';
@@ -210,27 +210,137 @@ const LiveInterviewPage = () => {
         }
     };
 
-    const stopRecordingAndDownload = () => {
+    // const stopRecordingAndDownload = async () => {
+    //     setInterviewState("UPLOADING");
+
+    //     if (recorderRef.current && recorderRef.current.state !== "inactive") {
+    //         recorderRef.current.stop();
+    //         // upload recording to the backend api call...
+    //         const blob = new Blob(chunkRef.current, { type: 'video/webm' });
+    //         const file = new File([blob], `interview_answer_${Date.now()}_${interviewId}.webm`, {
+    //             type: 'video/webm',
+    //             lastModified: Date.now()
+    //         });
+    //         const res = await createInterviewQuestionResultApi({
+    //             interviewId: interviewId as string,
+    //             questionId: `question_${interviewQuestion.length}`,
+    //             questionText: interviewQuestion[interviewQuestion.length - 1],
+    //             file: file,
+    //         })
+    //         if (!res) {
+    //             toast.error("Failed to upload interview answer for this question.");
+    //             setInterviewState("ERROR");
+    //             return;
+    //         }
+
+    //         if (res.status === "Failed") {
+    //             toast.error(res.message || "Failed to upload interview answer for this question.");
+    //             setInterviewState("ERROR");
+    //             return;
+    //         }
+
+    //         console.log("Interview Answer Done | Uploaded Successfully");
+
+    //         // download the video
+    //         // const url = URL.createObjectURL(blob);
+    //         // const a = document.createElement('a');
+    //         // a.style.display = 'none';
+    //         // a.href = url;
+    //         // a.download = `interview_answer_${Date.now()}.webm`;
+    //         // document.body.appendChild(a);
+    //         // a.click();
+    //         // window.URL.revokeObjectURL(url);
+    //         // document.body.removeChild(a);
+    //     }
+
+    //     setInterviewState("UPLOADED");
+    // };
+
+
+    const stopRecordingAndDownload = async () => {
         setInterviewState("UPLOADING");
 
-        if (recorderRef.current && recorderRef.current.state !== "inactive") {
-            recorderRef.current.stop();
-            // upload recording to the backend api call...
-            // download the video
-            const blob = new Blob(chunkRef.current, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = `interview_answer_${Date.now()}.webm`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        }
+        try {
+            // Check if recorder exists and is active
+            if (!recorderRef.current || recorderRef.current.state === "inactive") {
+                console.warn("No active recording to stop");
+                setInterviewState("UPLOADED");
+                return;
+            }
 
-        setInterviewState("UPLOADED");
+            // Stop the recorder
+            recorderRef.current.stop();
+
+            // Wait for recorder to fully stop and collect all chunks
+            // This ensures ondataavailable has fired for all remaining data
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            // Verify we have chunks to upload
+            if (chunkRef.current.length === 0) {
+                console.warn("No recording chunks collected");
+                setInterviewState("ERROR");
+                throw new Error("No recording data available");
+            }
+
+            // Create blob from collected chunks
+            const blob = new Blob(chunkRef.current, { type: 'video/webm' });
+
+            // Verify blob has content
+            if (blob.size === 0) {
+                console.error("Recording blob is empty");
+                setInterviewState("ERROR");
+                throw new Error("Recording is empty");
+            }
+
+            console.log(`Recording blob size: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+
+            // Create file for upload
+            const file = new File(
+                [blob],
+                `interview_answer_${Date.now()}_${interviewId}.webm`,
+                {
+                    type: 'video/webm',
+                    lastModified: Date.now()
+                }
+            );
+
+            // Upload to API
+            console.log("Uploading recording to API...");
+            const res = await createInterviewQuestionResultApi({
+                interviewId: interviewId as string,
+                questionId: `question_${interviewQuestion.length}`,
+                questionText: interviewQuestion[interviewQuestion.length - 1],
+                file: file,
+            });
+
+            // Handle API response
+            if (!res) {
+                console.error("API returned no response");
+                setInterviewState("ERROR");
+                throw new Error("Failed to upload interview answer - no response from server");
+            }
+
+            if (res.status === "Failed") {
+                console.error("API returned failure:", res.message);
+                setInterviewState("ERROR");
+                throw new Error(res.message || "Failed to upload interview answer");
+            }
+
+            console.log("✅ Interview Answer Uploaded Successfully");
+            setInterviewState("UPLOADED");
+
+            // Clear chunks for next recording
+            chunkRef.current = [];
+
+        } catch (error) {
+            console.error("Error in stopRecordingAndDownload:", error);
+            setInterviewState("ERROR");
+
+            // Re-throw the error so handleSendAnswer can catch it
+            throw error;
+        }
     };
+
     // --- 6. INTERVIEW FLOW CONTROL ---
     const startCameraPreview = async () => {
         try {
@@ -261,34 +371,40 @@ const LiveInterviewPage = () => {
         speakQuestion(questions[0]);
     }
 
-    const handleSendAnswer = () => {
+    const handleSendAnswer = async () => {
         // Stop recognition first
         if (recognitionRef.current) {
             recognitionRef.current.stop();
             recognitionRef.current = null;
         }
 
-        stopRecordingAndDownload();
-
-        // Save current answer
         const currentAnswer = answerValue;
-        setInterviewAnswer(prev => [...prev, currentAnswer]);
+        try {
+            await stopRecordingAndDownload()
+            // Save current answer
+            setInterviewAnswer(prev => [...prev, currentAnswer]);
 
-        // Clear answer value and AI text immediately
-        setAnswerValue("");
+            // Clear answer value and AI text immediately
+            setAnswerValue("");
 
-        const nextIndex = interviewAnswer.length + 1;
+            const nextIndex = interviewAnswer.length + 1;
 
-        if (nextIndex < questions.length) {
-            // Small delay to ensure state is cleared before next question
-            setTimeout(() => {
-                speakQuestion(questions[nextIndex]);
-            }, 100);
-        } else {
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach(track => track.stop());
+            if (nextIndex < questions.length) {
+                // Small delay to ensure state is cleared before next question
+                setTimeout(() => {
+                    speakQuestion(questions[nextIndex]);
+                }, 100);
+            } else {
+                if (streamRef.current) {
+                    streamRef.current.getTracks().forEach(track => track.stop());
+                }
+                setStatus('completed');
             }
-            setStatus('completed');
+        } catch (error) {
+            console.error("Upload failed:", error);
+            toast.error("Failed to upload answer. Please try again.");
+            // Restore the answer if upload failed
+            setAnswerValue(currentAnswer);
         }
     };
 

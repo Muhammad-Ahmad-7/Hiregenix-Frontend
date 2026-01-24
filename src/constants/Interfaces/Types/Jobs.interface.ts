@@ -139,3 +139,11 @@ export interface GetInterviewDataByIdApiResponse {
   aiResult: AiResult;
   __v: number;
 }
+
+export interface InterviewQuestionResultApiResponse {
+  _id: string;
+  status: 'PROCESSING' | 'DONE' | 'FAILED';
+  stages: {
+    uploaded: boolean;
+  }
+}
