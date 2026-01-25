@@ -140,6 +140,14 @@ export interface GetInterviewDataByIdApiResponse {
   __v: number;
 }
 
+export interface InterviewVideoUploadSignedUrlApiResponse {
+  cloudName: string;
+  apiKey: string;
+  signature: string;
+  timestamp: string;
+  publicId: string;
+}
+
 export interface InterviewQuestionResultApiResponse {
   _id: string;
   status: 'PROCESSING' | 'DONE' | 'FAILED';

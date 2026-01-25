@@ -5,10 +5,12 @@
 import {
   GetInterviewDataByIdApiResponse,
   InterviewQuestionResultApiResponse,
+  InterviewVideoUploadSignedUrlApiResponse,
   ScheduledInterview,
   ScheduledInterviewSimple,
 } from "@/constants/Interfaces/Types/Jobs.interface";
 import api, { safeApiCall } from "../base.api";
+import { toast } from "react-hot-toast";
 
 const BASE_API = "/interview";
 
@@ -57,17 +59,54 @@ export const createInterviewQuestionResultApi = async (
   { interviewId, questionId, questionText, file }:
     { interviewId: string, questionId: string, questionText: string, file: File }
 ) => {
-  const formData = new FormData();
-  formData.append('questionId', questionId);
-  formData.append('file', file);
-  formData.append('interviewId', interviewId);
-  formData.append('questionText', questionText);
 
+  // Api Call to generate the signed url
+  const signedUrlRes = await safeApiCall<{ data: InterviewVideoUploadSignedUrlApiResponse }>({
+    apiCall: () => api.post(`/upload/generate-signed-url`, { interviewId, questionId }),
+  });
+
+  if (!signedUrlRes || signedUrlRes.status !== "Success") {
+    toast.error("Failed to get signed URL");
+    return;
+  }
+
+  if (signedUrlRes.data === undefined) {
+    toast.error("Failed to get signed URL2");
+    return;
+  }
+
+  const { cloudName, apiKey, signature, timestamp, publicId } = signedUrlRes.data.data;
+
+  // Upload video to Cloudinary using the signed URL
+  const formData = new FormData();
+
+  formData.append('file', file);
+  formData.append('api_key', apiKey);
+  formData.append('signature', signature);
+  formData.append('timestamp', timestamp);
+  formData.append('public_id', publicId);
+  formData.append('folder', 'interviews');
+
+  const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
+  const uploadRes = await fetch(uploadUrl, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const uploadResult = await uploadRes.json();
+
+  if (!uploadResult.secure_url) {
+    toast.error("Failed to upload video");
+    return;
+  }
+
+  // Submit the answer with the uploaded video URL
   return safeApiCall<{ questionResult: InterviewQuestionResultApiResponse }>({
-    apiCall: () => api.post(`${BASE_API}/submit-answer`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    apiCall: () => api.post(`${BASE_API}/submit-answer`, {
+      interviewId,
+      questionId,
+      questionText,
+      videoUrl: uploadResult.secure_url,
     }),
   });
 };
