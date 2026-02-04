@@ -56,8 +56,8 @@ export const getInterviewByIdApi = async (
 }
 
 export const createInterviewQuestionResultApi = async (
-  { interviewId, questionId, questionText, file }:
-    { interviewId: string, questionId: string, questionText: string, file: File }
+  { interviewId, questionId, questionText, numberOfTabSwitch, file }:
+    { interviewId: string, questionId: string, questionText: string, numberOfTabSwitch: number, file: File }
 ) => {
 
   // Api Call to generate the signed url
@@ -106,7 +106,24 @@ export const createInterviewQuestionResultApi = async (
       interviewId,
       questionId,
       questionText,
+      numberOfTabSwitch,
       videoUrl: uploadResult.secure_url,
+    }),
+  });
+};
+
+
+
+export const createInterviewQuestionResultForSkipQuestionApi = async (
+  { interviewId, questionId, questionText }:
+    { interviewId: string, questionId: string, questionText: string }
+) => {
+  // Submit the answer with the uploaded video URL
+  return safeApiCall<{ questionResult: InterviewQuestionResultApiResponse }>({
+    apiCall: () => api.post(`${BASE_API}/submit-skip-question`, {
+      interviewId,
+      questionId,
+      questionText,
     }),
   });
 };
