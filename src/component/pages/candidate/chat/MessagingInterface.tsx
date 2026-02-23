@@ -10,7 +10,11 @@ import {
   FileTextOutlined,
   FileImageOutlined,
 } from "@ant-design/icons";
-import { getAllChats, getAllMessages } from "@/app/api/chat/chats.api";
+import {
+  getAllChats,
+  getAllMessages,
+  getAllMessages2,
+} from "@/app/api/chat/chats.api";
 import { formatChatTime } from "@/utils/dateFormation";
 import {
   setChats,
@@ -54,10 +58,40 @@ const MessagingInterface = () => {
   const { messages } = useSelector((state: RootState) => state.messages);
   const [docLoading, setDocLoading] = useState(false);
   const dispatch = useDispatch();
-
+  const [currentStickyDate, setCurrentStickyDate] = useState<string | null>(
+    null,
+  );
+  const dateRefs = useRef<Record<string, HTMLDivElement | null>>({});
   // Track whether the next messages update is from pagination (old msgs) or new msg
   const isLoadingOldMessages = useRef(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const date = entry.target.getAttribute("data-date");
+            if (date) {
+              setCurrentStickyDate(date);
+            }
+          }
+        });
+      },
+      {
+        root: containerRef.current,
+        threshold: 0,
+        rootMargin: "-40px 0px 0px 0px",
+      },
+    );
 
+    Object.entries(dateRefs.current).forEach(([date, el]) => {
+      if (el) {
+        el.setAttribute("data-date", date);
+        observer.observe(el);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, [messages]);
   useEffect(() => {
     const handleUploading = () => setDocLoading(true);
     const handleUploaded = () => setDocLoading(false);
@@ -598,30 +632,63 @@ const MessagingInterface = () => {
             {/* Messages Area */}
             <div
               ref={containerRef}
-              className="flex-1 overflow-y-auto p-3 md:p-6 bg-gray-50"
+              className="flex-1 relative overflow-y-auto p-3 md:p-6 bg-gray-50"
             >
+              <div className="sticky top-0 flex  justify-center z-10 bg-transparent py-2">
+                {currentStickyDate && (
+                  <div className="px-3 py-1 bg-white text-gray-600 text-xs rounded-full shadow">
+                    {currentStickyDate}
+                  </div>
+                )}
+              </div>
               {messages.length === 0 && !docLoading ? (
                 <div className="text-center text-gray-500 mt-10">
                   No messages yet. Start the conversation!
                 </div>
               ) : (
                 <div className="flex flex-col">
-                  {messages.map((msg) => (
-                    <Message
-                      selectReplyId={selectReplyId}
-                      setSelectReplyId={setSelectReplyId}
-                      onReply={handleReply}
-                      key={msg._id}
-                      msg={msg}
-                      profile={profile}
-                      hoveredMessageId={hoveredMessageId}
-                      setHoveredMessageId={setHoveredMessageId}
-                      handleReaction={handleReaction}
-                      toggleReactionPicker={toggleReactionPicker}
-                      reactionPickerMessageId={reactionPickerMessageId}
-                      dispatch={dispatch}
-                    />
-                  ))}
+                  {messages.map((msg, index) => {
+                    const currentDate = new Date(msg.createdAt).toDateString();
+
+                    const previousDate =
+                      index > 0
+                        ? new Date(messages[index - 1].createdAt).toDateString()
+                        : null;
+
+                    const showDate = currentDate !== previousDate;
+
+                    return (
+                      <React.Fragment key={msg._id}>
+                        {showDate && (
+                          <div
+                            ref={(el) => {
+                              if (el) dateRefs.current[currentDate] = el;
+                            }}
+                            className="flex justify-center my-4"
+                          >
+                            <div className="px-3 py-1 bg-white text-gray-600 text-xs rounded-full">
+                              {currentDate}
+                            </div>
+                          </div>
+                        )}
+
+                        <Message
+                          selectReplyId={selectReplyId}
+                          setSelectReplyId={setSelectReplyId}
+                          onReply={handleReply}
+                          msg={msg}
+                          profile={profile}
+                          hoveredMessageId={hoveredMessageId}
+                          setHoveredMessageId={setHoveredMessageId}
+                          handleReaction={handleReaction}
+                          toggleReactionPicker={toggleReactionPicker}
+                          reactionPickerMessageId={reactionPickerMessageId}
+                          dispatch={dispatch}
+                        />
+                      </React.Fragment>
+                    );
+                  })}
+
                   {docLoading && <LoadingMessage text="Uploading..." loading />}
                 </div>
               )}

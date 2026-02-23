@@ -29,3 +29,25 @@ export const getAllMessages = async ({
     showToaster: false,
   });
 };
+
+export const getAllMessages2 = async ({
+  chatId,
+  params = {
+    limit: 200,
+    page: 1,
+  },
+}: {
+  chatId: string;
+  params?: {
+    limit: string | number;
+    page: string | number;
+  };
+}) => {
+  return safeApiCall<{ messages: IMessage[] }>({
+    apiCall: () =>
+      api.get(`/message/chat2/${chatId}`, {
+        params, // pass query params here
+      }),
+    showToaster: false,
+  });
+};
