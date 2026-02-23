@@ -10,11 +10,7 @@ import {
   FileTextOutlined,
   FileImageOutlined,
 } from "@ant-design/icons";
-import {
-  getAllChats,
-  getAllMessages,
-  getAllMessages2,
-} from "@/app/api/chat/chats.api";
+import { getAllChats, getAllMessages } from "@/app/api/chat/chats.api";
 import { formatChatTime } from "@/utils/dateFormation";
 import {
   setChats,
@@ -43,12 +39,24 @@ import LoadingMessage from "./LoadingMessage";
 import { isDocumentUrl } from "@/utils/isDocumentUrl";
 import { isImageUrl } from "@/utils/isImageUrl";
 
+// Helper to get a consistent ISO date key from a message timestamp
+const getDateKey = (dateStr: string) =>
+  new Date(dateStr).toISOString().split("T")[0]; // "2024-01-15"
+
+// Helper for a human-readable label from an ISO date key
+const getDateLabel = (isoDate: string) =>
+  new Date(isoDate).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
 const MessagingInterface = () => {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [selectedChatP, setSelectedChatP] = useState<IChat | null>(null);
   const [messageText, setMessageText] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [page, setPage] = useState(2);
   const { profile } = useSelector((state: RootState) => state.user);
   const [hoveredMessageId, setHoveredMessageId] = useState<number | null>(null);
@@ -58,106 +66,122 @@ const MessagingInterface = () => {
   const { messages } = useSelector((state: RootState) => state.messages);
   const [docLoading, setDocLoading] = useState(false);
   const dispatch = useDispatch();
+
+  // Sticky date state — stores an ISO date key like "2024-01-15"
   const [currentStickyDate, setCurrentStickyDate] = useState<string | null>(
     null,
   );
+
+  // Refs for each date divider element, keyed by ISO date string
   const dateRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  // Track whether the next messages update is from pagination (old msgs) or new msg
+
+  // Tracks whether we're loading old (paginated) messages to suppress auto-scroll
   const isLoadingOldMessages = useRef(false);
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const date = entry.target.getAttribute("data-date");
-            if (date) {
-              setCurrentStickyDate(date);
-            }
-          }
-        });
-      },
-      {
-        root: containerRef.current,
-        threshold: 0,
-        rootMargin: "-40px 0px 0px 0px",
-      },
-    );
 
-    Object.entries(dateRefs.current).forEach(([date, el]) => {
-      if (el) {
-        el.setAttribute("data-date", date);
-        observer.observe(el);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastScrollTop = useRef(0);
+
+  const [imgError, setImgError] = useState(false);
+  const [showChatList, setShowChatList] = useState(true);
+  const [replyingTo, setReplyingTo] = useState<any>(null);
+  const [selectReplyId, setSelectReplyId] = useState<string | null>(null);
+
+  // ── Sticky Date Calculator ─────────────────────────────────────────────────
+  // Called on every scroll event. Finds the last date header that has scrolled
+  // past the top of the container (within STICKY_OFFSET px), and sets it as
+  // the current sticky date.
+  const updateStickyDate = () => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const containerTop = container.getBoundingClientRect().top;
+    const STICKY_OFFSET = 50;
+
+    const entries = Object.entries(dateRefs.current)
+      .filter(([, el]) => el !== null)
+      .map(([date, el]) => ({
+        date,
+        top: el!.getBoundingClientRect().top - containerTop,
+      }))
+      .sort((a, b) => a.top - b.top);
+
+    if (entries.length === 0) return;
+
+    // Pick the last header that is at or above the sticky threshold
+    let active = entries[0].date;
+    for (const entry of entries) {
+      if (entry.top <= STICKY_OFFSET) {
+        active = entry.date;
       }
-    });
+    }
 
-    return () => observer.disconnect();
-  }, [messages]);
+    setCurrentStickyDate(active);
+  };
+
+  // ── File upload socket events ──────────────────────────────────────────────
   useEffect(() => {
     const handleUploading = () => setDocLoading(true);
     const handleUploaded = () => setDocLoading(false);
-
     socket.on("uploadingFile", handleUploading);
     socket.on("uploadedFileDone", handleUploaded);
-
     return () => {
       socket.off("uploadingFile", handleUploading);
       socket.off("uploadedFileDone", handleUploaded);
     };
   }, []);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Scroll listener for pagination (loading older messages)
+  // ── Scroll handler: pagination + sticky date ───────────────────────────────
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const handleScroll = () => {
-      if (container.scrollTop <= 0) {
-        const scrollHeightBefore = container.scrollHeight;
+      lastScrollTop.current = container.scrollTop;
 
-        // Mark that we're loading old messages — suppress auto-scroll
+      // Update sticky date on every scroll tick
+      updateStickyDate();
+
+      // Pagination: load older messages when scrolled to top
+      if (container.scrollTop <= 0 && selectedChat) {
+        const scrollHeightBefore = container.scrollHeight;
         isLoadingOldMessages.current = true;
 
         getAllMessages({
-          chatId: selectedChat!,
+          chatId: selectedChat,
           params: { page, limit: 20 },
         }).then((res) => {
-          console.log("hurrah:", res);
+          if (!res?.data) return;
           dispatch(setMessages(res.data.messages));
           setPage((prev) => prev + 1);
 
-          // After DOM updates, restore scroll position so user stays in place
           requestAnimationFrame(() => {
             const scrollDiff = container.scrollHeight - scrollHeightBefore;
             container.scrollTop = scrollDiff;
-            // Reset flag after position is restored
             isLoadingOldMessages.current = false;
           });
         });
       }
     };
 
-    container.addEventListener("scroll", handleScroll);
+    container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [messages, selectedChat, page]);
+  }, [selectedChat, page]); // removed `messages` dep — scroll handler doesn't need it
 
+  // Re-calculate sticky date whenever messages change (e.g. after pagination load)
+  useEffect(() => {
+    // Small delay to let DOM paint the new date dividers before measuring
+    const timer = setTimeout(() => updateStickyDate(), 50);
+    return () => clearTimeout(timer);
+  }, [messages]);
+
+  // ── Incoming message socket ────────────────────────────────────────────────
   useEffect(() => {
     socket.on("updateReaction", ({ messageId, reaction }) => {
       dispatch(updateReaction({ messageId, reaction }));
     });
-    socket.on("sendMessage", ({ chatId, msg, msgId, sender, isUserOnline }) => {
-      console.log(
-        "sendEvent",
-        chatId,
-        msg,
-        msgId,
-        sender,
-        "selectedChat:",
-        selectedChat,
-        isUserOnline,
-      );
 
+    socket.on("sendMessage", ({ chatId, msg, msgId, sender, isUserOnline }) => {
       if (sender !== profile?._id) {
         if (selectedChat !== chatId) {
           socket.emit("updateMessageStatus", {
@@ -208,39 +232,34 @@ const MessagingInterface = () => {
           },
           selectedId: selectedChat,
           userId: profile?._id,
-          isUserOnline: isUserOnline,
+          isUserOnline,
         }),
       );
     });
 
     return () => {
       socket.off("sendMessage");
+      socket.off("updateReaction");
     };
-  }, [selectedChat, selectedChatP]);
+  }, [selectedChat, selectedChatP, profile]);
 
+  // ── Seen status socket ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!profile) return;
-
-    socket.on("updateAllMessagesStatusToSeen", ({ selectedChat }) => {
+    socket.on("updateAllMessagesStatusToSeen", ({ selectedChat: chatId }) => {
       dispatch(
-        updateAllMessagesStatusToSeen({
-          chatId: selectedChat,
-          userId: profile?.userId._id,
-        }),
+        updateAllMessagesStatusToSeen({ chatId, userId: profile.userId._id }),
       );
-      dispatch(
-        updateLastMessageStatus({ status: "seen", chatId: selectedChat }),
-      );
+      dispatch(updateLastMessageStatus({ status: "seen", chatId }));
     });
-  }, [profile, selectedChat]);
+  }, [profile]);
 
   const { chats } = useSelector((state: RootState) => state.chats);
 
+  // ── Online/offline socket ──────────────────────────────────────────────────
   useEffect(() => {
     socket.on("iAmOnline", (onlineUserId: string) => {
-      const yeschats = chats?.find(
-        (chat) => chat.participant._id === onlineUserId,
-      );
+      const yeschats = chats?.find((c) => c.participant._id === onlineUserId);
       if (yeschats) {
         dispatch(
           updateAllMessagesStatusToDelivered({
@@ -259,18 +278,11 @@ const MessagingInterface = () => {
         );
       }
     });
+
     socket.on("iAmOffline", (offlineUserId: string) => {
-      const yeschats = chats?.find(
-        (chat) => chat.participant._id === offlineUserId,
+      dispatch(
+        updateOnlineStatus({ userId: offlineUserId, onlineStatus: "offline" }),
       );
-      if (yeschats) {
-        dispatch(
-          updateOnlineStatus({
-            userId: offlineUserId,
-            onlineStatus: "offline",
-          }),
-        );
-      }
     });
 
     return () => {
@@ -279,81 +291,83 @@ const MessagingInterface = () => {
     };
   }, [chats, profile]);
 
-  const [imgError, setImgError] = useState(false);
-  const [showChatList, setShowChatList] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [replyingTo, setReplyingTo] = useState<any>(null);
+  // ── Message status socket ──────────────────────────────────────────────────
+  useEffect(() => {
+    socket.on("updateMessageStatus", ({ messageId, status }) => {
+      dispatch(updateMessageStatus({ messageId, status }));
+    });
+    return () => {
+      socket.off("updateMessageStatus");
+    };
+  }, [selectedChat]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    if (!selectedChat) return;
-    dispatch(updateUnreadCount({ chatId: selectedChat, unReadCount: -1 }));
-  };
-
-  // Only scroll to bottom for new messages, NOT when loading old ones
+  // ── Auto-scroll to bottom for new messages only ────────────────────────────
   useEffect(() => {
     if (isLoadingOldMessages.current) return;
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (selectedChat) {
+      dispatch(updateUnreadCount({ chatId: selectedChat, unReadCount: -1 }));
+    }
   }, [messages]);
 
+  // ── Load all chats on mount ────────────────────────────────────────────────
   useEffect(() => {
     getAllChats()
       .then((res) => {
-        if (!res || !res.data) return;
+        if (!res?.data) return;
         dispatch(setChats(res.data.chats));
       })
-      .catch((err) => {
-        console.error(err);
-      });
+      .catch(console.error);
   }, []);
 
+  // ── Debug: log all socket events ──────────────────────────────────────────
   useEffect(() => {
-    socket.onAny((event, ...args) => {
-      console.log("📩 Received:", event, args);
-    });
-    return () => {
-      socket.offAny();
-    };
+    socket.onAny((event, ...args) => console.log("📩 Received:", event, args));
+    return () => socket.offAny();
   }, []);
 
+  // ── Load messages when a chat is selected ─────────────────────────────────
   useEffect(() => {
     if (!selectedChat) return;
+    // Clear date refs so stale dates from previous chat don't linger
+    dateRefs.current = {};
+    setCurrentStickyDate(null);
+
     socket.emit("private-chat", {
       selectedChat,
       userId: profile?._id,
       selectedChatP,
     });
+
     getAllMessages({ chatId: selectedChat }).then((res) => {
-      if (!res || !res.data) return;
+      if (!res?.data) return;
       dispatch(setMessages(res.data.messages));
     });
-  }, [selectedChat, dispatch]);
+  }, [selectedChat]);
 
+  // ── Reply scroll-to ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!selectReplyId) return;
+    const el = document.getElementById(`msg-${selectReplyId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      const timer = setTimeout(() => setSelectReplyId(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [selectReplyId]);
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
   const handleChatSelect = (chatId: string) => {
     setSelectedChat(chatId);
     setShowChatList(false);
-    // Reset page when switching chats
     setPage(2);
   };
 
-  useEffect(() => {
-    socket.on(
-      "updateMessageStatus",
-      ({ messageId, status, chatId, sender, isUserOnline }) => {
-        dispatch(updateMessageStatus({ messageId, status }));
-      },
-    );
-  }, [selectedChat]);
-
-  const sortedChats = chats
-    ? [...chats].sort((a, b) => {
-        const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-        const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-        return timeB - timeA;
-      })
-    : [];
-
   const handleBackToList = () => setShowChatList(true);
+  const handleOverlayClick = () => {
+    setReactionPickerMessageId(null);
+    setShowEmoji(false);
+  };
 
   const handleReaction = (messageId: string | number, emoji: string) => {
     dispatch(
@@ -370,50 +384,22 @@ const MessagingInterface = () => {
     );
   };
 
-  const handleOverlayClick = () => {
-    setReactionPickerMessageId(null);
-    setShowEmoji(false);
-  };
-
-  const [selectReplyId, setSelectReplyId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!selectReplyId) return;
-    if (typeof window === "undefined") return;
-
-    const el = document.getElementById(`msg-${selectReplyId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      setSelectReplyId(selectReplyId);
-      const timer = setTimeout(() => setSelectReplyId(null), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [selectReplyId]);
+  const handleReply = (msg: any) => setReplyingTo(msg);
 
   const sendDocumentMessage = (fileUrl: string) => {
-    const uniqueId = Date.now().toString();
     if (!profile) return;
     socket.emit("sendMessage", {
       chatId: selectedChat,
       msg: fileUrl,
       sender: profile._id,
-      msgId: uniqueId,
+      msgId: Date.now().toString(),
       toUser: selectedChatP?.participant._id,
     });
   };
 
-  const handleReply = (msg: any) => {
-    setReplyingTo(msg);
-    console.log("replying to:", msg);
-  };
-
   const sendMessage = () => {
+    if (!messageText.trim() || !selectedChat || !profile) return;
     const uniqueId = Date.now().toString();
-    if (messageText.trim()) {
-      if (!selectedChat) return;
-      setMessageText("");
-    }
-    if (!profile) return;
     socket.emit("sendMessage", {
       chatId: selectedChat,
       msg: messageText,
@@ -422,6 +408,8 @@ const MessagingInterface = () => {
       toUser: selectedChatP?.participant._id,
       replyingTo: replyingTo?._id,
     });
+    setMessageText("");
+    setReplyingTo(null);
   };
 
   const onImgErrorHandler = () => {
@@ -429,14 +417,22 @@ const MessagingInterface = () => {
     return true;
   };
 
-  if (profile === null) return;
+  const sortedChats = chats
+    ? [...chats].sort((a, b) => {
+        const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return timeB - timeA;
+      })
+    : [];
+
+  if (profile === null) return null;
 
   return (
     <div
       className="flex h-[calc(100vh-100px)] bg-white"
       onClick={handleOverlayClick}
     >
-      {/* ── Left Sidebar ─────────────────────────────────────────────────────── */}
+      {/* ── Left Sidebar ──────────────────────────────────────────────────── */}
       <div
         className={`${
           showChatList ? "flex" : "hidden"
@@ -491,7 +487,9 @@ const MessagingInterface = () => {
                   key={chat._id}
                   value={chat}
                   as="div"
-                  className={`flex items-start gap-3 p-3 md:p-4 cursor-pointer hover:bg-gray-50 transition-colors ${selectedChat === chat._id ? "bg-blue-50" : ""}`}
+                  className={`flex items-start gap-3 p-3 md:p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                    selectedChat === chat._id ? "bg-blue-50" : ""
+                  }`}
                   onClick={() => {
                     setSelectedChatP(chat);
                     handleChatSelect(chat._id);
@@ -586,12 +584,13 @@ const MessagingInterface = () => {
         </div>
       </div>
 
-      {/* ── Right Side - Chat Window ──────────────────────────────────────────── */}
+      {/* ── Right Side - Chat Window ──────────────────────────────────────── */}
       <div
         className={`${!showChatList ? "flex" : "hidden"} md:flex flex-1 flex-col`}
       >
         {selectedChat ? (
           <>
+            {/* Header */}
             <div className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 border-b border-gray-200">
               <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                 <Button
@@ -603,18 +602,13 @@ const MessagingInterface = () => {
                 <Avatar
                   size={40}
                   src={
-                    selectedChatP.participant.logoUrl === undefined
-                      ? selectedChatP.participant.profilePictureUrl || undefined
-                      : selectedChatP.participant.logoUrl || undefined
+                    selectedChatP?.participant.logoUrl === undefined
+                      ? selectedChatP?.participant.profilePictureUrl ||
+                        undefined
+                      : selectedChatP?.participant.logoUrl || undefined
                   }
                   onError={onImgErrorHandler}
-                >
-                  {imgError
-                    ? selectedChatP.participant.companyName === undefined
-                      ? selectedChatP.participant.fullName?.charAt(0)
-                      : selectedChatP.participant.companyName?.charAt(0)
-                    : null}
-                </Avatar>
+                />
                 <span className="font-medium text-gray-900 text-sm md:text-base truncate">
                   {selectedChatP?.participant.companyName === undefined
                     ? selectedChatP?.participant.fullName
@@ -623,7 +617,7 @@ const MessagingInterface = () => {
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <span className="text-xs md:text-sm text-gray-500 hidden sm:block">
-                  Sun, Aug 17, 3:57 PM
+                  {currentStickyDate ? getDateLabel(currentStickyDate) : ""}
                 </span>
                 <Button type="text" icon={<MoreOutlined />} />
               </div>
@@ -634,13 +628,15 @@ const MessagingInterface = () => {
               ref={containerRef}
               className="flex-1 relative overflow-y-auto p-3 md:p-6 bg-gray-50"
             >
-              <div className="sticky top-0 flex  justify-center z-10 bg-transparent py-2">
+              {/* Sticky Date Header */}
+              <div className="sticky top-0 flex justify-center z-10 pointer-events-none py-2">
                 {currentStickyDate && (
                   <div className="px-3 py-1 bg-white text-gray-600 text-xs rounded-full shadow">
-                    {currentStickyDate}
+                    {getDateLabel(currentStickyDate)}
                   </div>
                 )}
               </div>
+
               {messages.length === 0 && !docLoading ? (
                 <div className="text-center text-gray-500 mt-10">
                   No messages yet. Start the conversation!
@@ -648,26 +644,27 @@ const MessagingInterface = () => {
               ) : (
                 <div className="flex flex-col">
                   {messages.map((msg, index) => {
-                    const currentDate = new Date(msg.createdAt).toDateString();
-
-                    const previousDate =
+                    // Consistent ISO date key for grouping and ref tracking
+                    const currentDateKey = getDateKey(msg.createdAt);
+                    const previousDateKey =
                       index > 0
-                        ? new Date(messages[index - 1].createdAt).toDateString()
+                        ? getDateKey(messages[index - 1].createdAt)
                         : null;
-
-                    const showDate = currentDate !== previousDate;
+                    const showDateDivider = currentDateKey !== previousDateKey;
 
                     return (
                       <React.Fragment key={msg._id}>
-                        {showDate && (
+                        {showDateDivider && (
                           <div
                             ref={(el) => {
-                              if (el) dateRefs.current[currentDate] = el;
+                              // Store ref keyed by ISO date string
+                              dateRefs.current[currentDateKey] = el;
                             }}
+                            data-date={currentDateKey}
                             className="flex justify-center my-4"
                           >
-                            <div className="px-3 py-1 bg-white text-gray-600 text-xs rounded-full">
-                              {currentDate}
+                            <div className="px-3 py-1 bg-white text-gray-600 text-xs rounded-full shadow-sm">
+                              {getDateLabel(currentDateKey)}
                             </div>
                           </div>
                         )}
