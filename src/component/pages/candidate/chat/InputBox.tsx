@@ -9,19 +9,26 @@ import { Button, Input } from "antd";
 import EmojiPicker from "emoji-picker-react";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useRef } from "react";
+import ReplyCard from "./ReplyCard";
 
 export default function InputBox({
+  replyingTo,
   messageText,
+  selectedChat,
   setMessageText,
   sendMessage,
   setShowEmoji,
   showEmoji,
+  sendDocumentMessage,
 }: {
+  replyingTo: any;
   messageText: string;
   setMessageText: (text: string) => void;
   sendMessage: () => void;
   setShowEmoji: (show: boolean) => void;
   showEmoji: boolean;
+  sendDocumentMessage: (fileUrl: string) => void;
+  selectedChat: string;
 }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,10 +39,11 @@ export default function InputBox({
     formData.append("file", file); // IMPORTANT: key must be "file"
 
     try {
-      socket.emit("uploadingFile", { fileName: file.name }); // Optional: show uploading status
+      socket.emit("uploadingFile", { selectedChat }); // Optional: show uploading status
       const res = await uploadFileApi(formData);
       console.log("Uploaded URL:", res?.data?.url);
-      socket.emit("uploadedFileDone", { fileUrl: res?.data?.url }); // Notify server of upload completion
+      socket.emit("uploadedFileDone", { selectedChat }); // Notify server of upload completion
+      sendDocumentMessage(res?.data?.url); // Send the file URL as a message
       // socket.emit("sendDocumentMessage", {
       //   chatId: "currentChatId", // replace with actual chat ID
       //   msgId: "generatedMsgId", // generate a unique message ID
@@ -53,6 +61,7 @@ export default function InputBox({
   return (
     <>
       <div className="p-3 md:p-4 border-t border-gray-200 bg-white">
+        <ReplyCard text={replyingTo?.text} />
         <div className="flex items-center gap-2 md:gap-3">
           <Button
             type="primary"

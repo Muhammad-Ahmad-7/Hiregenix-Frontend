@@ -1,15 +1,28 @@
 import { getTimeOnly } from "@/utils/dateFormation";
-import { SmileOutlined } from "@ant-design/icons";
+import {
+  DownOutlined,
+  FileImageOutlined,
+  FileTextOutlined,
+  SmileOutlined,
+} from "@ant-design/icons";
 import { Button } from "antd";
 import EmojiPicker from "emoji-picker-react";
 import { AnimatePresence, motion } from "framer-motion";
-import React from "react";
+import React, { useState } from "react";
 import MessageStatus from "./MessageStatus";
 import { socket } from "@/socket";
 import { updateReaction } from "@/redux/slices/chat/messagesSlice";
+import { isImageUrl } from "@/utils/isImageUrl";
+import Image from "next/image";
+import { isDocumentUrl } from "@/utils/isDocumentUrl";
+import ReplyCard from "./ReplyCard";
+import SmallReplyCard from "./SmallReplyCard";
+import { div } from "framer-motion/client";
 
 export default function Message({
   msg,
+  setSelectReplyId,
+  selectReplyId,
   profile,
   hoveredMessageId,
   setHoveredMessageId,
@@ -17,13 +30,52 @@ export default function Message({
   toggleReactionPicker,
   reactionPickerMessageId,
   dispatch,
+
+  onReply = (msgId: string) => console.log("Reply", msgId),
+  onDelete = (msgId: string) => console.log("Delete", msgId),
+  onForward = (msgId: string) => console.log("Forward", msgId),
+  onCopy = (msgId: string) => console.log("Copy", msgId),
 }: any) {
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+
+  const handleDropdownClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDropdownVisible(!dropdownVisible);
+  };
+
+  const handleActionClick = (action: string) => {
+    setDropdownVisible(false);
+    switch (action) {
+      case "reply":
+        onReply(msg);
+        break;
+      case "delete":
+        onDelete(msg._id);
+        break;
+      case "forward":
+        onForward(msg._id);
+        break;
+      case "copy":
+        onCopy(msg._id);
+        break;
+    }
+  };
+
   return (
     <div
       key={msg._id}
+      id={`msg-${msg._id}`}
+      style={{
+        background: selectReplyId === msg._id ? "#80d4ff" : "",
+      }}
       className={`mb-4 flex ${msg.sender === profile._id ? "justify-end" : "justify-start"}`}
+      // onMouseEnter={() => setHoveredMessageId(msg._id)}
+      // onMouseLeave={() => setHoveredMessageId(null)}
       onMouseEnter={() => setHoveredMessageId(msg._id)}
-      onMouseLeave={() => setHoveredMessageId(null)}
+      onMouseLeave={() => {
+        setHoveredMessageId(null);
+        setDropdownVisible(false);
+      }}
     >
       {/* Message column */}
       <div
@@ -70,17 +122,96 @@ export default function Message({
 
           {/* ── Bubble ──────────────────────────────────────────────── */}
           <div
-            className={`relative px-3 py-2 md:px-4 md:py-2.5 shadow-sm ${
-              msg.sender === profile._id
-                ? "bg-[#005C4B] text-white rounded-lg" // top-right corner is the tail point
-                : "bg-white border border-gray-200 rounded-lg"
-            }`}
+            className={`
+              overflow-hidden-cmt
+              relative px-3 py-2 md:px-4 md:py-2.5 shadow-sm ${
+                msg.sender === profile._id
+                  ? "bg-[#005C4B] text-white rounded-lg" // top-right corner is the tail point
+                  : "bg-white border border-gray-200 rounded-lg"
+              }`}
           >
-            <p
+            {msg.replyingTo && (
+              <div onClick={() => setSelectReplyId(msg.replyingTo._id)}>
+                <SmallReplyCard text={msg.replyingTo.text} />
+              </div>
+            )}
+            {hoveredMessageId === msg._id && (
+              <AnimatePresence>
+                <motion.div
+                  key="dropdown-btn"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="absolute -right-0 -top-0  border-r- z-10"
+                >
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<DownOutlined />}
+                    onClick={handleDropdownClick}
+                    className="!bg-gray-100 shadow-sm border border-gray-200 hover:bg-gray-50"
+                  />
+                  {dropdownVisible && (
+                    <div
+                      className="absolute right-0 mt-2 w-28 bg-white shadow-md border border-gray-200 rounded-md z-50"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {["Reply", "Delete", "Forward", "Copy"].map((action) => (
+                        <div
+                          key={action}
+                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                          onClick={() =>
+                            handleActionClick(action.toLowerCase())
+                          }
+                        >
+                          {action}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            )}
+            {isImageUrl(msg.text) ? (
+              <a
+                href={msg.text}
+                target="_blank"
+                rel="noopener noreferrer"
+                // className="flex items-center gap-1 text-blue-600 hover:underline"
+                style={{
+                  color: msg.sender === profile._id ? "white" : "#005C4B",
+                }}
+                className="flex items-center gap-1 text-blue-100 hover:underline"
+              >
+                <FileImageOutlined style={{ fontSize: 18 }} />
+                Image
+              </a>
+            ) : isDocumentUrl(msg.text) ? (
+              <a
+                href={msg.text}
+                target="_blank"
+                rel="noopener noreferrer"
+                // className="flex items-center gap-1 text-blue-600 hover:underline"
+                style={{
+                  color: msg.sender === profile._id ? "white" : "#005C4B",
+                }}
+                className="flex items-center gap-1 text-blue-100 hover:underline"
+              >
+                <FileTextOutlined style={{ fontSize: 18 }} />
+                Document
+              </a>
+            ) : (
+              <p
+                className={`text-xs md:text-sm whitespace-pre-line break-words ${msg.sender === profile._id ? "text-white" : "text-gray-800"}`}
+              >
+                {msg.text}
+              </p>
+            )}
+            {/* <p
               className={`text-xs md:text-sm whitespace-pre-line break-words ${msg.sender === profile._id ? "text-white" : "text-gray-800"}`}
             >
               {msg.text}
-            </p>
+            </p> */}
 
             {msg.emoji && (
               <div className="mt-2">

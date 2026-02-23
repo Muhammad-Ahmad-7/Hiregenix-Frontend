@@ -7,6 +7,8 @@ import {
   MoreOutlined,
   ArrowLeftOutlined,
   MenuOutlined,
+  FileTextOutlined,
+  FileImageOutlined,
 } from "@ant-design/icons";
 import { getAllChats, getAllMessages } from "@/app/api/chat/chats.api";
 import { formatChatTime } from "@/utils/dateFormation";
@@ -33,6 +35,9 @@ import {
 import InputBox from "./InputBox";
 import MessageStatus from "./MessageStatus";
 import Message from "./Message";
+import LoadingMessage from "./LoadingMessage";
+import { isDocumentUrl } from "@/utils/isDocumentUrl";
+import { isImageUrl } from "@/utils/isImageUrl";
 
 const MessagingInterface = () => {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
@@ -50,12 +55,16 @@ const MessagingInterface = () => {
   const [docLoading, setDocLoading] = useState(false);
   const dispatch = useDispatch();
   useEffect(() => {
-    socket.on("uploadingFile", () => {
-      setDocLoading(true);
-    });
-    socket.on("uploadedFileDone", () => {
-      setDocLoading(false);
-    });
+    const handleUploading = () => setDocLoading(true);
+    const handleUploaded = () => setDocLoading(false);
+
+    socket.on("uploadingFile", handleUploading);
+    socket.on("uploadedFileDone", handleUploaded);
+
+    return () => {
+      socket.off("uploadingFile", handleUploading);
+      socket.off("uploadedFileDone", handleUploaded);
+    };
   }, []);
   useEffect(() => {
     socket.on("updateReaction", ({ messageId, reaction }) => {
@@ -223,6 +232,7 @@ const MessagingInterface = () => {
 
   const [showChatList, setShowChatList] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [replyingTo, setReplyingTo] = useState<any>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -319,7 +329,6 @@ const MessagingInterface = () => {
       prev === messageId ? null : messageId,
     );
   };
-
   const handleOverlayClick = () => {
     setReactionPickerMessageId(null);
     setShowEmoji(false);
@@ -327,6 +336,39 @@ const MessagingInterface = () => {
   useEffect(() => {
     console.log("online-Users:", onlineUsers);
   }, [onlineUsers]);
+  const [selectReplyId, setSelectReplyId] = useState<string | null>(null);
+  // const [clickReplyMsg, setClickReplyMsg] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selectReplyId) return;
+    if (typeof window === "undefined") return;
+
+    const el = document.getElementById(`msg-${selectReplyId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setSelectReplyId(selectReplyId);
+      const timer = setTimeout(() => setSelectReplyId(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [selectReplyId]);
+  const sendDocumentMessage = (fileUrl: string) => {
+    const uniqueId = Date.now().toString();
+    // if (messageText.trim()) {
+    //   if (!selectedChat) return;
+    //   setMessageText("");
+    // }
+    if (!profile) return;
+    socket.emit("sendMessage", {
+      chatId: selectedChat,
+      msg: fileUrl,
+      sender: profile._id,
+      msgId: uniqueId,
+      toUser: selectedChatP?.participant._id,
+    });
+  };
+  const handleReply = (msg: any) => {
+    setReplyingTo(msg);
+    console.log("replying to:", msg);
+  };
   const sendMessage = () => {
     const uniqueId = Date.now().toString();
     if (messageText.trim()) {
@@ -340,6 +382,7 @@ const MessagingInterface = () => {
       sender: profile._id,
       msgId: uniqueId,
       toUser: selectedChatP?.participant._id,
+      replyingTo: replyingTo?._id,
     });
   };
   const onImgErrorHandler = () => {
@@ -470,7 +513,22 @@ const MessagingInterface = () => {
                             />
                           </>
                         )}{" "}
-                        {chat.lastMessage?.text ?? "No messages yet ..."}
+                        {isImageUrl(chat.lastMessage?.text) ? (
+                          <>
+                            <FileImageOutlined style={{ fontSize: 18 }} />
+                            Image
+                          </>
+                        ) : isDocumentUrl(chat.lastMessage?.text) ? (
+                          <>
+                            <FileTextOutlined style={{ fontSize: 18 }} />
+                            Document
+                          </>
+                        ) : (
+                          <span className="truncate">
+                            {chat.lastMessage?.text ?? "No messages yet ..."}
+                          </span>
+                        )}
+                        {/* {chat.lastMessage?.text ?? "No messages yet ..."} */}
                       </div>
                       {chat.unReadCount > 0 &&
                         chat.lastMessage.sender !== profile._id && (
@@ -543,29 +601,39 @@ const MessagingInterface = () => {
             </div>
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-3 md:p-6 bg-gray-50">
-              {messages.length === 0 ? (
+              {messages.length === 0 && !docLoading ? (
                 <div className="text-center text-gray-500 mt-10">
                   No messages yet. Start the conversation!
                 </div>
               ) : (
-                messages.map((msg) => (
-                  <Message
-                    key={msg._id}
-                    msg={msg}
-                    profile={profile}
-                    hoveredMessageId={hoveredMessageId}
-                    setHoveredMessageId={setHoveredMessageId}
-                    handleReaction={handleReaction}
-                    toggleReactionPicker={toggleReactionPicker}
-                    reactionPickerMessageId={reactionPickerMessageId}
-                    dispatch={dispatch}
-                  />
-                ))
+                <div className="flex flex-col">
+                  {messages.map((msg) => (
+                    <Message
+                      selectReplyId={selectReplyId}
+                      setSelectReplyId={setSelectReplyId}
+                      onReply={handleReply}
+                      key={msg._id}
+                      msg={msg}
+                      profile={profile}
+                      hoveredMessageId={hoveredMessageId}
+                      setHoveredMessageId={setHoveredMessageId}
+                      handleReaction={handleReaction}
+                      toggleReactionPicker={toggleReactionPicker}
+                      reactionPickerMessageId={reactionPickerMessageId}
+                      dispatch={dispatch}
+                    />
+                  ))}
+
+                  {docLoading && <LoadingMessage text="Uploading..." loading />}
+                </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
             <InputBox
+              replyingTo={replyingTo}
+              selectedChat={selectedChat}
+              sendDocumentMessage={sendDocumentMessage}
               messageText={messageText}
               setMessageText={setMessageText}
               sendMessage={sendMessage}
