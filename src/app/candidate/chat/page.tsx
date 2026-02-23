@@ -1,3 +1,4 @@
+"use client";
 import MessagingInterface from "@/component/pages/candidate/chat/MessagingInterface";
 import React from "react";
 

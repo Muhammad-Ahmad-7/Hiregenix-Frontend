@@ -9,7 +9,7 @@ import { CandidateResume } from "@/constants/Interfaces/Types/Resume.interface";
 
 export const getCandidateProfileApi = async () => {
   return safeApiCall<{ candidate: CandidateProfileResponse }>({
-    apiCall: () => api.get("/candidate/profile/692fdedc6b8f39c9bcfe2fac"),
+    apiCall: () => api.get("/candidate/profile"),
     showToaster: true,
   });
 };

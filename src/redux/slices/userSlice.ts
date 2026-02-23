@@ -24,6 +24,8 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     setProfile(state, action: PayloadAction<UserProfile>) {
+      console.log("iamdangeous");
+      console.log(action.payload);
       state.profile = action.payload;
     },
     clearUserProfile(state) {

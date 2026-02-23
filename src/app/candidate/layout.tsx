@@ -77,12 +77,14 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     //   router.replace("/");
     // }
     dispatch(setLoading(true));
+    console.log("ilovilov", profile);
     if (profile) return;
     getCandidateProfileApi()
       .then((res) => {
         console.log("first", res);
         if (!res || !res.data) return;
         if (res.status === "Success") {
+          console.log("youyouyou", res);
           const valuesWithUserType: CandidateProfileResponse & {
             userType: "candidate";
           } = {
@@ -248,10 +250,11 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   removeToken();
                   router.replace("/auth");
                 }}
-                className={`w-full font-bold text-left ${collapsed
-                  ? "flex justify-center bg-red-600 hover:bg-red-700"
-                  : "bg-red-600 hover:bg-red-700 text-white"
-                  }`}
+                className={`w-full font-bold text-left ${
+                  collapsed
+                    ? "flex justify-center bg-red-600 hover:bg-red-700"
+                    : "bg-red-600 hover:bg-red-700 text-white"
+                }`}
               >
                 {!collapsed && "Logout"}
               </Button>
