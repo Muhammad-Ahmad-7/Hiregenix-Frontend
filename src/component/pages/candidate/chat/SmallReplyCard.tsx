@@ -1,11 +1,18 @@
+"use client";
 export default function SmallReplyCard({
+  setSelectReplyId,
   sender = "Ahmad Waheed CUI",
   text = "Wo Tu Nahi jay ga",
-  messageId = "123456",
+  messageId,
 }) {
   return (
     // <div className="min-h-screen bg-[#0f1117] flex items-center justify-center">
-    <div className="flex bg-[#1c1f26] rounded-lg   overflow-hidden">
+    <div
+      onClick={() => {
+        setSelectReplyId(messageId);
+      }}
+      className="flex bg-[#1c1f26] rounded-lg   overflow-hidden"
+    >
       {/* Left accent bar */}
       <div className="w-1 bg-sky-400 flex-shrink-0" />
 
@@ -18,7 +25,16 @@ export default function SmallReplyCard({
       </div>
 
       {/* Close icon */}
-      <span className="text-gray-500 px-3 pt-2 text-sm self-start">✕</span>
+      <span
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log("delelelele");
+          setSelectReplyId(null);
+        }}
+        className="text-gray-500 px-3 pt-2 text-sm self-start"
+      >
+        ✕
+      </span>
     </div>
     // {/* </div> */}
   );

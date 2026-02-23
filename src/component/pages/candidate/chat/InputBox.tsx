@@ -1,3 +1,4 @@
+"use client";
 import { uploadFileApi } from "@/app/api/auth.api";
 import { socket } from "@/socket";
 import {
@@ -10,9 +11,11 @@ import EmojiPicker from "emoji-picker-react";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useRef } from "react";
 import ReplyCard from "./ReplyCard";
+import SmallReplyCard from "./SmallReplyCard";
 
 export default function InputBox({
   replyingTo,
+  setSelectReplyId,
   messageText,
   selectedChat,
   setMessageText,
@@ -23,6 +26,7 @@ export default function InputBox({
 }: {
   replyingTo: any;
   messageText: string;
+  setSelectReplyId: (id?: string) => void;
   setMessageText: (text: string) => void;
   sendMessage: () => void;
   setShowEmoji: (show: boolean) => void;
@@ -61,7 +65,18 @@ export default function InputBox({
   return (
     <>
       <div className="p-3 md:p-4 border-t border-gray-200 bg-white">
-        <ReplyCard text={replyingTo?.text} />
+        {replyingTo && (
+          // <div
+          //   onClick={() => setSelectReplyId(replyingTo?._id)}
+          //   className="mb-2"
+          // >
+          <SmallReplyCard
+            messageId={replyingTo._id}
+            setSelectReplyId={setSelectReplyId}
+            text={replyingTo.text}
+          />
+          // {/* </div> */}
+        )}
         <div className="flex items-center gap-2 md:gap-3">
           <Button
             type="primary"

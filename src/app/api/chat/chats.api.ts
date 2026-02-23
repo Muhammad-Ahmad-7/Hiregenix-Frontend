@@ -8,9 +8,24 @@ export const getAllChats = async () => {
   });
 };
 
-export const getAllMessages = async (chatId: string) => {
+export const getAllMessages = async ({
+  chatId,
+  params = {
+    limit: 20,
+    page: 1,
+  },
+}: {
+  chatId: string;
+  params?: {
+    limit: string | number;
+    page: string | number;
+  };
+}) => {
   return safeApiCall<{ messages: IMessage[] }>({
-    apiCall: () => api.get(`/message/chat/${chatId}`),
+    apiCall: () =>
+      api.get(`/message/chat/${chatId}`, {
+        params, // pass query params here
+      }),
     showToaster: false,
   });
 };

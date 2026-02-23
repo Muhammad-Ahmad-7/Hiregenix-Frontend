@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { message } from "antd";
-import { select } from "framer-motion/client";
+import { stat } from "fs";
 
 export type MessageStatus = "sent" | "delivered" | "seen";
 
@@ -29,7 +28,11 @@ const messagesSlice = createSlice({
   reducers: {
     // 🔹 Replace entire message list (when loading chat)
     setMessages(state, action: PayloadAction<IMessage[]>) {
-      state.messages = action.payload;
+      if (state.messages.length === 0) {
+        state.messages = action.payload;
+      } else {
+        state.messages = [...action.payload, ...state.messages];
+      }
     },
 
     // 🔹 Push single message (real-time receive or send)

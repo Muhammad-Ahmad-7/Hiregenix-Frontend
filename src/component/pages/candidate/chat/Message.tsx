@@ -1,3 +1,4 @@
+"use client";
 import { getTimeOnly } from "@/utils/dateFormation";
 import {
   DownOutlined,
@@ -131,9 +132,13 @@ export default function Message({
               }`}
           >
             {msg.replyingTo && (
-              <div onClick={() => setSelectReplyId(msg.replyingTo._id)}>
-                <SmallReplyCard text={msg.replyingTo.text} />
-              </div>
+              // <div onClick={() => setSelectReplyId(msg.replyingTo._id)}>
+              <SmallReplyCard
+                messageId={msg.replyingTo._id}
+                setSelectReplyId={setSelectReplyId}
+                text={msg.replyingTo.text}
+              />
+              // </div>
             )}
             {hoveredMessageId === msg._id && (
               <AnimatePresence>

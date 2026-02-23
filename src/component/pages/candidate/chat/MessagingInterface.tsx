@@ -45,7 +45,7 @@ const MessagingInterface = () => {
   const [messageText, setMessageText] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-
+  const [page, setPage] = useState(2);
   const { profile } = useSelector((state: RootState) => state.user);
   const [hoveredMessageId, setHoveredMessageId] = useState<number | null>(null);
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<
@@ -54,6 +54,10 @@ const MessagingInterface = () => {
   const { messages } = useSelector((state: RootState) => state.messages);
   const [docLoading, setDocLoading] = useState(false);
   const dispatch = useDispatch();
+
+  // Track whether the next messages update is from pagination (old msgs) or new msg
+  const isLoadingOldMessages = useRef(false);
+
   useEffect(() => {
     const handleUploading = () => setDocLoading(true);
     const handleUploaded = () => setDocLoading(false);
@@ -66,9 +70,46 @@ const MessagingInterface = () => {
       socket.off("uploadedFileDone", handleUploaded);
     };
   }, []);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Scroll listener for pagination (loading older messages)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      if (container.scrollTop <= 0) {
+        const scrollHeightBefore = container.scrollHeight;
+
+        // Mark that we're loading old messages — suppress auto-scroll
+        isLoadingOldMessages.current = true;
+
+        getAllMessages({
+          chatId: selectedChat!,
+          params: { page, limit: 20 },
+        }).then((res) => {
+          console.log("hurrah:", res);
+          dispatch(setMessages(res.data.messages));
+          setPage((prev) => prev + 1);
+
+          // After DOM updates, restore scroll position so user stays in place
+          requestAnimationFrame(() => {
+            const scrollDiff = container.scrollHeight - scrollHeightBefore;
+            container.scrollTop = scrollDiff;
+            // Reset flag after position is restored
+            isLoadingOldMessages.current = false;
+          });
+        });
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [messages, selectedChat, page]);
+
   useEffect(() => {
     socket.on("updateReaction", ({ messageId, reaction }) => {
-      console.log("i am at front end ");
       dispatch(updateReaction({ messageId, reaction }));
     });
     socket.on("sendMessage", ({ chatId, msg, msgId, sender, isUserOnline }) => {
@@ -82,48 +123,33 @@ const MessagingInterface = () => {
         selectedChat,
         isUserOnline,
       );
-      console.log("sender:", sender);
-
-      console.log("profile?.userId._id:", profile?._id);
 
       if (sender !== profile?._id) {
-        console.log("alluarjun");
-        console.log("participantId:", selectedChatP?.participant._id);
         if (selectedChat !== chatId) {
-          console.log("alluarjun2");
           socket.emit("updateMessageStatus", {
             messageId: msgId,
             status: "delivered",
             chatId,
-
-            allunjun: "alluarjun2",
             sender,
             toUser: selectedChatP?.participant._id,
           });
           dispatch(updateLastMessageStatus({ status: "delivered", chatId }));
         } else {
-          console.log("alluarjun3");
           socket.emit("updateMessageStatus", {
             messageId: msgId,
             status: "seen",
             chatId,
             sender,
-            allunjun: "alluarjun3",
             toUser: selectedChatP?.participant._id,
           });
           dispatch(updateLastMessageStatus({ status: "seen", chatId }));
         }
       } else {
-        console.log("alluarjun4");
-        // todo:fix it
-        console.log(isUserOnline);
         socket.emit("updateMessageStatus", {
           messageId: msgId,
           status: isUserOnline ? "delivered" : "sent",
           chatId,
           sender,
-
-          allunjun: "alluarjun4",
           toUser: selectedChatP?.participant._id,
         });
         dispatch(
@@ -133,10 +159,7 @@ const MessagingInterface = () => {
           }),
         );
       }
-      console.log("profile?._id:", profile?._id);
 
-      console.log("i am at client", msg);
-      console.log("selectedChat2:", selectedChat, "chatId2:", chatId);
       dispatch(
         addMessage({
           message: {
@@ -162,12 +185,9 @@ const MessagingInterface = () => {
   }, [selectedChat, selectedChatP]);
 
   useEffect(() => {
-    console.log("pyarybhai");
     if (!profile) return;
 
-    console.log("pyarybhai2");
     socket.on("updateAllMessagesStatusToSeen", ({ selectedChat }) => {
-      console.log("pyarybhai3", selectedChat);
       dispatch(
         updateAllMessagesStatusToSeen({
           chatId: selectedChat,
@@ -181,13 +201,13 @@ const MessagingInterface = () => {
   }, [profile, selectedChat]);
 
   const { chats } = useSelector((state: RootState) => state.chats);
+
   useEffect(() => {
     socket.on("iAmOnline", (onlineUserId: string) => {
       const yeschats = chats?.find(
         (chat) => chat.participant._id === onlineUserId,
       );
       if (yeschats) {
-        console.log("yeschats", yeschats);
         dispatch(
           updateAllMessagesStatusToDelivered({
             userId: profile?.userId._id,
@@ -201,10 +221,7 @@ const MessagingInterface = () => {
           }),
         );
         dispatch(
-          updateOnlineStatus({
-            userId: onlineUserId,
-            onlineStatus: "online",
-          }),
+          updateOnlineStatus({ userId: onlineUserId, onlineStatus: "online" }),
         );
       }
     });
@@ -219,7 +236,6 @@ const MessagingInterface = () => {
             onlineStatus: "offline",
           }),
         );
-        // setOnlineUsers((prev) => prev.filter((id) => id !== offlineUserId));
       }
     });
 
@@ -228,8 +244,8 @@ const MessagingInterface = () => {
       socket.off("iAmOffline");
     };
   }, [chats, profile]);
-  const [imgError, setImgError] = useState(false);
 
+  const [imgError, setImgError] = useState(false);
   const [showChatList, setShowChatList] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<any>(null);
@@ -240,7 +256,9 @@ const MessagingInterface = () => {
     dispatch(updateUnreadCount({ chatId: selectedChat, unReadCount: -1 }));
   };
 
+  // Only scroll to bottom for new messages, NOT when loading old ones
   useEffect(() => {
+    if (isLoadingOldMessages.current) return;
     scrollToBottom();
   }, [messages]);
 
@@ -254,57 +272,45 @@ const MessagingInterface = () => {
         console.error(err);
       });
   }, []);
+
   useEffect(() => {
     socket.onAny((event, ...args) => {
       console.log("📩 Received:", event, args);
     });
-
     return () => {
       socket.offAny();
     };
   }, []);
+
   useEffect(() => {
     if (!selectedChat) return;
-    console.log("faaaaah:", selectedChatP);
     socket.emit("private-chat", {
       selectedChat,
       userId: profile?._id,
       selectedChatP,
     });
-    console.log("fselectedChat:", selectedChat);
-    getAllMessages(selectedChat).then((res) => {
+    getAllMessages({ chatId: selectedChat }).then((res) => {
       if (!res || !res.data) return;
       dispatch(setMessages(res.data.messages));
     });
-  }, [selectedChat, profile, selectedChatP]);
+  }, [selectedChat, dispatch]);
+
   const handleChatSelect = (chatId: string) => {
     setSelectedChat(chatId);
     setShowChatList(false);
+    // Reset page when switching chats
+    setPage(2);
   };
+
   useEffect(() => {
     socket.on(
       "updateMessageStatus",
       ({ messageId, status, chatId, sender, isUserOnline }) => {
-        console.log(
-          "selectedChat:",
-          selectedChat,
-          "chatId:",
-          chatId,
-          "sender:",
-          sender,
-          "profile?._id",
-          profile?._id,
-          "isUserOnline:",
-          isUserOnline,
-          "status:",
-          status,
-        );
-        console.log("testme", selectedChat === chatId, sender !== profile?._id);
-        console.log("isUserOnline:", isUserOnline);
         dispatch(updateMessageStatus({ messageId, status }));
       },
     );
   }, [selectedChat]);
+
   const sortedChats = chats
     ? [...chats].sort((a, b) => {
         const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
@@ -329,15 +335,14 @@ const MessagingInterface = () => {
       prev === messageId ? null : messageId,
     );
   };
+
   const handleOverlayClick = () => {
     setReactionPickerMessageId(null);
     setShowEmoji(false);
   };
-  useEffect(() => {
-    console.log("online-Users:", onlineUsers);
-  }, [onlineUsers]);
+
   const [selectReplyId, setSelectReplyId] = useState<string | null>(null);
-  // const [clickReplyMsg, setClickReplyMsg] = useState<string | null>(null);
+
   useEffect(() => {
     if (!selectReplyId) return;
     if (typeof window === "undefined") return;
@@ -350,12 +355,9 @@ const MessagingInterface = () => {
       return () => clearTimeout(timer);
     }
   }, [selectReplyId]);
+
   const sendDocumentMessage = (fileUrl: string) => {
     const uniqueId = Date.now().toString();
-    // if (messageText.trim()) {
-    //   if (!selectedChat) return;
-    //   setMessageText("");
-    // }
     if (!profile) return;
     socket.emit("sendMessage", {
       chatId: selectedChat,
@@ -365,10 +367,12 @@ const MessagingInterface = () => {
       toUser: selectedChatP?.participant._id,
     });
   };
+
   const handleReply = (msg: any) => {
     setReplyingTo(msg);
     console.log("replying to:", msg);
   };
+
   const sendMessage = () => {
     const uniqueId = Date.now().toString();
     if (messageText.trim()) {
@@ -385,11 +389,14 @@ const MessagingInterface = () => {
       replyingTo: replyingTo?._id,
     });
   };
+
   const onImgErrorHandler = () => {
     setImgError(true);
     return true;
   };
+
   if (profile === null) return;
+
   return (
     <div
       className="flex h-[calc(100vh-100px)] bg-white"
@@ -505,13 +512,10 @@ const MessagingInterface = () => {
                       }}
                     >
                       <div className="truncate">
-                        {/* <div className="flex justify-center items-center"> */}
                         {chat.lastMessage.sender === profile._id && (
-                          <>
-                            <MessageStatus
-                              status={chat.lastMessage.status ?? "000"}
-                            />
-                          </>
+                          <MessageStatus
+                            status={chat.lastMessage.status ?? "000"}
+                          />
                         )}{" "}
                         {isImageUrl(chat.lastMessage?.text) ? (
                           <>
@@ -528,23 +532,16 @@ const MessagingInterface = () => {
                             {chat.lastMessage?.text ?? "No messages yet ..."}
                           </span>
                         )}
-                        {/* {chat.lastMessage?.text ?? "No messages yet ..."} */}
                       </div>
                       {chat.unReadCount > 0 &&
                         chat.lastMessage.sender !== profile._id && (
-                          <>
-                            <Badge
-                              color="#1677ff"
-                              count={
-                                chat.unReadCount > 9 ? "9+" : chat.unReadCount
-                              }
-                              className="mt-1 flex-shrink-0"
-                            />
-                            {/* <div>o{chat.lastMessage.sender}</div>
-
-                            <div>i{profile._id}</div> */}
-                            {chat.participant._id !== profile.userId._id}
-                          </>
+                          <Badge
+                            color="#1677ff"
+                            count={
+                              chat.unReadCount > 9 ? "9+" : chat.unReadCount
+                            }
+                            className="mt-1 flex-shrink-0"
+                          />
                         )}
                     </p>
                   </div>
@@ -559,8 +556,6 @@ const MessagingInterface = () => {
       <div
         className={`${!showChatList ? "flex" : "hidden"} md:flex flex-1 flex-col`}
       >
-        {/* Chat Header */}
-
         {selectedChat ? (
           <>
             <div className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 border-b border-gray-200">
@@ -599,8 +594,12 @@ const MessagingInterface = () => {
                 <Button type="text" icon={<MoreOutlined />} />
               </div>
             </div>
+
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-3 md:p-6 bg-gray-50">
+            <div
+              ref={containerRef}
+              className="flex-1 overflow-y-auto p-3 md:p-6 bg-gray-50"
+            >
               {messages.length === 0 && !docLoading ? (
                 <div className="text-center text-gray-500 mt-10">
                   No messages yet. Start the conversation!
@@ -623,7 +622,6 @@ const MessagingInterface = () => {
                       dispatch={dispatch}
                     />
                   ))}
-
                   {docLoading && <LoadingMessage text="Uploading..." loading />}
                 </div>
               )}
@@ -631,7 +629,9 @@ const MessagingInterface = () => {
             </div>
 
             <InputBox
+              setSelectReplyId={setSelectReplyId}
               replyingTo={replyingTo}
+              setReplyingTo={setReplyingTo}
               selectedChat={selectedChat}
               sendDocumentMessage={sendDocumentMessage}
               messageText={messageText}
