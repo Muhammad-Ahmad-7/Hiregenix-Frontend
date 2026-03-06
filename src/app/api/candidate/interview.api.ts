@@ -23,6 +23,7 @@ export const getAllTodaysInterviewsApi = async () => {
 export const getAllInterviewsApi = async (params: {
   page: number;
   limit: number;
+  status: string | undefined;
 }) => {
   return safeApiCall<{ interviews: ScheduledInterview[] }>({
     apiCall: () =>

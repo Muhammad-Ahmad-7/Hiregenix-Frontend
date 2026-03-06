@@ -68,14 +68,18 @@ export interface AppliedJob {
 export interface ScheduledInterview {
   _id: string;
   candidateId: string;
-  companyId: CompanyMini;
-  jobId: JobMini;
+  company: CompanyMini;
+  job: JobMini;
   type: "live" | "recorded";
   scheduledDate: string; // ISO string
   status: "scheduled" | "completed" | "cancelled";
   createdAt: string;
   updatedAt: string;
-  aiResult: AiResult;
+  report: {
+    topStrengths: string[];
+    topWeaknesses: string[];
+    overallImprovementSuggestions: string[];
+  }
   __v: number;
 }
 export interface ScheduledInterviewSimple {
@@ -107,7 +111,7 @@ export interface JobMini {
 
 export interface ScheduledInterviewWithCandidate {
   _id: string;
-  candidateId: CandidateMini;
+  candidate: CandidateMini;
   companyId: string; // just ID
   jobId: string; // just ID
   type: InterviewType;
@@ -116,6 +120,7 @@ export interface ScheduledInterviewWithCandidate {
   aiResult: AiResult;
   createdAt: string;
   updatedAt: string;
+  totalInterviews: number; // total interviews for this job
   __v: number;
 }
 export interface CandidateMini {

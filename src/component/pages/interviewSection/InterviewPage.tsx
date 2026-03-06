@@ -121,7 +121,7 @@ export default function InterviewsPage() {
       try {
         setLoading(true);
         // Replace with your actual API call
-        const res = await getAllInterviewsApi({ page: 1, limit: 50 });
+        const res = await getAllInterviewsApi({ page: 1, limit: 50, status: "scheduled" });
         if (!res || !res.data) {
           setAllInterviews([]);
           setAllInterviewsMeta(null);
@@ -178,10 +178,10 @@ export default function InterviewsPage() {
   ): InterviewTableRecord[] =>
     interviews.map((i) => ({
       key: i._id,
-      name: i.jobId?.title || "N/A",
-      company: i.companyId?.companyName || "N/A",
+      name: i.job?.title || "N/A",
+      company: i.company?.companyName || "N/A",
       type: i.type || "N/A",
-      role: i.jobId?.workMode || "N/A",
+      role: i.job?.workMode || "N/A",
       date: formatDate(i.scheduledDate),
       interviewStatus: i.status,
     }));
@@ -311,11 +311,11 @@ export default function InterviewsPage() {
             {todaysInterviews.map((interview) => (
               <Col xs={24} sm={12} lg={8} key={interview._id}>
                 <InterviewCard
-                  title={interview.jobId?.title || "N/A"}
-                  company={interview.companyId?.companyName || "N/A"}
+                  title={interview.job?.title || "N/A"}
+                  company={interview.company?.companyName || "N/A"}
                   type={interview.type}
                   deadline={formatDate(
-                    interview.jobId?.deadline || interview.scheduledDate
+                    interview.job?.deadline || interview.scheduledDate
                   )}
                   logo="/logo.png"
                   onJoin={handleJoinInterview(interview._id)}

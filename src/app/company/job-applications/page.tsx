@@ -43,7 +43,7 @@ export interface JobResponse {
   __v: number;
   location: JobLocation;
   salaryRange: SalaryRange;
-  applicationCount?: number;
+  totalInterviews?: number;
   viewCount?: number;
   bestMatchCount?: number;
 }
@@ -62,7 +62,7 @@ export interface StatsData {
 }
 
 type JobWithStats = Pick<JobResponse, "_id" | "title"> & {
-  applicationCount?: number;
+  totalInterviews?: number;
   viewCount?: number;
   bestMatchCount?: number;
 };
@@ -178,15 +178,15 @@ export default function ApplicationsPage() {
         limit: pageSize,
       });
 
-        if (!res || !res.data) {
-          setInterviewsData([]);
-          return;
-        }
+      if (!res || !res.data) {
+        setInterviewsData([]);
+        return;
+      }
 
       // Set interviews data from res.data.interviews
-        setInterviewsData(
-          (res.data.interviews as unknown as InterviewRecord[]) || []
-        );
+      setInterviewsData(
+        (res.data.interviews as unknown as InterviewRecord[]) || []
+      );
 
       // Set pagination meta from res.meta
       setMetaData(
@@ -214,7 +214,7 @@ export default function ApplicationsPage() {
   // Transform stats data
   const statsData = applications.reduce((acc, job) => {
     acc[job._id] = {
-      totalApplications: job.applicationCount || 0,
+      totalApplications: job.totalInterviews || 0,
       totalViews: job.viewCount || 0,
       bestMatches: job.bestMatchCount || 0,
     };
@@ -225,10 +225,10 @@ export default function ApplicationsPage() {
   const selectedJob = applications.find((job) => job._id === selectedJobId);
 
   return (
-    <div className="p-6">
+    <div className="">
       <JobApplicationStats
         jobRoles={jobRoles}
-        totalApplications={interviewsData.length}
+        totalApplications={selectedJob ? statsData[selectedJob._id].totalApplications : 0}
         statsData={statsData}
         onJobRoleChange={handleJobRoleChange}
       />
