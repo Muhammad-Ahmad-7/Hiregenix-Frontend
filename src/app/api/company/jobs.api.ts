@@ -2,6 +2,7 @@
 
 import {
   JobPosting,
+  JobPostingAI,
   JobResponse,
 } from "@/constants/Interfaces/Types/Jobs.interface";
 import api, { safeApiCall } from "../base.api";
@@ -69,5 +70,12 @@ export const completeCompanyProfileApi = async (
   return safeApiCall<{ company: CompanyResponse }>({
     apiCall: () => api.post("/company/complete-profile", body),
     showToaster: true,
+  });
+};
+
+
+export const generateJobDataUsingAIApi = async (jobTitle: string) => {
+  return safeApiCall<{ jobData: JobPostingAI }>({
+    apiCall: () => api.get(`/job/generate-job-ai/${jobTitle}`),
   });
 };

@@ -37,6 +37,26 @@ export interface JobPosting {
   deadline?: string; // ISO date string
   status: JobStatus;
 }
+
+
+export interface JobPostingAI {
+  jobTitle: string;
+  jobRole: string;
+  status: JobStatus;
+  workMode: WorkMode;
+  applicationDeadline: string; // ISO date string
+  city: string;
+  country: string;
+  minSalary: number;
+  maxSalary: number;
+  currency: string;
+  jobDescription: string;
+  interviewGuideline: string;
+  skills: string[];
+  experienceLevel: ExperienceLevel;
+  requirements: string[];
+}
+
 export interface Location {
   city: string;
   country: string;

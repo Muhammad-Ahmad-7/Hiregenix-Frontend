@@ -5,9 +5,9 @@ interface AIFrameMonitorProps {
     videoRef: React.RefObject<HTMLVideoElement>;
     isSpeaking: boolean;
     isRecording: boolean;
-    currentQuestionIndex: number;
-    totalQuestions: number;
-    aiMetrics: {
+    currentQuestionIndex?: number;
+    totalQuestions?: number;
+    aiMetrics?: {
         faceVisible: boolean;
         multipleFaces: boolean;
     };
@@ -39,7 +39,7 @@ const AIFrameMonitor: React.FC<AIFrameMonitorProps> = ({
             <div className="absolute inset-x-0 top-6 flex flex-col items-center gap-3 pointer-events-none z-50 px-6">
 
                 {/* Face Detection Alert */}
-                {!aiMetrics.faceVisible && (
+                {!aiMetrics?.faceVisible && (
                     <div className="w-full max-w-sm flex items-center gap-4 p-4 rounded-2xl border border-amber-500/40 bg-slate-900/70 backdrop-blur-md shadow-2xl animate-bounce">
                         <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500">
                             <WarningOutlined className="text-xl" />
@@ -52,7 +52,7 @@ const AIFrameMonitor: React.FC<AIFrameMonitorProps> = ({
                 )}
 
                 {/* Multiple Faces Alert */}
-                {aiMetrics.multipleFaces && (
+                {aiMetrics?.multipleFaces && (
                     <div className="w-full max-w-sm flex items-center gap-4 p-4 rounded-2xl border border-red-500/40 bg-slate-900/70 backdrop-blur-md shadow-2xl transition-all duration-500">
                         <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">
                             <StopOutlined className="text-xl" />
@@ -87,7 +87,7 @@ const AIFrameMonitor: React.FC<AIFrameMonitorProps> = ({
                 <div className="bg-slate-900/60 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 flex flex-col items-end">
                     <span className="text-slate-400 text-[9px] uppercase font-black tracking-widest leading-none mb-1">Status</span>
                     <span className="text-white text-xs font-mono">
-                        {currentQuestionIndex + 1} <span className="text-slate-500">/</span> {totalQuestions}
+                        {currentQuestionIndex !== undefined ? currentQuestionIndex + 1 : '-'} <span className="text-slate-500">/</span> {totalQuestions !== undefined ? totalQuestions : '-'}
                     </span>
                 </div>
             </div>

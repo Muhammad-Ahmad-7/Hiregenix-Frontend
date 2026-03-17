@@ -1,14 +1,24 @@
-'use client'
+'use client';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { AudioOutlined, StopOutlined } from '@ant-design/icons';
 import { Button, Typography, Progress } from 'antd';
 import { useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { createInterviewQuestionResultApi, createInterviewQuestionResultForSkipQuestionApi, getInterviewByIdApi } from '@/app/api/candidate/interview.api';
+
+import {
+    createInterviewQuestionResultApi,
+    createInterviewQuestionResultForSkipQuestionApi,
+    getInterviewByIdApi,
+} from '@/app/api/candidate/interview.api';
 import { useInterviewAI } from '@/hooks/useInterviewAI';
 import AIFrameMonitor from '@/component/interview/AIFrameMonitor';
+import VerificationFlow from '@/component/interview/Verifications/VerificationFlow';
+
+// ─── Verification flow (gate) ─────────────────────────────────────────────────
 
 const { Text } = Typography;
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type InterviewStateType = {
     isRecording: boolean;
@@ -21,25 +31,29 @@ type InterviewStateType = {
     showWaitTimer: boolean;
     hasSpokenCurrent: boolean;
     isUploading: boolean;
-}
+};
+
+// ─── LiveInterviewPage ────────────────────────────────────────────────────────
 
 const LiveInterviewPage = () => {
+    // ── Verification gate ─────────────────────────────────────────────────────
+    const [isVerified, setIsVerified] = useState(false);
 
-    const [interviewState, setInterviewState] = useState<InterviewStateType
-    >({
+    // ── Interview state ───────────────────────────────────────────────────────
+    const [interviewState, setInterviewState] = useState<InterviewStateType>({
         isRecording: false,
         isSpeaking: false,
         currentQuestionIndex: 0,
         currentQuestion: '',
         interviewQuestions: [],
-        timeLeft: 120, // 2 minutes for recording
-        waitTimeLeft: 5, // 5 seconds to start recording
+        timeLeft: 120,
+        waitTimeLeft: 5,
         showWaitTimer: false,
         hasSpokenCurrent: false,
         isUploading: false,
     });
 
-    // Refs
+    // ── Refs ──────────────────────────────────────────────────────────────────
     const videoRef = useRef<HTMLVideoElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const recorderRef = useRef<MediaRecorder | null>(null);
@@ -50,49 +64,18 @@ const LiveInterviewPage = () => {
     const suspicionRef = useRef(0);
     const isSkippingRef = useRef(false);
 
-    const { aiMetrics } = useInterviewAI(videoRef)
-
+    const { aiMetrics } = useInterviewAI(videoRef);
     const { interviewId } = useParams();
 
-    // Fetch questions
+    // ── Camera (interview phase — initialised only after verification) ─────────
     useEffect(() => {
-        const fetchQuestions = async () => {
-            if (!interviewId) {
-                toast.error("Interview ID is missing.");
-                return;
-            }
-            if (typeof interviewId !== 'string') {
-                console.error("interviewId is not of type string");
-                return;
-            }
-            const res = await getInterviewByIdApi(interviewId);
-            if (!res) {
-                toast.error("Failed to fetch interview details.");
-                return;
-            }
-            if (res.status === "Failed") {
-                toast.error(res.message || "Failed to fetch interview details.");
-                return;
-            }
-            const interview = res.data?.interview;
-            if (!interview) {
-                toast.error("Interview data is missing.");
-                return;
-            }
-            setInterviewState(prev => ({ ...prev, interviewQuestions: interview?.questions }));
-            setInterviewState(prev => ({ ...prev, currentQuestion: interview?.questions[0] }));
-        }
+        if (!isVerified) return; // don't touch camera until verified
 
-        fetchQuestions();
-    }, [interviewId]);
-
-    // Initialize camera
-    useEffect(() => {
         const initCamera = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: true,
-                    audio: true
+                    audio: true,
                 });
                 streamRef.current = stream;
                 if (videoRef.current) {
@@ -103,186 +86,178 @@ const LiveInterviewPage = () => {
                 toast.error('Please enable camera and microphone access');
             }
         };
+
         initCamera();
 
         return () => {
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach(track => track.stop());
-            }
+            streamRef.current?.getTracks().forEach((t) => t.stop());
             if (recordTimerRef.current) clearInterval(recordTimerRef.current);
             if (waitTimerRef.current) clearInterval(waitTimerRef.current);
             window.speechSynthesis.cancel();
-
         };
-    }, []);
+    }, [isVerified]);
 
-    const moveToNextQuestion = useCallback(() => {
-        stopWaitTimer();
+    // ── Fetch questions (uncomment when backend is ready) ─────────────────────
+    useEffect(() => {
+        if (!isVerified) return;
 
-        if (interviewState.currentQuestionIndex < interviewState.interviewQuestions.length - 1) {
-            const nextIndex = interviewState.currentQuestionIndex + 1;
-            setInterviewState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
-            setInterviewState(prev => ({ ...prev, currentQuestion: interviewState.interviewQuestions[nextIndex] }))
-        } else {
-            toast.success('Interview completed!');
-            // Handle interview completion
-        }
-    }, [interviewState.currentQuestionIndex, interviewState.interviewQuestions]);
+        const fetchQuestions = async () => {
+            if (!interviewId) { toast.error('Interview ID is missing.'); return; }
+            if (typeof interviewId !== 'string') { console.error('interviewId is not a string'); return; }
 
-    //TODO: call the api for skip questions
-    const handleSkipQuestion = useCallback(async () => {
-
-        if (isSkippingRef.current) return;
-        isSkippingRef.current = true;
-
-        const interviewIdString = typeof interviewId === 'string' ? interviewId : interviewId?.[0];
-        if (!interviewIdString) {
-            toast.error("Interview ID is invalid");
-            return;
-        }
-        const res = await createInterviewQuestionResultForSkipQuestionApi({
-            interviewId: interviewIdString,
-            questionId: String(interviewState.currentQuestionIndex + 1),
-            questionText: interviewState.currentQuestion,
-        })
-
-        if (res?.status === "Failed") {
-            console.log("FAILED");
-        }
-
-        moveToNextQuestion()
-        isSkippingRef.current = false;
-
-    }, [interviewState.currentQuestionIndex, interviewState.currentQuestion, interviewId, moveToNextQuestion])
-
-    const startWaitTimer = useCallback(() => {
-        setInterviewState(prev => ({ ...prev, showWaitTimer: true, waitTimeLeft: 5 }));
-
-
-        waitTimerRef.current = setInterval(() => {
-            setInterviewState(prev => {
-                const newWaitTimeLeft = prev.waitTimeLeft <= 1 ? 0 : prev.waitTimeLeft - 1;
-                if (newWaitTimeLeft === 0) {
-                    console.log("user skip it");
-                    // if user does not answer the question then upload it as empty means user skip that question
-                    handleSkipQuestion()
-                }
-                return {
-                    ...prev, waitTimeLeft: newWaitTimeLeft
-                }
-            })
-        }, 1000);
-    }, [handleSkipQuestion]);
-
-    const speakQuestion = useCallback((question: string) => {
-        if (!question) return;
-
-        // Stop EVERYTHING first
-        window.speechSynthesis.cancel();
-        stopWaitTimer();
-
-        // setIsSpeaking(true);
-        setInterviewState(prev => ({ ...prev, isSpeaking: true }));
-
-        const utterance = new SpeechSynthesisUtterance(question);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.95;
-        utterance.pitch = 1;
-
-        // Store this instance
-        utteranceRef.current = utterance;
-
-        utterance.onend = () => {
-            // ONLY react if this is the latest utterance
-            if (utteranceRef.current === utterance) {
-                // setIsSpeaking(false);
-                setInterviewState(prev => ({ ...prev, isSpeaking: false }));
-                startWaitTimer();
+            const res = await getInterviewByIdApi(interviewId);
+            if (!res || res.status === 'Failed') {
+                toast.error(res?.message || 'Failed to fetch interview details.');
+                return;
             }
+            const interview = res.data?.interview;
+            if (!interview) { toast.error('Interview data is missing.'); return; }
+
+            setInterviewState((prev) => ({
+                ...prev,
+                interviewQuestions: interview.questions,
+                currentQuestion: interview.questions[0],
+            }));
         };
 
-        utterance.onerror = () => {
-            if (utteranceRef.current === utterance) {
-                // setIsSpeaking(false);
-                setInterviewState(prev => ({ ...prev, isSpeaking: false }));
-                startWaitTimer();
-            }
-        };
+        fetchQuestions();
+    }, [isVerified, interviewId]);
 
-        window.speechSynthesis.speak(utterance);
-
-    }, [startWaitTimer]);
-
-    // Speak question when it changes
+    // ── Tab-switch monitoring ──────────────────────────────────────────────────
     useEffect(() => {
-        if (!interviewState.currentQuestion) return;
-
-        // Reset spoken flag whenever question changes
-        setInterviewState(prev => ({ ...prev, hasSpokenCurrent: false }));
-    }, [interviewState.currentQuestion]);
-
-    useEffect(() => {
-        if (interviewState.currentQuestion && !interviewState.isRecording && !interviewState.hasSpokenCurrent) {
-            speakQuestion(interviewState.currentQuestion);
-            setInterviewState(prev => ({ ...prev, hasSpokenCurrent: true }));
-        }
-    }, [interviewState.currentQuestion, interviewState.isRecording, interviewState.hasSpokenCurrent, speakQuestion]);
-
-    // Tab switch handling
-    useEffect(() => {
-        const onViolation = (type: string) => {
-            console.log("TYPE:", type)
-            suspicionRef.current += 1;
-        };
+        if (!isVerified) return;
 
         const handleVisibilityChange = () => {
-            if (document.hidden) onViolation("tab-switch");
+            if (document.hidden) suspicionRef.current += 1;
         };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, [isVerified]);
 
-        // const handleBlur = () => {
-        //     onViolation("window-blur");
-        // };
+    // ─── Helpers ──────────────────────────────────────────────────────────────
 
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-        // window.addEventListener("blur", handleBlur);
-
-        return () => {
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
-            // window.removeEventListener("blur", handleBlur);
-        };
-    }, []);
-
-    const stopWaitTimer = () => {
+    const stopWaitTimer = useCallback(() => {
         if (waitTimerRef.current) {
             clearInterval(waitTimerRef.current);
             waitTimerRef.current = null;
         }
-        setInterviewState(prev => ({ ...prev, showWaitTimer: false }));
-        setInterviewState(prev => ({ ...prev, waitTimeLeft: 5 }));
-    };
+        setInterviewState((prev) => ({ ...prev, showWaitTimer: false, waitTimeLeft: 5 }));
+    }, []);
+
+    const moveToNextQuestion = useCallback(() => {
+        stopWaitTimer();
+        setInterviewState((prev) => {
+            if (prev.currentQuestionIndex < prev.interviewQuestions.length - 1) {
+                const nextIndex = prev.currentQuestionIndex + 1;
+                return {
+                    ...prev,
+                    currentQuestionIndex: nextIndex,
+                    currentQuestion: prev.interviewQuestions[nextIndex],
+                };
+            }
+            toast.success('Interview completed!');
+            return prev;
+        });
+    }, [stopWaitTimer]);
+
+    const handleSkipQuestion = useCallback(async () => {
+        if (isSkippingRef.current) return;
+        isSkippingRef.current = true;
+
+        const interviewIdString = typeof interviewId === 'string' ? interviewId : interviewId?.[0];
+        if (!interviewIdString) { toast.error('Interview ID is invalid'); return; }
+
+        await createInterviewQuestionResultForSkipQuestionApi({
+            interviewId: interviewIdString,
+            questionId: String(interviewState.currentQuestionIndex + 1),
+            questionText: interviewState.currentQuestion,
+        });
+
+        moveToNextQuestion();
+        isSkippingRef.current = false;
+    }, [interviewState.currentQuestionIndex, interviewState.currentQuestion, interviewId, moveToNextQuestion]);
+
+    const startWaitTimer = useCallback(() => {
+        setInterviewState((prev) => ({ ...prev, showWaitTimer: true, waitTimeLeft: 5 }));
+        waitTimerRef.current = setInterval(() => {
+            setInterviewState((prev) => {
+                const newWait = prev.waitTimeLeft <= 1 ? 0 : prev.waitTimeLeft - 1;
+                if (newWait === 0) handleSkipQuestion();
+                return { ...prev, waitTimeLeft: newWait };
+            });
+        }, 1000);
+    }, [handleSkipQuestion]);
+
+    const speakQuestion = useCallback(
+        (question: string) => {
+            if (!question) return;
+            window.speechSynthesis.cancel();
+            stopWaitTimer();
+            setInterviewState((prev) => ({ ...prev, isSpeaking: true }));
+
+            const utterance = new SpeechSynthesisUtterance(question);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.95;
+            utteranceRef.current = utterance;
+
+            utterance.onend = () => {
+                if (utteranceRef.current === utterance) {
+                    setInterviewState((prev) => ({ ...prev, isSpeaking: false }));
+                    startWaitTimer();
+                }
+            };
+            utterance.onerror = () => {
+                if (utteranceRef.current === utterance) {
+                    setInterviewState((prev) => ({ ...prev, isSpeaking: false }));
+                    startWaitTimer();
+                }
+            };
+            window.speechSynthesis.speak(utterance);
+        },
+        [startWaitTimer, stopWaitTimer]
+    );
+
+    // Reset spoken flag on question change
+    useEffect(() => {
+        if (!interviewState.currentQuestion) return;
+        setInterviewState((prev) => ({ ...prev, hasSpokenCurrent: false }));
+    }, [interviewState.currentQuestion]);
+
+    // Auto-speak new question
+    useEffect(() => {
+        if (
+            interviewState.currentQuestion &&
+            !interviewState.isRecording &&
+            !interviewState.hasSpokenCurrent
+        ) {
+            speakQuestion(interviewState.currentQuestion);
+            setInterviewState((prev) => ({ ...prev, hasSpokenCurrent: true }));
+        }
+    }, [
+        interviewState.currentQuestion,
+        interviewState.isRecording,
+        interviewState.hasSpokenCurrent,
+        speakQuestion,
+    ]);
+
+    // ── Recording ─────────────────────────────────────────────────────────────
 
     const handleStartRecording = () => {
         const stream = streamRef.current;
         if (!stream) return;
-
-        // Stop wait timer when user starts recording
         stopWaitTimer();
         chunkRef.current = [];
-
         try {
             const recorder = new MediaRecorder(stream, {
                 mimeType: 'video/webm;codecs=vp8,opus',
-                videoBitsPerSecond: 1500000
+                videoBitsPerSecond: 1_500_000,
             });
-            recorder.ondataavailable = (event) => {
-                if (event.data.size > 0) chunkRef.current.push(event.data);
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) chunkRef.current.push(e.data);
             };
-
             recorder.start(1000);
             recorderRef.current = recorder;
-            // setIsRecording(true);
-            setInterviewState(prev => ({ ...prev, isRecording: true }));
-            setInterviewState(prev => ({ ...prev, timeLeft: 120 }));
+            setInterviewState((prev) => ({ ...prev, isRecording: true, timeLeft: 120 }));
         } catch (err) {
             console.error('Recording failed:', err);
             toast.error('Failed to start recording');
@@ -290,123 +265,77 @@ const LiveInterviewPage = () => {
     };
 
     const handleStopRecording = useCallback(async () => {
-        console.log("stop recording")
-        setInterviewState(prev => ({ ...prev, isUploading: true }));
+        setInterviewState((prev) => ({ ...prev, isUploading: true }));
 
-        if (!recorderRef.current || recorderRef.current.state === "inactive") {
-            console.warn("No active recording to stop");
+        if (!recorderRef.current || recorderRef.current.state === 'inactive') {
+            console.warn('No active recording');
             return;
         }
         recorderRef.current.stop();
-        if (recordTimerRef.current) {
-            clearInterval(recordTimerRef.current);
-        }
+        if (recordTimerRef.current) clearInterval(recordTimerRef.current);
 
-        // Verify we have chunks to upload
         if (chunkRef.current.length === 0) {
-            console.warn("No recording chunks collected");
-            throw new Error("No recording data available");
+            console.warn('No recording chunks');
+            return;
         }
 
         const blob = new Blob(chunkRef.current, { type: 'video/webm' });
+        setInterviewState((prev) => ({ ...prev, isRecording: false }));
 
-        // Verify blob has content
-        if (blob.size === 0) {
-            console.error("Recording blob is empty");
-            throw new Error("Recording is empty");
-        }
-
-        console.log(`Recording blob size: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
-        setInterviewState(prev => ({ ...prev, isRecording: false }));
-
-        console.log("Tab switch", suspicionRef.current);
-        suspicionRef.current = 0;
-        // Api Calls
         const interviewIdString = typeof interviewId === 'string' ? interviewId : interviewId?.[0];
-        if (!interviewIdString) {
-            toast.error("Interview ID is invalid");
-            return;
-        }
+        if (!interviewIdString) { toast.error('Interview ID is invalid'); return; }
+
         const file = new File([blob], `recording_${Date.now()}.webm`, { type: 'video/webm' });
         const res = await createInterviewQuestionResultApi({
             interviewId: interviewIdString,
             questionId: String(interviewState.currentQuestionIndex + 1),
             questionText: interviewState.currentQuestion,
             numberOfTabSwitch: suspicionRef.current,
-            file
-        })
-        console.log("INTERVIEW RES ", res)
+            file,
+        });
 
-        setInterviewState(prev => ({ ...prev, isUploading: false }));
+        suspicionRef.current = 0;
+        setInterviewState((prev) => ({ ...prev, isUploading: false }));
 
+        if (res?.status === 'Success') toast.success('Answer submitted successfully');
 
-        // if (res === null) {
-        //     toast.error("Failed to submit your answer, Please try later with the interview.");
-        // }
-
-        if (res?.status === "Failed") {
-            console.log("FAILED");
-            // toast.error(res.message || "Failed to submit your answer, Please try later with the interview.")
-            // return;
-        }
-
-        if (res?.status === "Success") {
-            toast.success("Answer submitted successfully")
-            // Move to next question after stopping
-        }
         moveToNextQuestion();
-        // download the file locally
-
-        // Create download link
-        // const url = URL.createObjectURL(blob);
-
-        // const a = document.createElement('a');
-        // a.href = url;
-        // a.download = `recording_${Date.now()}.webm`;   // dynamic filename
-        // document.body.appendChild(a);
-        // a.click();
-
-        // // Cleanup
-        // document.body.removeChild(a);
-        // URL.revokeObjectURL(url);
-
-        // console.log("Video downloaded successfully");
     }, [moveToNextQuestion, interviewState.currentQuestionIndex, interviewId, interviewState.currentQuestion]);
 
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
+    // Auto-stop at time limit
+    useEffect(() => {
+        if (!interviewState.isRecording || interviewState.timeLeft <= 0) return;
+        recordTimerRef.current = setInterval(() => {
+            setInterviewState((prev) => {
+                const newTime = prev.timeLeft <= 1 ? 0 : prev.timeLeft - 1;
+                if (newTime === 0) handleStopRecording();
+                return { ...prev, timeLeft: newTime };
+            });
+        }, 1000);
+        return () => { if (recordTimerRef.current) clearInterval(recordTimerRef.current); };
+    }, [interviewState.isRecording, handleStopRecording, interviewState.timeLeft]);
+
+    const formatTime = (s: number) =>
+        `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
     const waitProgress = ((5 - interviewState.waitTimeLeft) / 5) * 100;
 
-    // Recording timer countdown
-    useEffect(() => {
-        if (interviewState.isRecording && interviewState.timeLeft > 0) {
-            recordTimerRef.current = setInterval(() => {
-                setInterviewState(prev => {
-                    const newTimeLeft = prev.timeLeft <= 1 ? 0 : prev.timeLeft - 1;
-                    if (newTimeLeft === 0) {
-                        handleStopRecording();
-                    }
-                    return { ...prev, timeLeft: newTimeLeft };
-                });
-            }, 1000);
-        }
+    // ── RENDER: Verification gate ─────────────────────────────────────────────
+    if (!isVerified) {
+        return (
+            <VerificationFlow
+                onVerificationComplete={() => setIsVerified(true)}
+                interviewId={interviewId ? (typeof interviewId === 'string' ? interviewId : interviewId[0]) : ''}
+            />
+        );
+    }
 
-        return () => {
-            if (recordTimerRef.current) {
-                clearInterval(recordTimerRef.current);
-            }
-        };
-    }, [interviewState.isRecording, handleStopRecording, interviewState.timeLeft]);
-
+    // ── RENDER: Interview ─────────────────────────────────────────────────────
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
             <div className="flex flex-col md:flex-row w-full max-w-7xl h-[85vh] bg-white rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden">
 
-                {/* Left: AI Monitor Section */}
+                {/* Left: AI Monitor */}
                 <div className="w-full md:w-1/2 h-[40vh] md:h-full">
                     <AIFrameMonitor
                         videoRef={videoRef}
@@ -418,18 +347,22 @@ const LiveInterviewPage = () => {
                     />
                 </div>
 
-                {/* Right: Interaction Section */}
+                {/* Right: Interaction panel */}
                 <div className="w-full md:w-1/2 h-[60vh] md:h-full flex flex-col p-8 md:p-12 overflow-y-auto">
-                    {/* Your Question Card & Buttons go here */}
+
+                    {/* Question */}
                     <div className="flex-1">
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Question context</p>
+                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">
+                            Question context
+                        </p>
                         <h2 className="text-2xl font-bold text-slate-800 leading-snug">
-                            {interviewState.currentQuestion}
+                            {interviewState.currentQuestion || 'Loading questions…'}
                         </h2>
                     </div>
 
+                    {/* Wait timer */}
                     {interviewState.showWaitTimer && !interviewState.isRecording && (
-                        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4">
+                        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mt-4">
                             <div className="flex items-center justify-between mb-2">
                                 <Text className="text-sm text-yellow-700 font-medium">
                                     ⏳ Start recording or skip in:
@@ -448,18 +381,20 @@ const LiveInterviewPage = () => {
                         </div>
                     )}
 
-                    {/* Recording buttons as you already have them */}
+                    {/* Recording countdown */}
                     {interviewState.isRecording && (
-                        <div className="text-center bg-gray-100 rounded-xl p-4">
+                        <div className="text-center bg-gray-100 rounded-xl p-4 mt-4">
                             <Text className="text-sm text-gray-500 block mb-1">Time Remaining</Text>
-                            <div className={`text-5xl font-bold ${interviewState.timeLeft < 30 ? 'text-red-500' : 'text-blue-600'}`}>
+                            <div
+                                className={`text-5xl font-bold ${interviewState.timeLeft < 30 ? 'text-red-500' : 'text-blue-600'}`}
+                            >
                                 {formatTime(interviewState.timeLeft)}
                             </div>
                         </div>
                     )}
-                    <div className="mt-8">
 
-                        {/* Recording Button */}
+                    {/* Record / Stop button */}
+                    <div className="mt-8">
                         {!interviewState.isRecording ? (
                             <Button
                                 type="primary"
@@ -467,11 +402,14 @@ const LiveInterviewPage = () => {
                                 block
                                 icon={<AudioOutlined />}
                                 onClick={handleStartRecording}
-                                disabled={interviewState.isSpeaking}
+                                disabled={interviewState.isSpeaking || interviewState.isUploading}
                                 className="h-14 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
                             >
-                                {interviewState.isSpeaking ? 'Please wait...' :
-                                    interviewState.isUploading ? "Uploading..." : 'Start Recording Answer'}
+                                {interviewState.isSpeaking
+                                    ? 'Please wait…'
+                                    : interviewState.isUploading
+                                        ? 'Uploading…'
+                                        : 'Start Recording Answer'}
                             </Button>
                         ) : (
                             <Button
@@ -489,7 +427,6 @@ const LiveInterviewPage = () => {
                 </div>
             </div>
         </div>
-
     );
 };
 
