@@ -4,8 +4,8 @@ import { AlertCircle, RefreshCw, CheckCircle2, XCircle, CameraIcon } from 'lucid
 import { useCamera } from '@/hooks/useCamera';
 import { Overlay, Spinner, ScanCorners } from './LivenessCheck';
 import Image from 'next/image';
-import { mockFaceVerification } from './mockVerificationApi';
 import { Button } from 'antd';
+import { faceVerification } from './verificationApi';
 
 type FaceState = 'idle' | 'captured' | 'uploading' | 'verified' | 'failed';
 
@@ -48,7 +48,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({ onVerified }) => {
         if (!capturedImage) return;
         setFaceState('uploading');
         try {
-            const res = await mockFaceVerification(capturedImage);
+            const res = await faceVerification(capturedImage);
             if (res.faceVerified) {
                 setFaceState('verified');
             } else {

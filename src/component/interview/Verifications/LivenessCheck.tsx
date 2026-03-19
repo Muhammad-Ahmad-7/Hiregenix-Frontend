@@ -5,7 +5,7 @@ import { RefreshCw, CheckCircle2, XCircle } from "lucide-react";
 
 import { useCamera } from "@/hooks/useCamera";
 import { useMediaRecorder } from "@/hooks/useMediaRecorder";
-import { mockLivenessCheck } from "./mockVerificationApi";
+import { mockLivenessCheck } from "./verificationApi";
 import { useInterviewAI } from "@/hooks/useInterviewAI";
 import { Button } from "antd";
 

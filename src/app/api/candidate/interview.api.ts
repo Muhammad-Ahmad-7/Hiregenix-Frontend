@@ -179,3 +179,17 @@ export const livenessCheckApi = async (file: File, interviewId: string) => {
     }),
   });
 }
+
+export const verifyCandidateIdentityApi = async (file: File) => {
+  return safeApiCall<{ verificationResult: { similarity: number } }>({
+    apiCall: () => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return api.post(`${BASE_API}/face-verification`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    },
+  });
+};
