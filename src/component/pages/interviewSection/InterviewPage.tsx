@@ -19,8 +19,9 @@ import {
   getAllInterviewsApi,
   getAllTodaysInterviewsApi,
 } from "@/app/api/candidate/interview.api";
-import { ScheduledInterview } from "@/constants/Interfaces/Types/Jobs.interface";
+import { ScheduledInterview, TodayInterviews } from "@/constants/Interfaces/Types/Jobs.interface";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 // Interfaces
 export interface PaginationMeta {
@@ -54,16 +55,23 @@ const InterviewCard = ({
   company,
   type,
   deadline,
-  //  logo,
+  logo,
   onJoin,
 }: InterviewCardProps) => {
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3 mb-3">
         <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-          <span className="text-xl font-bold text-gray-400">
-            {company?.charAt(0) || "C"}
-          </span>
+          {logo ? (
+            <Image
+              src={logo}
+              alt={`${company} logo`}
+              width={48}
+              height={48}
+              className="object-cover w-full h-full rounded-xl"
+            />
+          ) : (<div className="text-gray-400 text-sm">No Logo</div>
+          )}
         </div>
         <div className="flex-1">
           <h3 className="font-semibold text-gray-900">{title}</h3>
@@ -92,7 +100,7 @@ export default function InterviewsPage() {
   const [activeTab, setActiveTab] = useState("schedule");
   const [searchText, setSearchText] = useState("");
   const [todaysInterviews, setTodaysInterviews] =
-    useState<ScheduledInterview[]>([]);
+    useState<TodayInterviews[]>([]);
   const [allInterviews, setAllInterviews] = useState<ScheduledInterview[]>([]);
   const [loading, setLoading] = useState(true);
   const [allInterviewsMeta, setAllInterviewsMeta] =
@@ -311,13 +319,13 @@ export default function InterviewsPage() {
             {todaysInterviews.map((interview) => (
               <Col xs={24} sm={12} lg={8} key={interview._id}>
                 <InterviewCard
-                  title={interview.job?.title || "N/A"}
-                  company={interview.company?.companyName || "N/A"}
+                  title={interview.jobId?.title || "N/A"}
+                  company={interview.companyId?.companyName || "N/A"}
                   type={interview.type}
                   deadline={formatDate(
-                    interview.job?.deadline || interview.scheduledDate
+                    interview.jobId?.deadline || interview.scheduledDate
                   )}
-                  logo="/logo.png"
+                  logo={interview.companyId?.logoUrl || ""}
                   onJoin={handleJoinInterview(interview._id)}
                 />
               </Col>

@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import {
-  Card,
   List,
   Avatar,
   Tag,
@@ -54,24 +53,137 @@ import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
 const { Title, Paragraph } = Typography;
 const { Search } = Input;
 
+// ─── Shared job detail content ───────────────────────────────────────────────
+function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
+  return (
+    <>
+      <div className="mt-4">
+        <span className="text-lg text-gray-400">Job Title</span>
+        <Title className="!text-3xl">{selectedJob.title}</Title>
+      </div>
+
+      {/* Job Meta */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+        <div className="my-4 items-center flex">
+          <IconWrapper
+            icon={<BuildFilled className="!text-[#1890FF]" />}
+            bgColorIcon="white"
+          />
+          <div className="ml-4">
+            <div className="text-sm text-gray-400">Posted</div>
+            <div className="font-semibold">
+              {new Date(selectedJob.createdAt).toLocaleDateString()}
+            </div>
+          </div>
+        </div>
+
+        <div className="my-4 items-center flex">
+          <IconWrapper
+            icon={<NotificationFilled className="!text-[#1890FF]" />}
+            bgColorIcon="white"
+          />
+          <div className="ml-4">
+            <div className="text-sm text-gray-400">Deadline</div>
+            <div className="font-semibold">
+              {selectedJob.deadline
+                ? new Date(selectedJob.deadline).toLocaleDateString()
+                : "N/A"}
+            </div>
+          </div>
+        </div>
+
+        <div className="my-4 items-center flex">
+          <IconWrapper
+            icon={<CalendarFilled className="!text-[#1890FF]" />}
+            bgColorIcon="white"
+          />
+          <div className="ml-4">
+            <div className="text-sm text-gray-400">Work Mode</div>
+            <div className="font-semibold">{selectedJob.workMode}</div>
+          </div>
+        </div>
+
+        <div className="my-4 items-center flex">
+          <IconWrapper
+            icon={<EnvironmentOutlined className="!text-[#1890FF]" />}
+            bgColorIcon="white"
+          />
+          <div className="ml-4">
+            <div className="text-sm text-gray-400">Location</div>
+            <div className="font-semibold">
+              {selectedJob.location.city}, {selectedJob.location.country}
+            </div>
+          </div>
+        </div>
+
+        <div className="my-4 items-center flex">
+          <IconWrapper
+            icon={<LaptopOutlined className="!text-[#1890FF]" />}
+            bgColorIcon="white"
+          />
+          <div className="ml-4">
+            <div className="text-sm text-gray-400">Experience</div>
+            <div className="font-semibold">{selectedJob.experienceLevel}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Description */}
+      <div className="mt-6">
+        <Title level={5}>Job Description</Title>
+        <Paragraph className="text-gray-700 whitespace-pre-line">
+          {selectedJob.description}
+        </Paragraph>
+      </div>
+
+      {/* Skills */}
+      {selectedJob.requiredSkills?.length > 0 && (
+        <div className="mt-6">
+          <Title level={5}>Required Skills</Title>
+          <div className="flex flex-wrap gap-2">
+            {selectedJob.requiredSkills.map((skill, i) => (
+              <Tag key={i} color="blue">
+                {skill}
+              </Tag>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Requirements */}
+      {selectedJob.requirements?.length > 0 && (
+        <div className="mt-6">
+          <Title level={5}>Requirements</Title>
+          <ul className="list-disc pl-5">
+            {selectedJob.requirements.map((req, i) => (
+              <li key={i} className="text-gray-700">
+                {req}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── Main component ──────────────────────────────────────────────────────────
 export default function JobDashboard() {
   const [selectedJob, setSelectedJob] = useState<JobResponse | null>(null);
   const [jobList, setJobList] = useState<JobResponse[]>([]);
   const [filteredJobList, setFilteredJobList] = useState<JobResponse[]>([]);
-  const [recommendedJobList, setRecommendedJobList] = useState<
-    RecommendedJob[]
-  >([]);
+  const [recommendedJobList, setRecommendedJobList] = useState<RecommendedJob[]>([]);
   const [savedJobsList, setSavedJobsList] = useState<SavedJobs[]>([]);
-  // const [savedJobsMeta, setSavedJobsMeta] = useState<any>(null);
   const [savingJobId, setSavingJobId] = useState<string | null>(null);
 
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingButton, setLoadingButton] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [activeTab, setActiveTab] = useState<"all" | "recommended" | "saved">(
-    "all"
-  );
+  const [activeTab, setActiveTab] = useState<"all" | "recommended" | "saved">("all");
+
+  // NEW: controls mobile drawer visibility
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   const firstLoadRef = useRef(true);
 
@@ -94,8 +206,6 @@ export default function JobDashboard() {
   const isJobSaved = (jobId: string) => {
     const job = jobList.find((j) => j._id === jobId);
     if (job) return job.isSaved;
-
-    // Fallback: check in savedJobsList
     return savedJobsList.some((saved) => saved.jobId._id === jobId);
   };
 
@@ -112,48 +222,30 @@ export default function JobDashboard() {
   // ---------------------------------------------
   const handleSaveJob = async (jobId: string) => {
     const isSaved = isJobSaved(jobId);
-
     try {
       setSavingJobId(jobId);
-
       if (isSaved) {
-        // Unsave the job
         const savedJobId = getSavedJobId(jobId);
         if (savedJobId) {
           await unSaveJobApi(savedJobId);
           message.success("Job unsaved successfully");
-
-          // Update the isSaved field in jobList
           setJobList((prev) =>
-            prev.map((job) =>
-              job._id === jobId ? { ...job, isSaved: false } : job
-            )
+            prev.map((job) => (job._id === jobId ? { ...job, isSaved: false } : job))
           );
-
-          // Update selected job if it's the current one
           if (selectedJob?._id === jobId) {
             setSelectedJob({ ...selectedJob, isSaved: false });
           }
         }
       } else {
-        // Save the job
         await saveJobApi(jobId);
         message.success("Job saved successfully");
-
-        // Update the isSaved field in jobList
         setJobList((prev) =>
-          prev.map((job) =>
-            job._id === jobId ? { ...job, isSaved: true } : job
-          )
+          prev.map((job) => (job._id === jobId ? { ...job, isSaved: true } : job))
         );
-
-        // Update selected job if it's the current one
         if (selectedJob?._id === jobId) {
           setSelectedJob({ ...selectedJob, isSaved: true });
         }
       }
-
-      // Refresh saved jobs list to keep it in sync
       await fetchSavedJobs();
     } catch (error) {
       console.error("Error saving/unsaving job:", error);
@@ -186,7 +278,6 @@ export default function JobDashboard() {
   // ---------------------------------------------
   const getDropdownItems = (jobId: string) => {
     const isSaved = isJobSaved(jobId);
-
     return [
       {
         label: isSaved ? "Unsave Job" : "Save Job",
@@ -197,18 +288,9 @@ export default function JobDashboard() {
           <HeartOutlined />
         ),
       },
-      {
-        label: "Share",
-        key: "share",
-        icon: <ShareAltOutlined />,
-      },
+      { label: "Share", key: "share", icon: <ShareAltOutlined /> },
       { type: "divider" as const },
-      {
-        label: "Report",
-        key: "report",
-        icon: <WarningOutlined />,
-        danger: true,
-      },
+      { label: "Report", key: "report", icon: <WarningOutlined />, danger: true },
     ];
   };
 
@@ -219,17 +301,9 @@ export default function JobDashboard() {
     try {
       setLoading(true);
       const res = await getAllSaveJobsApi({ limit: 100, page: 1 });
-
       console.log("✅ Saved Jobs API Response:", res);
       if (!res || !res.data) return;
-
       setSavedJobsList(res.data.savedJobs || []);
-      // setSavedJobsMeta(res.meta);
-
-      // Update recommended jobs if available
-      // if (res.data.recommendedJobs?.recommendedJobs) {
-      //   setRecommendedJobList(res.data.recommendedJobs.recommendedJobs);
-      // }
     } catch (error) {
       console.error("❌ Error fetching saved jobs:", error);
       message.error("Failed to fetch saved jobs");
@@ -245,13 +319,7 @@ export default function JobDashboard() {
     try {
       setLoading(true);
       const res = await getRecommendedJobsApi();
-      if (
-        !res ||
-        !res.data ||
-        !res.data.recommendedJobs ||
-        !res.data.recommendedJobs.recommendedJobs
-      )
-        return;
+      if (!res?.data?.recommendedJobs?.recommendedJobs) return;
       setRecommendedJobList(res.data.recommendedJobs.recommendedJobs || []);
     } catch (error) {
       console.error("Error fetching recommended jobs:", error);
@@ -267,16 +335,13 @@ export default function JobDashboard() {
   const fetchJobs = React.useCallback(
     async (lastId?: string) => {
       if (loading || !hasMore) return;
-
       if (firstLoadRef.current && !lastId) {
         firstLoadRef.current = false;
       } else if (!lastId) {
         return;
       }
-
       try {
         setLoading(true);
-
         const res = await getAllJobsWithScrollingApi({
           limit: 10,
           lastId: lastId || undefined,
@@ -287,14 +352,11 @@ export default function JobDashboard() {
         }
         const newJobs = res.data.jobs || [];
         setNextCursor(res.meta.nextCursor || null);
-
         if (newJobs.length === 0) {
           setHasMore(false);
           return;
         }
-
         setJobList((prev) => [...prev, ...newJobs]);
-
         if (!selectedJob && newJobs.length > 0) {
           setSelectedJob(newJobs[0]);
         }
@@ -313,25 +375,19 @@ export default function JobDashboard() {
   // ---------------------------------------------
   useEffect(() => {
     let filtered = [...jobList];
-
     if (searchQuery) {
       filtered = filtered.filter(
         (job) =>
           job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          job.companyId.companyName
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
+          job.companyId.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           job.role.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-
     if (workModeFilter.length > 0) {
       filtered = filtered.filter(
-        (job) =>
-          job.workMode && workModeFilter.includes(job.workMode.toLowerCase())
+        (job) => job.workMode && workModeFilter.includes(job.workMode.toLowerCase())
       );
     }
-
     if (experienceFilter.length > 0) {
       filtered = filtered.filter(
         (job) =>
@@ -339,14 +395,11 @@ export default function JobDashboard() {
           experienceFilter.includes(job.experienceLevel.toLowerCase())
       );
     }
-
     if (countryFilter) {
       filtered = filtered.filter(
-        (job) =>
-          job.location.country.toLowerCase() === countryFilter.toLowerCase()
+        (job) => job.location.country.toLowerCase() === countryFilter.toLowerCase()
       );
     }
-
     setFilteredJobList(filtered);
   }, [jobList, searchQuery, workModeFilter, experienceFilter, countryFilter]);
 
@@ -356,7 +409,7 @@ export default function JobDashboard() {
   useEffect(() => {
     if (activeTab === "all") {
       fetchJobs();
-      fetchSavedJobs(); // Fetch saved jobs to sync isSaved status
+      fetchSavedJobs();
     } else if (activeTab === "saved") {
       fetchSavedJobs();
     } else if (activeTab === "recommended") {
@@ -370,7 +423,6 @@ export default function JobDashboard() {
   // ---------------------------------------------
   useEffect(() => {
     if (activeTab !== "all") return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading && nextCursor) {
@@ -379,10 +431,8 @@ export default function JobDashboard() {
       },
       { threshold: 0.2 }
     );
-
     const currentTarget = observerTarget.current;
     if (currentTarget) observer.observe(currentTarget);
-
     return () => {
       if (currentTarget) observer.unobserve(currentTarget);
     };
@@ -415,11 +465,7 @@ export default function JobDashboard() {
     if (selectedDate && selectedJob) {
       const isoString = selectedDate.toISOString();
       setLoadingButton(true);
-
-      scheduleInterviewApi({
-        jobId: selectedJob._id,
-        scheduledDate: isoString,
-      })
+      scheduleInterviewApi({ jobId: selectedJob._id, scheduledDate: isoString })
         .then(() => {
           message.success("Interview scheduled successfully");
         })
@@ -436,26 +482,21 @@ export default function JobDashboard() {
 
   const disabledDate = (current: Dayjs) => {
     if (!selectedJob) return true;
-
     const today = dayjs().startOf("day");
     const deadline = dayjs(selectedJob.deadline).endOf("day");
-
     return current < today || current > deadline;
   };
 
   // ---------------------------------------------
   // Convert JobData to JobInterface for display
   // ---------------------------------------------
-  const convertToJobInterface = (
-    jobData: Partial<JobResponse>
-  ): JobResponse => {
+  const convertToJobInterface = (jobData: Partial<JobResponse>): JobResponse => {
     return {
       ...jobData,
       companyId: {
         _id: typeof jobData.companyId === "string" ? jobData.companyId : "",
         companyName: "Company",
         logoUrl: "",
-        // website: "",
       },
       isSaved: false,
     } as JobResponse;
@@ -465,552 +506,405 @@ export default function JobDashboard() {
   // JSX UI
   // ---------------------------------------------
   return (
-    <div
-      className="bg-gray-50"
-      style={{
-        height: "calc(100vh - 100px)",
-        overflow: "hidden",
-        padding: "16px",
-      }}
-    >
-      <Row gutter={[16, 16]} className="flex gap-10" style={{ height: "100%" }}>
-        {/* Sidebar */}
-        <Col xs={24} lg={11} style={{ height: "100%" }}>
-          <div
-            style={{ height: "100%", display: "flex", flexDirection: "column" }}
-          >
-            <div
-              className="h-full bg-white rounded-2xl"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-              }}
-            >
-              {/* Search + Filters */}
-              <div className="p-4" style={{ flexShrink: 0 }}>
-                <Row gutter={[8, 8]}>
-                  <Col xs={24} md={18}>
-                    <Search
-                      placeholder="Search jobs, companies, roles..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      prefix={<SearchOutlined />}
-                      allowClear
-                    />
-                  </Col>
+    <div className="bg-gray-50 p-4 h-[calc(100vh-100px)] overflow-hidden relative">
 
-                  <Col xs={24} md={6}>
-                    <Select
-                      placeholder="Country"
-                      allowClear
-                      style={{ width: "100%" }}
-                      value={countryFilter}
-                      onChange={setCountryFilter}
-                      options={[
-                        { label: "USA", value: "USA" },
-                        { label: "UK", value: "UK" },
-                        { label: "Germany", value: "Germany" },
-                        { label: "Japan", value: "Japan" },
-                      ]}
-                    />
-                  </Col>
-                </Row>
+      {/* ── Two-column layout ───────────────────────────────────────────── */}
+      <div className="flex gap-4 h-full">
 
-                <Row gutter={[8, 8]} className="my-2">
-                  <Col xs={8}>
-                    <Select
-                      mode="multiple"
-                      placeholder="Work Mode"
-                      style={{ width: "100%" }}
-                      value={workModeFilter}
-                      onChange={setWorkModeFilter}
-                      maxTagCount="responsive"
-                      options={[
-                        { label: "Remote", value: "remote" },
-                        { label: "Part-time", value: "part-time" },
-                        { label: "Full-time", value: "full-time" },
-                        { label: "Hybrid", value: "hybrid" },
-                      ]}
-                    />
-                  </Col>
+        {/* ── LEFT: Sidebar ─────────────────────────────────────────────── */}
+        <div className="flex flex-col bg-white rounded-2xl overflow-hidden w-full lg:w-[420px] lg:flex-shrink-0 h-full">
 
-                  <Col xs={8}>
-                    <Select
-                      mode="multiple"
-                      placeholder="Experience"
-                      style={{ width: "100%" }}
-                      value={experienceFilter}
-                      onChange={setExperienceFilter}
-                      maxTagCount="responsive"
-                      options={[
-                        { label: "Junior", value: "junior" },
-                        { label: "Mid-level", value: "mid-level" },
-                        { label: "Senior", value: "senior" },
-                      ]}
-                    />
-                  </Col>
+          {/* Filters — never scrolls */}
+          <div className="flex-shrink-0 p-4">
+            <Row gutter={[8, 8]}>
+              <Col xs={24} md={18}>
+                <Search
+                  placeholder="Search jobs, companies, roles..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  prefix={<SearchOutlined />}
+                  allowClear
+                />
+              </Col>
+              <Col xs={24} md={6}>
+                <Select
+                  placeholder="Country"
+                  allowClear
+                  style={{ width: "100%" }}
+                  value={countryFilter}
+                  onChange={setCountryFilter}
+                  options={[
+                    { label: "USA", value: "USA" },
+                    { label: "UK", value: "UK" },
+                    { label: "Germany", value: "Germany" },
+                    { label: "Japan", value: "Japan" },
+                  ]}
+                />
+              </Col>
+            </Row>
 
-                  <Col xs={8}>
-                    <UiButton onClick={clearFilters} className="w-full">
-                      Clear
-                    </UiButton>
-                  </Col>
+            <Row gutter={[8, 8]} className="my-2">
+              <Col xs={8}>
+                <Select
+                  mode="multiple"
+                  placeholder="Work Mode"
+                  style={{ width: "100%" }}
+                  value={workModeFilter}
+                  onChange={setWorkModeFilter}
+                  maxTagCount="responsive"
+                  options={[
+                    { label: "Remote", value: "remote" },
+                    { label: "Part-time", value: "part-time" },
+                    { label: "Full-time", value: "full-time" },
+                    { label: "Hybrid", value: "hybrid" },
+                  ]}
+                />
+              </Col>
+              <Col xs={8}>
+                <Select
+                  mode="multiple"
+                  placeholder="Experience"
+                  style={{ width: "100%" }}
+                  value={experienceFilter}
+                  onChange={setExperienceFilter}
+                  maxTagCount="responsive"
+                  options={[
+                    { label: "Junior", value: "junior" },
+                    { label: "Mid-level", value: "mid-level" },
+                    { label: "Senior", value: "senior" },
+                  ]}
+                />
+              </Col>
+              <Col xs={8}>
+                <UiButton onClick={clearFilters} className="w-full">
+                  Clear
+                </UiButton>
+              </Col>
 
-                  <Col xs={12}>
-                    <UiButton
-                      className={`w-full ${
-                        activeTab === "saved"
-                          ? "!text-blue-600 !bg-blue-50"
-                          : "!text-gray-400"
-                      }`}
-                      onClick={() => setActiveTab("saved")}
+              <Col xs={12}>
+                <UiButton
+                  className={`w-full ${activeTab === "saved" ? "!text-blue-600 !bg-blue-50" : "!text-gray-400"
+                    }`}
+                  onClick={() => setActiveTab("saved")}
+                >
+                  Saved ({savedJobsList.length})
+                </UiButton>
+              </Col>
+              <Col xs={12}>
+                <UiButton
+                  className={`w-full ${activeTab === "recommended" ? "!text-blue-600 !bg-blue-50" : "!text-gray-400"
+                    }`}
+                  onClick={() => setActiveTab("recommended")}
+                >
+                  Recommended
+                </UiButton>
+              </Col>
+              <Col xs={24}>
+                <UiButton
+                  className={`w-full ${activeTab === "all" ? "!text-blue-600 !bg-blue-50" : "!text-gray-400"
+                    }`}
+                  onClick={() => setActiveTab("all")}
+                >
+                  All Jobs ({filteredJobList.length})
+                </UiButton>
+              </Col>
+            </Row>
+          </div>
+
+          {/* Job list — scrolls independently */}
+          <div ref={listRef} className="flex-1 overflow-y-auto">
+            {activeTab === "all" ? (
+              <>
+                <List
+                  itemLayout="horizontal"
+                  dataSource={filteredJobList}
+                  renderItem={(item) => (
+                    <List.Item
+                      className={`cursor-pointer hover:bg-gray-100 transition ${selectedJob?._id === item._id ? "bg-gray-100" : ""
+                        }`}
+                      onClick={() => {
+                        setSelectedJob(item);
+                        setIsDetailOpen(true);
+                      }}
                     >
-                      Saved ({savedJobsList.length})
-                    </UiButton>
-                  </Col>
-
-                  <Col xs={12}>
-                    <UiButton
-                      className={`w-full ${
-                        activeTab === "recommended"
-                          ? "!text-blue-600 !bg-blue-50"
-                          : "!text-gray-400"
-                      }`}
-                      onClick={() => setActiveTab("recommended")}
-                    >
-                      Recommended
-                    </UiButton>
-                  </Col>
-
-                  <Col xs={24}>
-                    <UiButton
-                      className={`w-full ${
-                        activeTab === "all"
-                          ? "!text-blue-600 !bg-blue-50"
-                          : "!text-gray-400"
-                      }`}
-                      onClick={() => setActiveTab("all")}
-                    >
-                      All Jobs ({filteredJobList.length})
-                    </UiButton>
-                  </Col>
-                </Row>
-              </div>
-
-              {/* Jobs List */}
-              <div ref={listRef} style={{ flex: 1, overflow: "auto" }}>
-                {activeTab === "all" ? (
-                  <>
-                    <List
-                      itemLayout="horizontal"
-                      dataSource={filteredJobList}
-                      renderItem={(item) => (
+                      <List.Item.Meta
+                        avatar={
+                          <div className="px-4">
+                            <div className="relative">
+                              <Avatar src={item.companyId?.logoUrl} size={50} />
+                              {item.isSaved && <></>}
+                            </div>
+                            <div className="mt-2">
+                              <div className="text-blue-600 font-semibold">{item.title}</div>
+                              <div className="text-gray-500 text-sm">{item.companyId?.companyName}</div>
+                              <div className="flex gap-2 mt-1">
+                                <Tag color="blue">{item.workMode}</Tag>
+                                <Tag color="green">{item.experienceLevel}</Tag>
+                              </div>
+                            </div>
+                          </div>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+                {loading && (
+                  <div className="p-5 text-center"><Spin /></div>
+                )}
+                <div ref={observerTarget} className="h-8" />
+                {!hasMore && jobList.length > 0 && (
+                  <div className="p-5 text-center text-gray-400">No more jobs</div>
+                )}
+              </>
+            ) : activeTab === "saved" ? (
+              <>
+                {loading ? (
+                  <div className="p-5 text-center"><Spin /></div>
+                ) : savedJobsList.length === 0 ? (
+                  <div className="py-10 px-5 text-center">
+                    <div className="text-gray-400 text-lg mb-2">No saved jobs yet</div>
+                    <div className="text-gray-400 text-sm">Start saving jobs to view them here</div>
+                  </div>
+                ) : (
+                  <List
+                    itemLayout="horizontal"
+                    dataSource={savedJobsList}
+                    renderItem={(savedJob) => {
+                      const job = savedJob.jobId;
+                      return (
                         <List.Item
-                          className={`cursor-pointer hover:bg-gray-100 transition ${
-                            selectedJob?._id === item._id ? "bg-gray-100" : ""
-                          }`}
-                          onClick={() => setSelectedJob(item)}
+                          className="cursor-pointer hover:bg-gray-100 transition"
+                          onClick={() => {
+                            const fullJob = convertToJobInterface(job);
+                            fullJob.isSaved = true;
+                            setSelectedJob(fullJob);
+                            setIsDetailOpen(true);
+                          }}
                         >
                           <List.Item.Meta
                             avatar={
                               <div className="px-4">
                                 <div className="relative">
-                                  <Avatar
-                                    src={item.companyId?.logoUrl}
-                                    size={50}
+                                  <Avatar size={50} icon={<BuildFilled />} />
+                                  <HeartFilled
+                                    style={{
+                                      position: "absolute",
+                                      top: -5,
+                                      right: -5,
+                                      color: "#ff4d4f",
+                                      fontSize: 16,
+                                    }}
                                   />
-                                  {item.isSaved && (
-                                    <></>
-                                    // <HeartFilled
-                                    //   style={{
-                                    //     position: "absolute",
-                                    //     top: -5,
-                                    //     right: -5,
-                                    //     color: "#ff4d4f",
-                                    //     fontSize: 16,
-                                    //   }}
-                                    // />
-                                  )}
                                 </div>
                                 <div className="mt-2">
-                                  <div className="text-blue-600 font-semibold">
-                                    {item.title}
-                                  </div>
+                                  <div className="text-blue-600 font-semibold">{job.title}</div>
                                   <div className="text-gray-500 text-sm">
-                                    {item.companyId?.companyName}
+                                    Saved {new Date(savedJob.createdAt).toLocaleDateString()}
                                   </div>
                                   <div className="flex gap-2 mt-1">
-                                    <Tag color="blue">{item.workMode}</Tag>
-                                    <Tag color="green">
-                                      {item.experienceLevel}
-                                    </Tag>
+                                    <Tag color="blue">{job.workMode}</Tag>
+                                    <Tag color="green">{job.experienceLevel}</Tag>
                                   </div>
                                 </div>
                               </div>
                             }
                           />
                         </List.Item>
-                      )}
-                    />
-
-                    {loading && (
-                      <div style={{ padding: "20px", textAlign: "center" }}>
-                        <Spin />
-                      </div>
-                    )}
-
-                    <div ref={observerTarget} style={{ height: "30px" }} />
-
-                    {!hasMore && jobList.length > 0 && (
-                      <div
-                        style={{
-                          padding: "20px",
-                          textAlign: "center",
-                          color: "#888",
-                        }}
-                      >
-                        No more jobs
-                      </div>
-                    )}
-                  </>
-                ) : activeTab === "saved" ? (
-                  <>
-                    {/* Saved Jobs Tab */}
-                    {loading ? (
-                      <div style={{ padding: "20px", textAlign: "center" }}>
-                        <Spin />
-                      </div>
-                    ) : savedJobsList.length === 0 ? (
-                      <div
-                        style={{ padding: "40px 20px", textAlign: "center" }}
-                      >
-                        <div className="text-gray-400 text-lg mb-2">
-                          No saved jobs yet
-                        </div>
-                        <div className="text-gray-400 text-sm">
-                          Start saving jobs to view them here
-                        </div>
-                      </div>
-                    ) : (
-                      <List
-                        itemLayout="horizontal"
-                        dataSource={savedJobsList}
-                        renderItem={(savedJob) => {
-                          const job = savedJob.jobId;
-                          return (
-                            <List.Item
-                              className="cursor-pointer hover:bg-gray-100 transition"
-                              onClick={() => {
-                                const fullJob = convertToJobInterface(job);
-                                fullJob.isSaved = true; // Mark as saved
-                                setSelectedJob(fullJob);
-                              }}
-                            >
-                              <List.Item.Meta
-                                avatar={
-                                  <div className="px-4">
-                                    <div className="relative">
-                                      <Avatar
-                                        size={50}
-                                        icon={<BuildFilled />}
-                                      />
-                                      <HeartFilled
-                                        style={{
-                                          position: "absolute",
-                                          top: -5,
-                                          right: -5,
-                                          color: "#ff4d4f",
-                                          fontSize: 16,
-                                        }}
-                                      />
-                                    </div>
-                                    <div className="mt-2">
-                                      <div className="text-blue-600 font-semibold">
-                                        {job.title}
-                                      </div>
-                                      <div className="text-gray-500 text-sm">
-                                        Saved{" "}
-                                        {new Date(
-                                          savedJob.createdAt
-                                        ).toLocaleDateString()}
-                                      </div>
-                                      <div className="flex gap-2 mt-1">
-                                        <Tag color="blue">{job.workMode}</Tag>
-                                        <Tag color="green">
-                                          {job.experienceLevel}
-                                        </Tag>
-                                      </div>
-                                    </div>
-                                  </div>
-                                }
-                              />
-                            </List.Item>
-                          );
-                        }}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {/* Recommended Jobs Tab */}
-                    {loading ? (
-                      <div style={{ padding: "20px", textAlign: "center" }}>
-                        <Spin />
-                      </div>
-                    ) : recommendedJobList.length === 0 ? (
-                      <div
-                        style={{ padding: "40px 20px", textAlign: "center" }}
-                      >
-                        <div className="text-gray-400 text-lg mb-2">
-                          No recommendations yet
-                        </div>
-                        <div className="text-gray-400 text-sm">
-                          We will recommend jobs based on your profile
-                        </div>
-                      </div>
-                    ) : (
-                      <List
-                        itemLayout="horizontal"
-                        dataSource={recommendedJobList}
-                        renderItem={(item) => (
-                          <List.Item
-                            className="cursor-pointer hover:bg-gray-100 transition"
-                            onClick={() => {
-                              const fullJob = jobList.find(
-                                (j) => j._id === item.jobId
-                              );
-                              if (fullJob) setSelectedJob(fullJob);
-                            }}
-                          >
-                            <List.Item.Meta
-                              avatar={
-                                <div className="px-4">
-                                  <Avatar src={item.companyLogo} size={50} />
-                                  <div className="mt-2">
-                                    <div className="text-blue-600 font-semibold">
-                                      {item.title}
-                                    </div>
-                                    <div className="text-gray-500 text-sm">
-                                      {item.companyName}
-                                    </div>
-                                    <div className="flex gap-2 mt-1">
-                                      <Tag color="blue">{item.workMode}</Tag>
-                                      {item.experienceLevel && (
-                                        <Tag color="green">
-                                          {item.experienceLevel}
-                                        </Tag>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              }
-                            />
-                          </List.Item>
-                        )}
-                      />
-                    )}
-                  </>
+                      );
+                    }}
+                  />
                 )}
-              </div>
-            </div>
-          </div>
-        </Col>
-
-        {/* Job Details */}
-        <Col xs={24} lg={12} style={{ height: "100%" }}>
-          <Card
-            className="shadow-md rounded-2xl"
-            style={{ height: "100%", display: "flex", flexDirection: "column" }}
-            bodyStyle={{
-              height: "100%",
-              padding: 0,
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            {selectedJob ? (
-              <>
-                <div style={{ padding: "24px", flexShrink: 0 }}>
-                  <div className="text-2xl flex justify-between items-center">
-                    <TopIconAndNavigation
-                      icon={
-                        <Image src={selectedJob.companyId?.logoUrl} alt="" />
-                      }
-                      title={selectedJob.companyId?.companyName}
-                      arrow={{ shown: false }}
-                    />
-
-                    <div className="flex gap-4 items-center">
-                      <UiButton
-                        type="primary"
-                        className="!rounded-full"
-                        onClick={handleApplyNow}
-                      >
-                        Apply Now
-                      </UiButton>
-
-                      <Dropdown
-                        menu={{
-                          items: getDropdownItems(selectedJob._id),
-                          onClick: ({ key }) =>
-                            handleMenuClick(key, selectedJob._id),
-                        }}
-                        trigger={["click"]}
-                      >
-                        <span onClick={(e) => e.preventDefault()}>
-                          <UiButton
-                            className="!rounded-full w-8 h-8"
-                            loading={savingJobId === selectedJob._id}
-                          >
-                            {savingJobId === selectedJob._id ? null : (
-                              <EllipsisOutlined />
-                            )}
-                          </UiButton>
-                        </span>
-                      </Dropdown>
-                    </div>
-                  </div>
-
-                  <Divider />
-                </div>
-
-                <div
-                  style={{ flex: 1, overflow: "auto", padding: "0 24px 24px" }}
-                >
-                  <div>
-                    <span className="text-lg text-gray-400">Job Title</span>
-                    <Title className="!text-3xl">{selectedJob.title}</Title>
-                  </div>
-
-                  {/* Job Meta */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
-                    <div className="my-4 items-center flex">
-                      <IconWrapper
-                        icon={<BuildFilled className="!text-[#1890FF]" />}
-                        bgColorIcon="white"
-                      />
-                      <div className="ml-4">
-                        <div className="text-sm text-gray-400">Posted</div>
-                        <div className="font-semibold">
-                          {new Date(selectedJob.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="my-4 items-center flex">
-                      <IconWrapper
-                        icon={
-                          <NotificationFilled className="!text-[#1890FF]" />
-                        }
-                        bgColorIcon="white"
-                      />
-                      <div className="ml-4">
-                        <div className="text-sm text-gray-400">Deadline</div>
-                        <div className="font-semibold">
-                          {selectedJob.deadline
-                            ? new Date(
-                                selectedJob.deadline
-                              ).toLocaleDateString()
-                            : "N/A"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="my-4 items-center flex">
-                      <IconWrapper
-                        icon={<CalendarFilled className="!text-[#1890FF]" />}
-                        bgColorIcon="white"
-                      />
-                      <div className="ml-4">
-                        <div className="text-sm text-gray-400">Work Mode</div>
-                        <div className="font-semibold">
-                          {selectedJob.workMode}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="my-4 items-center flex">
-                      <IconWrapper
-                        icon={
-                          <EnvironmentOutlined className="!text-[#1890FF]" />
-                        }
-                        bgColorIcon="white"
-                      />
-                      <div className="ml-4">
-                        <div className="text-sm text-gray-400">Location</div>
-                        <div className="font-semibold">
-                          {selectedJob.location.city},{" "}
-                          {selectedJob.location.country}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="my-4 items-center flex">
-                      <IconWrapper
-                        icon={<LaptopOutlined className="!text-[#1890FF]" />}
-                        bgColorIcon="white"
-                      />
-                      <div className="ml-4">
-                        <div className="text-sm text-gray-400">Experience</div>
-                        <div className="font-semibold">
-                          {selectedJob.experienceLevel}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <div className="mt-6">
-                    <Title level={5}>Job Description</Title>
-                    <Paragraph className="text-gray-700 whitespace-pre-line">
-                      {selectedJob.description}
-                    </Paragraph>
-                  </div>
-
-                  {/* Skills */}
-                  {selectedJob.requiredSkills?.length > 0 && (
-                    <div className="mt-6">
-                      <Title level={5}>Required Skills</Title>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedJob.requiredSkills.map((skill, i) => (
-                          <Tag key={i} color="blue">
-                            {skill}
-                          </Tag>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Requirements */}
-                  {selectedJob.requirements?.length > 0 && (
-                    <div className="mt-6">
-                      <Title level={5}>Requirements</Title>
-                      <ul className="list-disc pl-5">
-                        {selectedJob.requirements.map((req, i) => (
-                          <li key={i} className="text-gray-700">
-                            {req}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
               </>
             ) : (
-              <div className="flex items-center justify-center h-full">
-                <Spin size="large" />
-              </div>
+              <>
+                {loading ? (
+                  <div className="p-5 text-center"><Spin /></div>
+                ) : recommendedJobList.length === 0 ? (
+                  <div className="py-10 px-5 text-center">
+                    <div className="text-gray-400 text-lg mb-2">No recommendations yet</div>
+                    <div className="text-gray-400 text-sm">We will recommend jobs based on your profile</div>
+                  </div>
+                ) : (
+                  <List
+                    itemLayout="horizontal"
+                    dataSource={recommendedJobList}
+                    renderItem={(item) => (
+                      <List.Item
+                        className="cursor-pointer hover:bg-gray-100 transition"
+                        onClick={() => {
+                          const fullJob = jobList.find((j) => j._id === item.jobId);
+                          if (fullJob) {
+                            setSelectedJob(fullJob);
+                            setIsDetailOpen(true);
+                          }
+                        }}
+                      >
+                        <List.Item.Meta
+                          avatar={
+                            <div className="px-4">
+                              <Avatar src={item.companyLogo} size={50} />
+                              <div className="mt-2">
+                                <div className="text-blue-600 font-semibold">{item.title}</div>
+                                <div className="text-gray-500 text-sm">{item.companyName}</div>
+                                <div className="flex gap-2 mt-1">
+                                  <Tag color="blue">{item.workMode}</Tag>
+                                  {item.experienceLevel && (
+                                    <Tag color="green">{item.experienceLevel}</Tag>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          }
+                        />
+                      </List.Item>
+                    )}
+                  />
+                )}
+              </>
             )}
-          </Card>
-        </Col>
-      </Row>
+          </div>
+        </div>
+        {/* end sidebar */}
 
-      {/* Modal */}
+        {/* ── RIGHT: Detail panel — desktop only ────────────────────────── */}
+        <div className="hidden lg:flex flex-col flex-1 h-full bg-white rounded-2xl shadow-md overflow-hidden">
+          {selectedJob ? (
+            <>
+              {/* Header — stays put */}
+              <div className="flex-shrink-0 px-6 pt-6">
+                <div className="flex justify-between items-center">
+                  <TopIconAndNavigation
+                    icon={<Image src={selectedJob.companyId?.logoUrl} alt="" />}
+                    title={selectedJob.companyId?.companyName}
+                    arrow={{ shown: false }}
+                  />
+                  <div className="flex gap-4 items-center">
+                    <UiButton
+                      type="primary"
+                      className="!rounded-full"
+                      onClick={handleApplyNow}
+                    >
+                      Apply Now
+                    </UiButton>
+                    <Dropdown
+                      menu={{
+                        items: getDropdownItems(selectedJob._id),
+                        onClick: ({ key }) => handleMenuClick(key, selectedJob._id),
+                      }}
+                      trigger={["click"]}
+                    >
+                      <span onClick={(e) => e.preventDefault()}>
+                        <UiButton
+                          className="!rounded-full w-8 h-8"
+                          loading={savingJobId === selectedJob._id}
+                        >
+                          {savingJobId === selectedJob._id ? null : <EllipsisOutlined />}
+                        </UiButton>
+                      </span>
+                    </Dropdown>
+                  </div>
+                </div>
+                <Divider />
+              </div>
+
+              {/* Body — scrolls independently */}
+              <div className="flex-1 overflow-y-auto px-6 pb-6">
+                <JobDetailContent selectedJob={selectedJob} />
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <Spin size="large" />
+            </div>
+          )}
+        </div>
+        {/* end desktop detail panel */}
+
+      </div>
+      {/* end two-column */}
+
+
+      {/* ──────────────────────────────────────────────────────────────────
+          MOBILE DRAWER — only rendered below lg breakpoint.
+          Dark backdrop + slide-up sheet, driven by `isDetailOpen`.
+      ────────────────────────────────────────────────────────────────── */}
+
+      {/* Backdrop */}
+      <div
+        className={`lg:hidden fixed inset-0 z-40 bg-black transition-opacity duration-300 ${isDetailOpen ? "opacity-50 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
+        onClick={() => setIsDetailOpen(false)}
+      />
+
+      {/* Slide-up sheet */}
+      <div
+        className={`lg:hidden fixed bottom-0 left-0 mx-auto right-0 z-50 flex flex-col bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 w-[90%] max-[400px]:w-[99%] ease-out ${isDetailOpen ? "translate-y-0" : "translate-y-full"
+          }`}
+        style={{ height: "90vh" }}
+      >
+        {/* Handle bar + close button */}
+        <div className="relative flex-shrink-0 flex items-center justify-between px-5 pt-4 pb-2">
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-300 rounded-full" />
+          <button
+            onClick={() => setIsDetailOpen(false)}
+            className="ml-auto w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-gray-500 text-sm font-semibold"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        {selectedJob && (
+          <>
+            {/* Sheet header — stays put */}
+            <div className="flex-shrink-0 px-5 pb-3 border-b border-gray-100">
+              <div className="flex justify-between items-center">
+                <TopIconAndNavigation
+                  icon={<Image src={selectedJob.companyId?.logoUrl} alt="" />}
+                  title={selectedJob.companyId?.companyName}
+                  arrow={{ shown: false }}
+                />
+                <div className="flex gap-2 items-center">
+                  <UiButton
+                    type="primary"
+                    className="!rounded-full"
+                    onClick={handleApplyNow}
+                  >
+                    Apply Now
+                  </UiButton>
+                  <Dropdown
+                    menu={{
+                      items: getDropdownItems(selectedJob._id),
+                      onClick: ({ key }) => handleMenuClick(key, selectedJob._id),
+                    }}
+                    trigger={["click"]}
+                  >
+                    <span onClick={(e) => e.preventDefault()}>
+                      <UiButton
+                        className="!rounded-full w-8 h-8"
+                        loading={savingJobId === selectedJob._id}
+                      >
+                        {savingJobId === selectedJob._id ? null : <EllipsisOutlined />}
+                      </UiButton>
+                    </span>
+                  </Dropdown>
+                </div>
+              </div>
+            </div>
+
+            {/* Sheet body — scrolls */}
+            <div className="flex-1 overflow-y-auto px-5 pb-8">
+              <JobDetailContent selectedJob={selectedJob} />
+            </div>
+          </>
+        )}
+      </div>
+      {/* end mobile drawer */}
+
+
+      {/* ── Modal — unchanged ─────────────────────────────────────────── */}
       <Modal
-        title={
-          <span className="text-xl font-semibold">Schedule Application</span>
-        }
+        title={<span className="text-xl font-semibold">Schedule Application</span>}
         open={isModalOpen}
         onCancel={handleModalClose}
         closeIcon={<CloseOutlined />}
@@ -1032,13 +926,10 @@ export default function JobDashboard() {
           <Paragraph className="text-gray-500">
             {selectedJob?.companyId.companyName}
           </Paragraph>
-
           <Divider />
-
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Select Application Date
           </label>
-
           <DatePicker
             style={{ width: "100%" }}
             size="large"
@@ -1048,23 +939,20 @@ export default function JobDashboard() {
             format="YYYY-MM-DD"
             placeholder="Choose a date"
           />
-
           {selectedDate && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <div>
-                <strong>Selected Date:</strong>{" "}
-                {selectedDate.format("MMMM D, YYYY")}
+                <strong>Selected Date:</strong> {selectedDate.format("MMMM D, YYYY")}
               </div>
               <div>
                 <strong>Deadline:</strong>{" "}
-                {selectedJob
-                  ? dayjs(selectedJob.deadline).format("MMMM D, YYYY")
-                  : "N/A"}
+                {selectedJob ? dayjs(selectedJob.deadline).format("MMMM D, YYYY") : "N/A"}
               </div>
             </div>
           )}
         </div>
       </Modal>
+
     </div>
   );
 }

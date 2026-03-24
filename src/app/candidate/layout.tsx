@@ -99,7 +99,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // Detect screen size and auto-close sidebar on mobile
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth < 768;
+      const mobile = window.innerWidth < 1068;
       setIsMobile(mobile);
       // Auto-close sidebar on mobile
       if (mobile) {

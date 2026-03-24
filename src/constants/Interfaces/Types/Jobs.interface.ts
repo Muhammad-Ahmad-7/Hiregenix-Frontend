@@ -102,6 +102,25 @@ export interface ScheduledInterview {
   }
   __v: number;
 }
+
+export interface TodayInterviews {
+  _id: string;
+  candidateId: string;
+  companyId: CompanyMini;
+  jobId: JobMini;
+  type: "live" | "recorded";
+  scheduledDate: string; // ISO string
+  status: "scheduled" | "completed" | "cancelled";
+  createdAt: string;
+  updatedAt: string;
+  report: {
+    topStrengths: string[];
+    topWeaknesses: string[];
+    overallImprovementSuggestions: string[];
+  }
+  __v: number;
+}
+
 export interface ScheduledInterviewSimple {
   _id: string;
   candidateId: string;

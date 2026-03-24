@@ -8,6 +8,7 @@ import {
   InterviewVideoUploadSignedUrlApiResponse,
   ScheduledInterview,
   ScheduledInterviewSimple,
+  TodayInterviews,
 } from "@/constants/Interfaces/Types/Jobs.interface";
 import api, { safeApiCall } from "../base.api";
 import { toast } from "react-hot-toast";
@@ -15,7 +16,7 @@ import { toast } from "react-hot-toast";
 const BASE_API = "/interview";
 
 export const getAllTodaysInterviewsApi = async () => {
-  return safeApiCall<{ interviews: ScheduledInterview[] }>({
+  return safeApiCall<{ interviews: TodayInterviews[] }>({
     apiCall: () => api.get(`${BASE_API}/candidate-interviews/today`),
     showToaster: true,
   });
