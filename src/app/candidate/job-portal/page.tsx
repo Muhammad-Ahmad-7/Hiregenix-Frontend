@@ -14,7 +14,6 @@ import {
   Input,
   Modal,
   DatePicker,
-  message,
 } from "antd";
 import {
   EnvironmentOutlined,
@@ -461,30 +460,33 @@ export default function JobDashboard() {
     setSelectedDate(null);
   };
 
-  const handleSchedule = () => {
+  const handleSchedule = async () => {
     if (selectedDate && selectedJob) {
       const isoString = selectedDate.toISOString();
       setLoadingButton(true);
-      scheduleInterviewApi({ jobId: selectedJob._id, scheduledDate: isoString })
-        .then(() => {
-          // message.success("Interview scheduled successfully");
-          toast.success("Interview scheduled successfully");
-          jobList.forEach((job) => {
-            if (job._id === selectedJob._id) {
-              job.isApplied = true;
-            }
-          });
-          setSelectedJob({ ...selectedJob, isApplied: true });
-          handleModalClose();
-        })
-        .catch((error) => {
-          console.error("Error scheduling interview:", error);
-          message.error("Failed to schedule interview");
-        })
-        .finally(() => {
-          setLoadingButton(false);
-          handleModalClose();
-        });
+      const res = await scheduleInterviewApi({ jobId: selectedJob._id, scheduledDate: isoString })
+      if (!res) {
+        handleModalClose();
+        setLoadingButton(false);
+        return;
+      }
+      if (res.status === "Failed") {
+        console.log("Failed", res.message);
+        toast.error(res.message || "Error Interview scheduling....")
+        handleModalClose();
+        setLoadingButton(false);
+        return;
+      }
+
+      toast.success(res.message || "Interview scheduled successfully");
+      jobList.forEach((job) => {
+        if (job._id === selectedJob._id) {
+          job.isApplied = true;
+        }
+      });
+      setSelectedJob({ ...selectedJob, isApplied: true });
+      handleModalClose();
+      setLoadingButton(false);
     }
   };
 
