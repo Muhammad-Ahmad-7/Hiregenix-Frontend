@@ -17,7 +17,8 @@ export interface JobResponse extends JobPosting {
   //these at used at the candidate side
   company?: CompanyResponse;
   isSaved?: boolean;
-  ////////
+  isApplied?: boolean;
+  deadline: string; // ISO date string
   createdAt: string;
   updatedAt: string;
   __v: number;

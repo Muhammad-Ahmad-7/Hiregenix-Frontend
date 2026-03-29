@@ -7,7 +7,6 @@ import {
   Typography,
   Row,
   Col,
-  Image,
   Dropdown,
   Divider,
   Spin,
@@ -33,7 +32,6 @@ import {
 } from "@ant-design/icons";
 
 import UiButton from "@/component/common/CustomButton";
-import { TopIconAndNavigation } from "../dashboard/page";
 import IconWrapper from "@/icons/IconWrapper";
 
 import {
@@ -49,6 +47,7 @@ import {
 import dayjs, { Dayjs } from "dayjs";
 import { scheduleInterviewApi } from "@/app/api/candidate/interview.api";
 import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
+import toast from "react-hot-toast";
 
 const { Title, Paragraph } = Typography;
 const { Search } = Input;
@@ -228,7 +227,7 @@ export default function JobDashboard() {
         const savedJobId = getSavedJobId(jobId);
         if (savedJobId) {
           await unSaveJobApi(savedJobId);
-          message.success("Job unsaved successfully");
+          toast.success("Job unsaved successfully");
           setJobList((prev) =>
             prev.map((job) => (job._id === jobId ? { ...job, isSaved: false } : job))
           );
@@ -238,7 +237,7 @@ export default function JobDashboard() {
         }
       } else {
         await saveJobApi(jobId);
-        message.success("Job saved successfully");
+        toast.success("Job saved successfully");
         setJobList((prev) =>
           prev.map((job) => (job._id === jobId ? { ...job, isSaved: true } : job))
         );
@@ -249,7 +248,7 @@ export default function JobDashboard() {
       await fetchSavedJobs();
     } catch (error) {
       console.error("Error saving/unsaving job:", error);
-      message.error(isSaved ? "Failed to unsave job" : "Failed to save job");
+      toast.error(isSaved ? "Failed to unsave job" : "Failed to save job");
     } finally {
       setSavingJobId(null);
     }
@@ -265,10 +264,10 @@ export default function JobDashboard() {
         break;
       case "share":
         navigator.clipboard.writeText(window.location.href);
-        message.success("Job link copied to clipboard");
+        toast.success("Job link copied to clipboard");
         break;
       case "report":
-        message.info("Report functionality coming soon");
+        toast.success("Report functionality coming soon");
         break;
     }
   };
@@ -306,7 +305,7 @@ export default function JobDashboard() {
       setSavedJobsList(res.data.savedJobs || []);
     } catch (error) {
       console.error("❌ Error fetching saved jobs:", error);
-      message.error("Failed to fetch saved jobs");
+      toast.error("Failed to fetch saved jobs");
     } finally {
       setLoading(false);
     }
@@ -323,7 +322,7 @@ export default function JobDashboard() {
       setRecommendedJobList(res.data.recommendedJobs.recommendedJobs || []);
     } catch (error) {
       console.error("Error fetching recommended jobs:", error);
-      message.error("Failed to fetch recommended jobs");
+      toast.error("Failed to fetch recommended jobs");
     } finally {
       setLoading(false);
     }
@@ -363,6 +362,7 @@ export default function JobDashboard() {
       } catch (error) {
         console.error("Error fetching jobs:", error);
         setHasMore(false);
+        toast.error("Failed to fetch jobs");
       } finally {
         setLoading(false);
       }
@@ -467,7 +467,15 @@ export default function JobDashboard() {
       setLoadingButton(true);
       scheduleInterviewApi({ jobId: selectedJob._id, scheduledDate: isoString })
         .then(() => {
-          message.success("Interview scheduled successfully");
+          // message.success("Interview scheduled successfully");
+          toast.success("Interview scheduled successfully");
+          jobList.forEach((job) => {
+            if (job._id === selectedJob._id) {
+              job.isApplied = true;
+            }
+          });
+          setSelectedJob({ ...selectedJob, isApplied: true });
+          handleModalClose();
         })
         .catch((error) => {
           console.error("Error scheduling interview:", error);
@@ -506,7 +514,7 @@ export default function JobDashboard() {
   // JSX UI
   // ---------------------------------------------
   return (
-    <div className="bg-gray-50 p-4 h-[calc(100vh-100px)] overflow-hidden relative">
+    <div className="bg-gray-50 h-[calc(100vh-100px)] overflow-hidden relative">
 
       {/* ── Two-column layout ───────────────────────────────────────────── */}
       <div className="flex gap-4 h-full">
@@ -620,31 +628,73 @@ export default function JobDashboard() {
                   dataSource={filteredJobList}
                   renderItem={(item) => (
                     <List.Item
-                      className={`cursor-pointer hover:bg-gray-100 transition ${selectedJob?._id === item._id ? "bg-gray-100" : ""
+                      className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${selectedJob?._id === item._id ? "bg-blue-50 border-l-4 border-l-blue-500" : "border-l-4 border-l-transparent"
                         }`}
                       onClick={() => {
                         setSelectedJob(item);
                         setIsDetailOpen(true);
                       }}
                     >
-                      <List.Item.Meta
-                        avatar={
-                          <div className="px-4">
-                            <div className="relative">
-                              <Avatar src={item.companyId?.logoUrl} size={50} />
-                              {item.isSaved && <></>}
+                      <div className="flex w-full items-start gap-4 p-1">
+                        {/* Left: Company Logo */}
+                        <div className="relative flex-shrink-0">
+                          <Avatar
+                            src={item.company?.logoUrl}
+                            shape="square"
+                            size={64}
+                            className="rounded-lg border border-gray-100 shadow-sm"
+                          />
+                          {item.isSaved && (
+                            <div className="absolute -bottom-1 -right-1 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full shadow-sm text-amber-600">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.924-2.438 7.11-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                              </svg>
                             </div>
-                            <div className="mt-2">
-                              <div className="text-blue-600 font-semibold">{item.title}</div>
-                              <div className="text-gray-500 text-sm">{item.companyId?.companyName}</div>
-                              <div className="flex gap-2 mt-1">
-                                <Tag color="blue">{item.workMode}</Tag>
-                                <Tag color="green">{item.experienceLevel}</Tag>
-                              </div>
-                            </div>
+                          )}
+                        </div>
+
+                        {/* Middle: Main Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="text-lg font-bold text-gray-900 truncate pr-4">
+                              {item.title}
+                            </h3>
+                            {item.isApplied && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>
+                                Applied
+                              </span>
+                            )}
                           </div>
-                        }
-                      />
+
+                          <div className="flex items-center text-gray-600 mb-3 italic">
+                            <span className="font-medium text-blue-600 not-italic">{item.company?.companyName}</span>
+                            <span className="mx-2 text-gray-300">•</span>
+                            <span className="text-sm">{item.location?.city}, {item.location?.country}</span>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            <Tag className="m-0 border-none bg-blue-50 text-blue-700 font-medium px-2 rounded">
+                              {item.workMode}
+                            </Tag>
+                            <Tag className="m-0 border-none bg-purple-50 text-purple-700 font-medium px-2 rounded capitalize">
+                              {item.experienceLevel}
+                            </Tag>
+                            <Tag className="m-0 border-none bg-orange-50 text-orange-700 font-medium px-2 rounded">
+                              {item.salaryRange?.currency} {item.salaryRange?.min.toLocaleString()} - {item.salaryRange?.max.toLocaleString()}
+                            </Tag>
+                          </div>
+
+                          {/* Quick Stats/Summary Footer */}
+                          <div className="flex items-center justify-between text-xs text-gray-400 mt-4">
+                            <div className="flex gap-4">
+                              <span>Posted: {new Date(item.createdAt).toLocaleDateString()}</span>
+                              <span>Deadline: {new Date(item.deadline).toLocaleDateString()}</span>
+                            </div>
+                            <div className="font-medium text-blue-500">View Details →</div>
+                          </div>
+                        </div>
+                      </div>
                     </List.Item>
                   )}
                 />
@@ -773,19 +823,61 @@ export default function JobDashboard() {
               {/* Header — stays put */}
               <div className="flex-shrink-0 px-6 pt-6">
                 <div className="flex justify-between items-center">
-                  <TopIconAndNavigation
-                    icon={<Image src={selectedJob.companyId?.logoUrl} alt="" />}
-                    title={selectedJob.companyId?.companyName}
-                    arrow={{ shown: false }}
-                  />
                   <div className="flex gap-4 items-center">
-                    <UiButton
-                      type="primary"
-                      className="!rounded-full"
-                      onClick={handleApplyNow}
-                    >
-                      Apply Now
-                    </UiButton>
+                    {/* Professional Logo Container */}
+                    <div className="">
+                      {selectedJob.company?.logoUrl ? (
+                        <Avatar
+                          src={selectedJob.company?.logoUrl}
+                          shape="square"
+                          size={64}
+                          className="rounded-lg border border-gray-100 shadow-sm"
+                        />
+                      ) : (
+                        <span className="text-blue-600 font-bold text-xl uppercase">
+                          {selectedJob.company?.companyName?.charAt(0)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Title and Metadata */}
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-gray-900 leading-tight">
+                          {selectedJob.company?.companyName}
+                        </h2>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 text-sm text-gray-500 font-medium">
+                          <span>{selectedJob.location?.city}, {selectedJob.location?.country}</span>
+                        </div>
+                        <span className="text-gray-300 hidden sm:block">|</span>
+                        <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
+                          {selectedJob.role}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 items-center">
+                    {
+                      selectedJob.isApplied ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800 border border-teal-200">
+                          <svg className="-ml-0.5 mr-1.5 h-2 w-2 text-teal-400" fill="currentColor" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                          </svg>
+                          Applied
+                        </span>
+                      ) : (
+                        <UiButton
+                          type="primary"
+                          className="!rounded-full"
+                          onClick={handleApplyNow}
+                        >
+                          Apply Now
+                        </UiButton>
+                      )
+                    }
                     <Dropdown
                       menu={{
                         items: getDropdownItems(selectedJob._id),
@@ -859,19 +951,61 @@ export default function JobDashboard() {
             {/* Sheet header — stays put */}
             <div className="flex-shrink-0 px-5 pb-3 border-b border-gray-100">
               <div className="flex justify-between items-center">
-                <TopIconAndNavigation
-                  icon={<Image src={selectedJob.companyId?.logoUrl} alt="" />}
-                  title={selectedJob.companyId?.companyName}
-                  arrow={{ shown: false }}
-                />
+                <div className="flex gap-4 items-center">
+                  {/* Professional Logo Container */}
+                  <div className="">
+                    {selectedJob.company?.logoUrl ? (
+                      <Avatar
+                        src={selectedJob.company?.logoUrl}
+                        shape="square"
+                        size={64}
+                        className="rounded-lg border border-gray-100 shadow-sm"
+                      />
+                    ) : (
+                      <span className="text-blue-600 font-bold text-xl uppercase">
+                        {selectedJob.company?.companyName?.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Title and Metadata */}
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl font-bold text-gray-900 leading-tight">
+                        {selectedJob.company?.companyName}
+                      </h2>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 text-sm text-gray-500 font-medium">
+                        <span>{selectedJob.location?.city}, {selectedJob.location?.country}</span>
+                      </div>
+                      <span className="text-gray-300 hidden sm:block">|</span>
+                      <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
+                        {selectedJob.role}
+                      </span>
+                    </div>
+                  </div>
+                </div>
                 <div className="flex gap-2 items-center">
-                  <UiButton
-                    type="primary"
-                    className="!rounded-full"
-                    onClick={handleApplyNow}
-                  >
-                    Apply Now
-                  </UiButton>
+                  {
+                    selectedJob.isApplied ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800 border border-teal-200">
+                        <svg className="-ml-0.5 mr-1.5 h-2 w-2 text-teal-400" fill="currentColor" viewBox="0 0 8 8">
+                          <circle cx="4" cy="4" r="3" />
+                        </svg>
+                        Applied
+                      </span>
+                    ) : (
+                      <UiButton
+                        type="primary"
+                        className="!rounded-full"
+                        onClick={handleApplyNow}
+                      >
+                        Apply Now
+                      </UiButton>
+                    )
+                  }
                   <Dropdown
                     menu={{
                       items: getDropdownItems(selectedJob._id),
