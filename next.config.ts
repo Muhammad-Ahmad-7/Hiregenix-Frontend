@@ -12,7 +12,8 @@ const nextConfig: NextConfig = {
         search: '',
       },
     ]
-  }
+  },
+  output: 'standalone',
 };
 
 export default nextConfig;
