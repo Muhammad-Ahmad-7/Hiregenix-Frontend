@@ -3,7 +3,7 @@ import JobApplicationsTable from "@/component/pages/candidate/jobPortal/JobAppli
 
 export default function Home() {
   return (
-    <div className="w-full min-h-screen bg-gray-50 p-4">
+    <div className="w-full min-h-screen bg-gray-50">
       <JobApplicationsTable />
     </div>
   );

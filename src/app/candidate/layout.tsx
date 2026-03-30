@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ReactNode, useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { redirect, usePathname, useRouter } from "next/navigation";
 import { Layout, Menu, ConfigProvider, Button } from "antd";
 import {
   MenuFoldOutlined,
@@ -63,26 +63,21 @@ type DashboardLayoutProps = {
 const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const dispatch = useDispatch();
   const { profile } = useSelector((state: RootState) => state.user);
 
-  // const {profile,loading} useSelector(state=>state.user)
-  //   const dispatch = useDispatch();
-
   useEffect(() => {
-    // if (!getToken()) {
-    //   console.log("i am runnning 1");
-    //   router.replace("/");
-    // }
     dispatch(setLoading(true));
     console.log("ilovilov", profile);
     if (profile) return;
     getCandidateProfileApi()
       .then((res) => {
         console.log("first", res);
-        if (!res || !res.data) return;
+        if (!res || !res.data) {
+          redirect("/auth");
+        };
         if (res.status === "Success") {
           console.log("youyouyou", res);
           const valuesWithUserType: CandidateProfileResponse & {
@@ -93,43 +88,26 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           };
           console.log("Profile data:", valuesWithUserType);
           dispatch(setProfile(valuesWithUserType));
-
           dispatch(setLoading(false));
         }
       })
       .catch((err) => {
         console.log("Error fetching profile:", err);
-
-        console.log("i am runnning 2");
-        // router.replace("/");
-        // router.push("/auth/sign-up");
+        redirect("/auth");
       })
-      .finally(() => {});
+      .finally(() => { });
   }, [profile, dispatch, router]);
 
-  //   const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.auth);
-
-  // 🔹 Protect route - Fixed logic
-  //   useEffect(() => {
-  //     // Don't do anything while still loading
-  //     // if (loading) return;
-
-  //     // Only redirect after loading is complete
-  //     if (!isAuthenticated) {
-  //       router.push("/dashboard");
-  //       return;
-  //     }
-
-  //     // Check role only if user exists and is authenticated
-  //     if (user && user.role !== "admin") {
-  //       router.push("/dashboard/client");
-  //       return;
-  //     }
-  //   }, [isAuthenticated, user, loading, router]);
-
-  // Detect screen size
+  // Detect screen size and auto-close sidebar on mobile
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1068;
+      setIsMobile(mobile);
+      // Auto-close sidebar on mobile
+      if (mobile) {
+        setCollapsed(true);
+      }
+    };
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -143,29 +121,6 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       : pathname;
   }, [pathname]);
 
-  // Don't render anything if loading (global overlay will show)
-  //   if (loading) {
-  //     return null;
-  //   }
-
-  // Don't render anything if not authenticated or wrong role
-  // This prevents flash of admin content before redirect
-  //   if (!isAuthenticated || !user || user.role !== "admin") {
-  //     return null;
-  //   }
-
-  //   const handleLogout = async () => {
-  //     const res = await logoutUser();
-  //     // Handle successful logout
-  //     if (res.success) {
-  //       // Clear redux auth state
-  //       dispatch(logout());
-  //       localStorage.removeItem("token");
-  //       router.push("/dashboard");
-  //     } else {
-  //       toast.error("Logout failed. Please try again.");
-  //     }
-  //   };
   return (
     profile && (
       <ConfigProvider
@@ -184,33 +139,36 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         }}
       >
         <Layout style={{ minHeight: "100vh" }}>
-          {/* Overlay for mobile */}
+          {/* Overlay for mobile when sidebar is open */}
           {isMobile && !collapsed && (
             <div
               onClick={() => setCollapsed(true)}
               style={{
                 position: "fixed",
                 inset: 0,
-                backgroundColor: "rgba(0,0,0,0.3)",
+                backgroundColor: "rgba(0,0,0,0.5)",
                 zIndex: 998,
               }}
             />
           )}
 
-          {/* 🔹 Fixed Sidebar */}
+          {/* Sidebar - Fixed position on mobile, static on desktop */}
           <Sider
             width={256}
             collapsed={collapsed}
+            collapsedWidth={isMobile ? 0 : 80}
             trigger={null}
             style={{
               background: "#fff",
               height: "100vh",
-              position: "fixed",
-              left: collapsed && isMobile ? "-256px" : "0",
+              position: isMobile ? "fixed" : "fixed",
+              left: 0,
               top: 0,
               zIndex: 999,
-              transition: "all 0.3s ease",
+              transform: isMobile && collapsed ? "translateX(-100%)" : "translateX(0)",
+              transition: "transform 0.3s ease, width 0.3s ease",
               boxShadow: "2px 0 8px rgba(0,0,0,0.1)",
+              overflow: "hidden",
             }}
           >
             <div
@@ -225,7 +183,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 borderBottom: "1px solid #f0f0f0",
               }}
             >
-              {collapsed ? "CD" : "Candidate Dashboard"}
+              {collapsed && !isMobile ? "CD" : "Candidate Dashboard"}
 
               {isMobile && !collapsed && (
                 <CloseOutlined
@@ -240,6 +198,12 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               items={items}
               selectedKeys={[basePath]}
               style={{ borderRight: 0 }}
+              onClick={() => {
+                // Auto-close sidebar on mobile after clicking menu item
+                if (isMobile) {
+                  setCollapsed(true);
+                }
+              }}
             />
 
             <div className="p-4 text-white bottom-0 absolute w-full">
@@ -250,24 +214,24 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   removeToken();
                   router.replace("/auth");
                 }}
-                className={`w-full font-bold text-left ${
-                  collapsed
-                    ? "flex justify-center bg-red-600 hover:bg-red-700"
-                    : "bg-red-600 hover:bg-red-700 text-white"
-                }`}
+                className={`w-full font-bold text-left ${collapsed && !isMobile
+                  ? "flex justify-center bg-red-600 hover:bg-red-700"
+                  : "bg-red-600 hover:bg-red-700 text-white"
+                  }`}
               >
-                {!collapsed && "Logout"}
+                {(!collapsed || isMobile) && "Logout"}
               </Button>
             </div>
           </Sider>
 
-          {/* 🔹 Fixed Header and Scrollable Content */}
+          {/* Main Layout - No margin change on mobile */}
           <Layout
             style={{
-              marginLeft: collapsed ? 80 : 256,
-              transition: "all 0.3s ease",
+              marginLeft: isMobile ? 0 : collapsed ? 80 : 256,
+              transition: "margin-left 0.3s ease",
             }}
           >
+            {/* Fixed Header */}
             <Header
               style={{
                 background: "#fff",
@@ -275,28 +239,29 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 padding: "0 16px",
                 position: "fixed",
                 top: 0,
-                left: collapsed ? 80 : 256,
+                left: isMobile ? 0 : collapsed ? 80 : 256,
                 right: 0,
-                zIndex: 998,
+                zIndex: 997,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
-                transition: "all 0.3s ease",
+                transition: "left 0.3s ease",
               }}
             >
               <div
                 onClick={() => setCollapsed(!collapsed)}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: "pointer", fontSize: 20 }}
               >
                 {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               </div>
-              <h1 style={{ margin: 0, fontSize: "1.25rem" }}>
+              <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 600 }}>
                 Candidate Dashboard
               </h1>
+              <div style={{ width: 24 }}>{/* Spacer for centering */}</div>
             </Header>
 
-            {/* 🔹 Scrollable Content Area */}
+            {/* Scrollable Content Area */}
             <Content
               style={{
                 marginTop: 64,
