@@ -1,7 +1,6 @@
 export default function ReplyCard({
   sender = "Ahmad Waheed CUI",
   text = "Wo Tu Nahi jay ga",
-  messageId = "123456",
 }) {
   return (
     // <div className="min-h-screen bg-[#0f1117] flex items-center justify-center">

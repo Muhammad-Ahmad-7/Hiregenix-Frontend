@@ -14,11 +14,34 @@ import MessageStatus from "./MessageStatus";
 import { socket } from "@/socket";
 import { updateReaction } from "@/redux/slices/chat/messagesSlice";
 import { isImageUrl } from "@/utils/isImageUrl";
-import Image from "next/image";
 import { isDocumentUrl } from "@/utils/isDocumentUrl";
-import ReplyCard from "./ReplyCard";
 import SmallReplyCard from "./SmallReplyCard";
-import { div } from "framer-motion/client";
+import type { IMessage } from "@/constants/Interfaces/Types/Chat.interface";
+import type { AppDispatch, RootState } from "@/redux/store";
+
+export type MessageViewModel = IMessage & {
+  replyingTo?: { _id: string; text: string };
+  emoji?: string;
+};
+
+type UserProfile = NonNullable<RootState["user"]["profile"]>;
+
+type MessageProps = {
+  msg: MessageViewModel;
+  setSelectReplyId: React.Dispatch<React.SetStateAction<string | null>>;
+  selectReplyId: string | null;
+  profile: UserProfile;
+  hoveredMessageId: string | null;
+  setHoveredMessageId: React.Dispatch<React.SetStateAction<string | null>>;
+  handleReaction: (messageId: string | number, emoji: string) => void;
+  toggleReactionPicker: (e: React.MouseEvent, messageId: string) => void;
+  reactionPickerMessageId: string | null;
+  dispatch: AppDispatch;
+  onReply?: (msg: MessageViewModel) => void;
+  onDelete?: (msgId: string) => void;
+  onForward?: (msgId: string) => void;
+  onCopy?: (msgId: string) => void;
+};
 
 export default function Message({
   msg,
@@ -32,11 +55,11 @@ export default function Message({
   reactionPickerMessageId,
   dispatch,
 
-  onReply = (msgId: string) => console.log("Reply", msgId),
-  onDelete = (msgId: string) => console.log("Delete", msgId),
-  onForward = (msgId: string) => console.log("Forward", msgId),
-  onCopy = (msgId: string) => console.log("Copy", msgId),
-}: any) {
+  onReply = () => undefined,
+  onDelete = () => undefined,
+  onForward = () => undefined,
+  onCopy = () => undefined,
+}: MessageProps) {
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
   const handleDropdownClick = (e: React.MouseEvent) => {
@@ -97,10 +120,10 @@ export default function Message({
                   type="text"
                   size="small"
                   icon={<SmileOutlined />}
-                  onClick={(e) => toggleReactionPicker(e, msg.id)}
+                  onClick={(e) => toggleReactionPicker(e, msg._id)}
                   className="bg-white shadow-sm border border-gray-200 hover:bg-gray-50"
                 />
-                {reactionPickerMessageId === msg.id && (
+                {reactionPickerMessageId === msg._id && (
                   <div
                     className="absolute bottom-8 right-0 z-50"
                     onClick={(e) => e.stopPropagation()}
@@ -276,10 +299,10 @@ export default function Message({
               type="text"
               size="small"
               icon={<SmileOutlined />}
-              onClick={(e) => toggleReactionPicker(e, msg.id)}
+              onClick={(e) => toggleReactionPicker(e, msg._id)}
               className="bg-white shadow-sm border border-gray-200 hover:bg-gray-50"
             />
-            {reactionPickerMessageId === msg.id && (
+            {reactionPickerMessageId === msg._id && (
               <div
                 className="absolute bottom-8 left-0 z-50"
                 onClick={(e) => e.stopPropagation()}

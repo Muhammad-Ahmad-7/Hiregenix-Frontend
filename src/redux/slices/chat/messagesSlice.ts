@@ -1,18 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { stat } from "fs";
+import {
+  IMessage,
+  MessageStatus,
+} from "@/constants/Interfaces/Types/Chat.interface";
 
-export type MessageStatus = "sent" | "delivered" | "seen";
-
-export interface IMessage {
-  _id: string;
-  chat: string;
-  sender: string;
-  text: string;
-  status: MessageStatus;
-  reaction: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+export type { IMessage, MessageStatus };
 
 interface MessagesState {
   messages: IMessage[];
@@ -40,14 +32,15 @@ const messagesSlice = createSlice({
       state,
       action: PayloadAction<{
         message: IMessage;
-        selectedId: string | number;
-        userId: string | number;
+        selectedId: string | number | null | undefined;
+        userId?: string | number;
+        isUserOnline?: boolean;
       }>,
     ) {
       console.log("redux", action.payload);
       const { selectedId, message } = action.payload;
 
-      if (selectedId === message.chat) {
+      if (selectedId != null && selectedId === message.chat) {
         state.messages.push(message);
       }
     },

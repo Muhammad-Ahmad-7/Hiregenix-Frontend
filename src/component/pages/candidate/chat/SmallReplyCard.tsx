@@ -1,10 +1,17 @@
 "use client";
+import type { Dispatch, SetStateAction } from "react";
+
+type SmallReplyCardProps = {
+  setSelectReplyId: Dispatch<SetStateAction<string | null>>;
+  messageId: string;
+  text?: string;
+};
+
 export default function SmallReplyCard({
   setSelectReplyId,
-  sender = "Ahmad Waheed CUI",
   text = "Wo Tu Nahi jay ga",
   messageId,
-}) {
+}: SmallReplyCardProps) {
   return (
     // <div className="min-h-screen bg-[#0f1117] flex items-center justify-center">
     <div

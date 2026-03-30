@@ -9,8 +9,12 @@ import {
 import { Button, Input } from "antd";
 import EmojiPicker from "emoji-picker-react";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useRef } from "react";
-import ReplyCard from "./ReplyCard";
+import React, {
+  useRef,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+import type { IMessage } from "@/constants/Interfaces/Types/Chat.interface";
 import SmallReplyCard from "./SmallReplyCard";
 
 export default function InputBox({
@@ -24,12 +28,12 @@ export default function InputBox({
   showEmoji,
   sendDocumentMessage,
 }: {
-  replyingTo: any;
+  replyingTo: IMessage | null;
   messageText: string;
-  setSelectReplyId: (id?: string) => void;
-  setMessageText: (text: string) => void;
+  setSelectReplyId: Dispatch<SetStateAction<string | null>>;
+  setMessageText: Dispatch<SetStateAction<string>>;
   sendMessage: () => void;
-  setShowEmoji: (show: boolean) => void;
+  setShowEmoji: Dispatch<SetStateAction<boolean>>;
   showEmoji: boolean;
   sendDocumentMessage: (fileUrl: string) => void;
   selectedChat: string;
@@ -47,7 +51,8 @@ export default function InputBox({
       const res = await uploadFileApi(formData);
       console.log("Uploaded URL:", res?.data?.url);
       socket.emit("uploadedFileDone", { selectedChat }); // Notify server of upload completion
-      sendDocumentMessage(res?.data?.url); // Send the file URL as a message
+      const url = res?.data?.url;
+      if (url) sendDocumentMessage(url);
       // socket.emit("sendDocumentMessage", {
       //   chatId: "currentChatId", // replace with actual chat ID
       //   msgId: "generatedMsgId", // generate a unique message ID

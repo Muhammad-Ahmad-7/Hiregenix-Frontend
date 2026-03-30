@@ -5,8 +5,6 @@ import {
   TeamOutlined,
   SendOutlined,
 } from "@ant-design/icons";
-import { Button } from "antd";
-
 const EmptyChatState = () => {
   return (
     <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">

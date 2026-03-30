@@ -161,7 +161,7 @@ export const EmptyChatStateV3 = () => {
           Ready to Connect? 🚀
         </h2>
         <p className="text-gray-600 mb-8 text-base md:text-lg leading-relaxed">
-          Pick a conversation and let's get the ball rolling! Your next
+          Pick a conversation and let&apos;s get the ball rolling! Your next
           opportunity is just a message away.
         </p>
 

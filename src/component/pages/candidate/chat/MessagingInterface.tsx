@@ -23,7 +23,10 @@ import { RootState } from "@/redux/store";
 import { Reorder } from "framer-motion";
 import { socket } from "@/socket";
 import EmptyChatState from "@/component/chats/EmptyChatState";
-import { IChat } from "@/constants/Interfaces/Types/Chat.interface";
+import {
+  IChat,
+  IMessage,
+} from "@/constants/Interfaces/Types/Chat.interface";
 import {
   addMessage,
   setMessages,
@@ -57,9 +60,9 @@ const MessagingInterface = () => {
   const [showEmoji, setShowEmoji] = useState(false);
   const [page, setPage] = useState(2);
   const { profile } = useSelector((state: RootState) => state.user);
-  const [hoveredMessageId, setHoveredMessageId] = useState<number | null>(null);
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<
-    number | null
+    string | null
   >(null);
   const { messages } = useSelector((state: RootState) => state.messages);
   const [docLoading, setDocLoading] = useState(false);
@@ -79,7 +82,7 @@ const MessagingInterface = () => {
 
   const [imgError, setImgError] = useState(false);
   const [showChatList, setShowChatList] = useState(true);
-  const [replyingTo, setReplyingTo] = useState<any>(null);
+  const [replyingTo, setReplyingTo] = useState<IMessage | null>(null);
   const [selectReplyId, setSelectReplyId] = useState<string | null>(null);
 
   // ── Sticky Date Calculator ─────────────────────────────────────────────────
@@ -265,11 +268,12 @@ const MessagingInterface = () => {
   // ── Online/offline socket ──────────────────────────────────────────────────
   useEffect(() => {
     socket.on("iAmOnline", (onlineUserId: string) => {
+      if (!profile) return;
       const yeschats = chats?.find((c) => c.participant._id === onlineUserId);
       if (yeschats) {
         dispatch(
           updateAllMessagesStatusToDelivered({
-            userId: profile?.userId._id,
+            userId: profile.userId._id,
             chatId: yeschats._id,
           }),
         );
@@ -329,7 +333,9 @@ const MessagingInterface = () => {
   // ── Debug: log all socket events ──────────────────────────────────────────
   useEffect(() => {
     socket.onAny((event, ...args) => console.log("📩 Received:", event, args));
-    return () => socket.offAny();
+    return () => {
+      socket.offAny();
+    };
   }, []);
 
   // ── Load messages when a chat is selected ─────────────────────────────────
@@ -384,14 +390,14 @@ const MessagingInterface = () => {
     setReactionPickerMessageId(null);
   };
 
-  const toggleReactionPicker = (e: React.MouseEvent, messageId: number) => {
+  const toggleReactionPicker = (e: React.MouseEvent, messageId: string) => {
     e.stopPropagation();
     setReactionPickerMessageId((prev) =>
       prev === messageId ? null : messageId,
     );
   };
 
-  const handleReply = (msg: any) => setReplyingTo(msg);
+  const handleReply = (msg: IMessage) => setReplyingTo(msg);
 
   const sendDocumentMessage = (fileUrl: string) => {
     if (!profile) return;
@@ -707,7 +713,6 @@ const MessagingInterface = () => {
             <InputBox
               setSelectReplyId={setSelectReplyId}
               replyingTo={replyingTo}
-              setReplyingTo={setReplyingTo}
               selectedChat={selectedChat}
               sendDocumentMessage={sendDocumentMessage}
               messageText={messageText}

@@ -81,7 +81,7 @@ const chatSlice = createSlice({
         chat.updatedAt = message.updatedAt;
 
         // ✅ ONLY increment unread count if message is from OTHER user
-        if (sender !== userId) {
+        if (userId != null && sender !== userId) {
           console.log("unReadCount before:", chat.unReadCount);
           chat.unReadCount = (chat.unReadCount || 0) + 1;
           console.log("unReadCount after:", chat.unReadCount);

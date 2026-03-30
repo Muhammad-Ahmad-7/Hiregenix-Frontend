@@ -26,12 +26,12 @@ export type MessageStatus = "sent" | "delivered" | "seen";
 
 export interface IMessage {
   _id: string;
-  chat?: string;
+  chat: string;
   sender: string;
   text: string;
-  status?: MessageStatus;
-  reaction?: string | null;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
+  status: MessageStatus;
+  reaction: string | null;
+  createdAt: string;
+  updatedAt: string;
   __v?: number;
 }
