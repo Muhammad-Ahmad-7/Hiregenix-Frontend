@@ -39,11 +39,9 @@ import LoadingMessage from "./LoadingMessage";
 import { isDocumentUrl } from "@/utils/isDocumentUrl";
 import { isImageUrl } from "@/utils/isImageUrl";
 
-// Helper to get a consistent ISO date key from a message timestamp
 const getDateKey = (dateStr: string) =>
-  new Date(dateStr).toISOString().split("T")[0]; // "2024-01-15"
+  new Date(dateStr).toISOString().split("T")[0];
 
-// Helper for a human-readable label from an ISO date key
 const getDateLabel = (isoDate: string) =>
   new Date(isoDate).toLocaleDateString("en-US", {
     weekday: "short",
@@ -67,20 +65,17 @@ const MessagingInterface = () => {
   const [docLoading, setDocLoading] = useState(false);
   const dispatch = useDispatch();
 
-  // Sticky date state — stores an ISO date key like "2024-01-15"
   const [currentStickyDate, setCurrentStickyDate] = useState<string | null>(
     null,
   );
+  const [stickyVisible, setStickyVisible] = useState(false);
 
-  // Refs for each date divider element, keyed by ISO date string
   const dateRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
-  // Tracks whether we're loading old (paginated) messages to suppress auto-scroll
   const isLoadingOldMessages = useRef(false);
-
   const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastScrollTop = useRef(0);
+  const stickyHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [imgError, setImgError] = useState(false);
   const [showChatList, setShowChatList] = useState(true);
@@ -88,9 +83,6 @@ const MessagingInterface = () => {
   const [selectReplyId, setSelectReplyId] = useState<string | null>(null);
 
   // ── Sticky Date Calculator ─────────────────────────────────────────────────
-  // Called on every scroll event. Finds the last date header that has scrolled
-  // past the top of the container (within STICKY_OFFSET px), and sets it as
-  // the current sticky date.
   const updateStickyDate = () => {
     const container = containerRef.current;
     if (!container) return;
@@ -108,7 +100,6 @@ const MessagingInterface = () => {
 
     if (entries.length === 0) return;
 
-    // Pick the last header that is at or above the sticky threshold
     let active = entries[0].date;
     for (const entry of entries) {
       if (entry.top <= STICKY_OFFSET) {
@@ -117,7 +108,23 @@ const MessagingInterface = () => {
     }
 
     setCurrentStickyDate(active);
+
+    // Show pill immediately
+    setStickyVisible(true);
+
+    // Reset the hide timer on every scroll
+    if (stickyHideTimer.current) clearTimeout(stickyHideTimer.current);
+    stickyHideTimer.current = setTimeout(() => {
+      setStickyVisible(false);
+    }, 4000);
   };
+
+  // Cleanup hide timer on unmount
+  useEffect(() => {
+    return () => {
+      if (stickyHideTimer.current) clearTimeout(stickyHideTimer.current);
+    };
+  }, []);
 
   // ── File upload socket events ──────────────────────────────────────────────
   useEffect(() => {
@@ -139,7 +146,7 @@ const MessagingInterface = () => {
     const handleScroll = () => {
       lastScrollTop.current = container.scrollTop;
 
-      // Update sticky date on every scroll tick
+      // Update sticky date on every scroll tick (up or down)
       updateStickyDate();
 
       // Pagination: load older messages when scrolled to top
@@ -166,11 +173,10 @@ const MessagingInterface = () => {
 
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [selectedChat, page]); // removed `messages` dep — scroll handler doesn't need it
+  }, [selectedChat, page]);
 
-  // Re-calculate sticky date whenever messages change (e.g. after pagination load)
+  // Re-calculate sticky date after messages repaint
   useEffect(() => {
-    // Small delay to let DOM paint the new date dividers before measuring
     const timer = setTimeout(() => updateStickyDate(), 50);
     return () => clearTimeout(timer);
   }, [messages]);
@@ -329,9 +335,9 @@ const MessagingInterface = () => {
   // ── Load messages when a chat is selected ─────────────────────────────────
   useEffect(() => {
     if (!selectedChat) return;
-    // Clear date refs so stale dates from previous chat don't linger
     dateRefs.current = {};
     setCurrentStickyDate(null);
+    setStickyVisible(false);
 
     socket.emit("private-chat", {
       selectedChat,
@@ -364,6 +370,7 @@ const MessagingInterface = () => {
   };
 
   const handleBackToList = () => setShowChatList(true);
+
   const handleOverlayClick = () => {
     setReactionPickerMessageId(null);
     setShowEmoji(false);
@@ -399,12 +406,11 @@ const MessagingInterface = () => {
 
   const sendMessage = () => {
     if (!messageText.trim() || !selectedChat || !profile) return;
-    const uniqueId = Date.now().toString();
     socket.emit("sendMessage", {
       chatId: selectedChat,
       msg: messageText,
       sender: profile._id,
-      msgId: uniqueId,
+      msgId: Date.now().toString(),
       toUser: selectedChatP?.participant._id,
       replyingTo: replyingTo?._id,
     });
@@ -616,9 +622,6 @@ const MessagingInterface = () => {
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-xs md:text-sm text-gray-500 hidden sm:block">
-                  {currentStickyDate ? getDateLabel(currentStickyDate) : ""}
-                </span>
                 <Button type="text" icon={<MoreOutlined />} />
               </div>
             </div>
@@ -628,13 +631,24 @@ const MessagingInterface = () => {
               ref={containerRef}
               className="flex-1 relative overflow-y-auto p-3 md:p-6 bg-gray-50"
             >
-              {/* Sticky Date Header */}
+              {/* ── Animated Sticky Date Pill ──────────────────────────────── */}
               <div className="sticky top-0 flex justify-center z-10 pointer-events-none py-2">
-                {currentStickyDate && (
-                  <div className="px-3 py-1 bg-white text-gray-600 text-xs rounded-full shadow">
-                    {getDateLabel(currentStickyDate)}
-                  </div>
-                )}
+                <div
+                  style={{
+                    transition:
+                      "opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                    opacity: stickyVisible && currentStickyDate ? 1 : 0,
+                    transform:
+                      stickyVisible && currentStickyDate
+                        ? "translateY(0px) scale(1)"
+                        : "translateY(-12px) scale(0.85)",
+                    // Keep it in DOM always so transition plays correctly
+                    pointerEvents: "none",
+                  }}
+                  className="px-4 py-1.5 bg-white text-gray-600 text-xs font-medium rounded-full shadow-md"
+                >
+                  {currentStickyDate ? getDateLabel(currentStickyDate) : ""}
+                </div>
               </div>
 
               {messages.length === 0 && !docLoading ? (
@@ -644,7 +658,6 @@ const MessagingInterface = () => {
               ) : (
                 <div className="flex flex-col">
                   {messages.map((msg, index) => {
-                    // Consistent ISO date key for grouping and ref tracking
                     const currentDateKey = getDateKey(msg.createdAt);
                     const previousDateKey =
                       index > 0
@@ -657,7 +670,6 @@ const MessagingInterface = () => {
                         {showDateDivider && (
                           <div
                             ref={(el) => {
-                              // Store ref keyed by ISO date string
                               dateRefs.current[currentDateKey] = el;
                             }}
                             data-date={currentDateKey}
