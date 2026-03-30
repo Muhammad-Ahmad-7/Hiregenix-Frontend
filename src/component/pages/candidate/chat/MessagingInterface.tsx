@@ -1,124 +1,455 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Input, Avatar, Badge, Dropdown, Button } from "antd";
 import {
   SearchOutlined,
   DownOutlined,
   MoreOutlined,
-  SmileOutlined,
-  PaperClipOutlined,
-  SendOutlined,
-  FilePdfOutlined,
   ArrowLeftOutlined,
   MenuOutlined,
+  FileTextOutlined,
+  FileImageOutlined,
 } from "@ant-design/icons";
+import { getAllChats, getAllMessages } from "@/app/api/chat/chats.api";
+import { formatChatTime } from "@/utils/dateFormation";
+import {
+  setChats,
+  updateLastMessageStatus,
+  updateOnlineStatus,
+  updateUnreadCount,
+} from "@/redux/slices/chat/chatsSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { Reorder } from "framer-motion";
+import { socket } from "@/socket";
+import EmptyChatState from "@/component/chats/EmptyChatState";
+import {
+  IChat,
+  IMessage,
+} from "@/constants/Interfaces/Types/Chat.interface";
+import {
+  addMessage,
+  setMessages,
+  updateAllMessagesStatusToDelivered,
+  updateAllMessagesStatusToSeen,
+  updateMessageStatus,
+  updateReaction,
+} from "@/redux/slices/chat/messagesSlice";
+import InputBox from "./InputBox";
+import MessageStatus from "./MessageStatus";
+import Message from "./Message";
+import LoadingMessage from "./LoadingMessage";
+import { isDocumentUrl } from "@/utils/isDocumentUrl";
+import { isImageUrl } from "@/utils/isImageUrl";
+
+const getDateKey = (dateStr: string) =>
+  new Date(dateStr).toISOString().split("T")[0];
+
+const getDateLabel = (isoDate: string) =>
+  new Date(isoDate).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
 const MessagingInterface = () => {
-  const [selectedChat, setSelectedChat] = useState("ibm");
+  const [selectedChat, setSelectedChat] = useState<string | null>(null);
+  const [selectedChatP, setSelectedChatP] = useState<IChat | null>(null);
+  const [messageText, setMessageText] = useState("");
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [page, setPage] = useState(2);
+  const { profile } = useSelector((state: RootState) => state.user);
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const [reactionPickerMessageId, setReactionPickerMessageId] = useState<
+    string | null
+  >(null);
+  const { messages } = useSelector((state: RootState) => state.messages);
+  const [docLoading, setDocLoading] = useState(false);
+  const dispatch = useDispatch();
+
+  const [currentStickyDate, setCurrentStickyDate] = useState<string | null>(
+    null,
+  );
+  const [stickyVisible, setStickyVisible] = useState(false);
+
+  const dateRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const isLoadingOldMessages = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastScrollTop = useRef(0);
+  const stickyHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [imgError, setImgError] = useState(false);
   const [showChatList, setShowChatList] = useState(true);
+  const [replyingTo, setReplyingTo] = useState<IMessage | null>(null);
+  const [selectReplyId, setSelectReplyId] = useState<string | null>(null);
 
-  const conversations = [
-    {
-      id: "halo",
-      name: "Halo Studio",
-      avatar: "H",
-      message: "Hi James, we've reviewed your application and would love...",
-      time: "30m",
-      unread: 2,
-      color: "#000",
-    },
-    {
-      id: "donald",
-      name: "Donald",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Donald",
-      message: "Thank you for submitting your resume. Could you also share...",
-      time: "1h",
-      unread: 0,
-      color: "#f56a00",
-    },
-    {
-      id: "dexter",
-      name: "Dexter Champlin",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Dexter",
-      message: "Thank you for submitting your resume. Could you also share...",
-      time: "2h",
-      unread: 0,
-      color: "#7265e6",
-    },
-    {
-      id: "melinda",
-      name: "Melinda Rice",
-      avatar: "M",
-      message: "Thank you for submitting your resume. Could you also share...",
-      time: "2h",
-      unread: 0,
-      color: "#00a2ae",
-    },
-    {
-      id: "muriel",
-      name: "Ms. Muriel Fay",
-      avatar: "M",
-      message: "Thank you for submitting your resume. Could you also share...",
-      time: "7h",
-      unread: 2,
-      color: "#666",
-    },
-    {
-      id: "lyle",
-      name: "Lyle Kassulke DVM",
-      avatar: "L",
-      message: "Thank you for submitting your resume. Could you also share...",
-      time: "9h",
-      unread: 0,
-      color: "#00474f",
-    },
-    {
-      id: "jimmy",
-      name: "Jimmy Hilpert",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jimmy",
-      message: "Thank you for submitting your resume. Could you also share...",
-      time: "1 day",
-      unread: 2,
-      color: "#ccc",
-    },
-  ];
+  // ── Sticky Date Calculator ─────────────────────────────────────────────────
+  const updateStickyDate = () => {
+    const container = containerRef.current;
+    if (!container) return;
 
-  const messages = [
-    {
-      id: 1,
-      sender: "ibm",
-      text: "Hi Abdullah, we're reviewed your application and are quite impressed with your background! Our team would love to learn a bit more about your past experience before we move ahead.",
-      time: "5 min ago",
-      emoji: "👍",
-    },
-    {
-      id: 2,
-      sender: "you",
-      text: "Hi! Thank you for the kind words. I've shared my updated resume with detailed project experience — please let me know if there's anything specific you'd like to know.\n\nLet me know if you need any further information",
-      time: "5 min ago",
-      status: "Read",
-      attachment: "Updatedplan.pdf",
-    },
-  ];
+    const containerTop = container.getBoundingClientRect().top;
+    const STICKY_OFFSET = 50;
 
+    const entries = Object.entries(dateRefs.current)
+      .filter(([, el]) => el !== null)
+      .map(([date, el]) => ({
+        date,
+        top: el!.getBoundingClientRect().top - containerTop,
+      }))
+      .sort((a, b) => a.top - b.top);
+
+    if (entries.length === 0) return;
+
+    let active = entries[0].date;
+    for (const entry of entries) {
+      if (entry.top <= STICKY_OFFSET) {
+        active = entry.date;
+      }
+    }
+
+    setCurrentStickyDate(active);
+
+    // Show pill immediately
+    setStickyVisible(true);
+
+    // Reset the hide timer on every scroll
+    if (stickyHideTimer.current) clearTimeout(stickyHideTimer.current);
+    stickyHideTimer.current = setTimeout(() => {
+      setStickyVisible(false);
+    }, 4000);
+  };
+
+  // Cleanup hide timer on unmount
+  useEffect(() => {
+    return () => {
+      if (stickyHideTimer.current) clearTimeout(stickyHideTimer.current);
+    };
+  }, []);
+
+  // ── File upload socket events ──────────────────────────────────────────────
+  useEffect(() => {
+    const handleUploading = () => setDocLoading(true);
+    const handleUploaded = () => setDocLoading(false);
+    socket.on("uploadingFile", handleUploading);
+    socket.on("uploadedFileDone", handleUploaded);
+    return () => {
+      socket.off("uploadingFile", handleUploading);
+      socket.off("uploadedFileDone", handleUploaded);
+    };
+  }, []);
+
+  // ── Scroll handler: pagination + sticky date ───────────────────────────────
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      lastScrollTop.current = container.scrollTop;
+
+      // Update sticky date on every scroll tick (up or down)
+      updateStickyDate();
+
+      // Pagination: load older messages when scrolled to top
+      if (container.scrollTop <= 0 && selectedChat) {
+        const scrollHeightBefore = container.scrollHeight;
+        isLoadingOldMessages.current = true;
+
+        getAllMessages({
+          chatId: selectedChat,
+          params: { page, limit: 20 },
+        }).then((res) => {
+          if (!res?.data) return;
+          dispatch(setMessages(res.data.messages));
+          setPage((prev) => prev + 1);
+
+          requestAnimationFrame(() => {
+            const scrollDiff = container.scrollHeight - scrollHeightBefore;
+            container.scrollTop = scrollDiff;
+            isLoadingOldMessages.current = false;
+          });
+        });
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [selectedChat, page,dispatch]);
+
+  // Re-calculate sticky date after messages repaint
+  useEffect(() => {
+    const timer = setTimeout(() => updateStickyDate(), 50);
+    return () => clearTimeout(timer);
+  }, [messages]);
+
+  // ── Incoming message socket ────────────────────────────────────────────────
+  useEffect(() => {
+    socket.on("updateReaction", ({ messageId, reaction }) => {
+      dispatch(updateReaction({ messageId, reaction }));
+    });
+
+    socket.on("sendMessage", ({ chatId, msg, msgId, sender, isUserOnline }) => {
+      if (sender !== profile?._id) {
+        if (selectedChat !== chatId) {
+          socket.emit("updateMessageStatus", {
+            messageId: msgId,
+            status: "delivered",
+            chatId,
+            sender,
+            toUser: selectedChatP?.participant._id,
+          });
+          dispatch(updateLastMessageStatus({ status: "delivered", chatId }));
+        } else {
+          socket.emit("updateMessageStatus", {
+            messageId: msgId,
+            status: "seen",
+            chatId,
+            sender,
+            toUser: selectedChatP?.participant._id,
+          });
+          dispatch(updateLastMessageStatus({ status: "seen", chatId }));
+        }
+      } else {
+        socket.emit("updateMessageStatus", {
+          messageId: msgId,
+          status: isUserOnline ? "delivered" : "sent",
+          chatId,
+          sender,
+          toUser: selectedChatP?.participant._id,
+        });
+        dispatch(
+          updateLastMessageStatus({
+            status: isUserOnline ? "delivered" : "sent",
+            chatId,
+          }),
+        );
+      }
+
+      dispatch(
+        addMessage({
+          message: {
+            _id: msgId,
+            chat: chatId,
+            sender,
+            text: msg,
+            status: "sent",
+            reaction: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          selectedId: selectedChat,
+          userId: profile?._id,
+          isUserOnline,
+        }),
+      );
+    });
+
+    return () => {
+      socket.off("sendMessage");
+      socket.off("updateReaction");
+    };
+  }, [selectedChat, selectedChatP, profile,dispatch]);
+
+  // ── Seen status socket ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!profile) return;
+    socket.on("updateAllMessagesStatusToSeen", ({ selectedChat: chatId }) => {
+      dispatch(
+        updateAllMessagesStatusToSeen({ chatId, userId: profile.userId._id }),
+      );
+      dispatch(updateLastMessageStatus({ status: "seen", chatId }));
+    });
+  }, [profile,dispatch]);
+
+  const { chats } = useSelector((state: RootState) => state.chats);
+
+  // ── Online/offline socket ──────────────────────────────────────────────────
+  useEffect(() => {
+    socket.on("iAmOnline", (onlineUserId: string) => {
+      if (!profile) return;
+      const yeschats = chats?.find((c) => c.participant._id === onlineUserId);
+      if (yeschats) {
+        dispatch(
+          updateAllMessagesStatusToDelivered({
+            userId: profile.userId._id,
+            chatId: yeschats._id,
+          }),
+        );
+        dispatch(
+          updateLastMessageStatus({
+            status: "delivered",
+            chatId: yeschats._id,
+          }),
+        );
+        dispatch(
+          updateOnlineStatus({ userId: onlineUserId, onlineStatus: "online" }),
+        );
+      }
+    });
+
+    socket.on("iAmOffline", (offlineUserId: string) => {
+      dispatch(
+        updateOnlineStatus({ userId: offlineUserId, onlineStatus: "offline" }),
+      );
+    });
+
+    return () => {
+      socket.off("iAmOnline");
+      socket.off("iAmOffline");
+    };
+  }, [chats, profile,dispatch]);
+
+  // ── Message status socket ──────────────────────────────────────────────────
+  useEffect(() => {
+    socket.on("updateMessageStatus", ({ messageId, status }) => {
+      dispatch(updateMessageStatus({ messageId, status }));
+    });
+    return () => {
+      socket.off("updateMessageStatus");
+    };
+  }, [selectedChat,dispatch]);
+
+  // ── Auto-scroll to bottom for new messages only ────────────────────────────
+  useEffect(() => {
+    if (isLoadingOldMessages.current) return;
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (selectedChat) {
+      dispatch(updateUnreadCount({ chatId: selectedChat, unReadCount: -1 }));
+    }
+  }, [messages,dispatch,selectedChat]);
+
+  // ── Load all chats on mount ────────────────────────────────────────────────
+  useEffect(() => {
+    getAllChats()
+      .then((res) => {
+        if (!res?.data) return;
+        dispatch(setChats(res.data.chats));
+      })
+      .catch(console.error);
+  }, [dispatch]);
+
+  // ── Debug: log all socket events ──────────────────────────────────────────
+  useEffect(() => {
+    socket.onAny((event, ...args) => console.log("📩 Received:", event, args));
+    return () => {
+      socket.offAny();
+    };
+  }, [ ]);
+
+  // ── Load messages when a chat is selected ─────────────────────────────────
+  useEffect(() => {
+    if (!selectedChat) return;
+    dateRefs.current = {};
+    setCurrentStickyDate(null);
+    setStickyVisible(false);
+
+    socket.emit("private-chat", {
+      selectedChat,
+      userId: profile?._id,
+      selectedChatP,
+    });
+
+    getAllMessages({ chatId: selectedChat }).then((res) => {
+      if (!res?.data) return;
+      dispatch(setMessages(res.data.messages));
+    });
+  }, [selectedChat,profile?._id,selectedChatP,dispatch]);
+
+  // ── Reply scroll-to ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!selectReplyId) return;
+    const el = document.getElementById(`msg-${selectReplyId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      const timer = setTimeout(() => setSelectReplyId(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [selectReplyId]);
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
   const handleChatSelect = (chatId: string) => {
     setSelectedChat(chatId);
     setShowChatList(false);
+    setPage(2);
   };
 
-  const handleBackToList = () => {
-    setShowChatList(true);
+  const handleBackToList = () => setShowChatList(true);
+
+  const handleOverlayClick = () => {
+    setReactionPickerMessageId(null);
+    setShowEmoji(false);
   };
+
+  const handleReaction = (messageId: string | number, emoji: string) => {
+    dispatch(
+      updateReaction({ messageId: messageId.toString(), reaction: emoji }),
+    );
+    socket.emit("updateReaction", { messageId, reaction: emoji });
+    setReactionPickerMessageId(null);
+  };
+
+  const toggleReactionPicker = (e: React.MouseEvent, messageId: string) => {
+    e.stopPropagation();
+    setReactionPickerMessageId((prev) =>
+      prev === messageId ? null : messageId,
+    );
+  };
+
+  const handleReply = (msg: IMessage) => setReplyingTo(msg);
+
+  const sendDocumentMessage = (fileUrl: string) => {
+    if (!profile) return;
+    socket.emit("sendMessage", {
+      chatId: selectedChat,
+      msg: fileUrl,
+      sender: profile._id,
+      msgId: Date.now().toString(),
+      toUser: selectedChatP?.participant._id,
+    });
+  };
+
+  const sendMessage = () => {
+    if (!messageText.trim() || !selectedChat || !profile) return;
+    socket.emit("sendMessage", {
+      chatId: selectedChat,
+      msg: messageText,
+      sender: profile._id,
+      msgId: Date.now().toString(),
+      toUser: selectedChatP?.participant._id,
+      replyingTo: replyingTo?._id,
+    });
+    setMessageText("");
+    setReplyingTo(null);
+  };
+
+  const onImgErrorHandler = () => {
+    setImgError(true);
+    return true;
+  };
+
+  const sortedChats = chats
+    ? [...chats].sort((a, b) => {
+        const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return timeB - timeA;
+      })
+    : [];
+
+  if (profile === null) return null;
 
   return (
-    <div className="flex h-[calc(100vh-100px)] bg-white">
-      {/* Left Sidebar - Conversations List */}
+    <div
+      className="flex h-[calc(100vh-100px)] bg-white"
+      onClick={handleOverlayClick}
+    >
+      {/* ── Left Sidebar ──────────────────────────────────────────────────── */}
       <div
         className={`${
           showChatList ? "flex" : "hidden"
         } md:flex w-full md:w-[380px] lg:w-[420px] border-r border-gray-200 flex-col`}
       >
-        {/* Search Header */}
         <div className="p-3 md:p-4 border-b border-gray-200">
           <div className="flex gap-2">
             <Input
@@ -153,179 +484,247 @@ const MessagingInterface = () => {
           </div>
         </div>
 
-        {/* Conversations */}
         <div className="flex-1 overflow-y-auto">
-          {conversations.map((conv) => (
-            <div
-              key={conv.id}
-              onClick={() => handleChatSelect(conv.id)}
-              className={`flex items-start gap-3 p-3 md:p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                selectedChat === conv.id ? "bg-blue-50" : ""
-              }`}
+          {chats == null ? (
+            <div className="p-4 text-center text-gray-500">Loading...</div>
+          ) : (
+            <Reorder.Group
+              axis="y"
+              values={sortedChats}
+              onReorder={() => {}}
+              className="flex flex-col"
             >
-              <Avatar
-                size={40}
-                src={conv.avatar.startsWith("http") ? conv.avatar : null}
-                style={{ backgroundColor: conv.color }}
-              >
-                {!conv.avatar.startsWith("http") && conv.avatar}
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-gray-900 text-sm md:text-base truncate">
-                    {conv.name}
-                  </span>
-                  <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                    {conv.time}
-                  </span>
-                </div>
-                <p className="text-xs md:text-sm text-gray-600 truncate">
-                  {conv.message}
-                </p>
-              </div>
-              {conv.unread > 0 && (
-                <Badge count={conv.unread} className="mt-1 flex-shrink-0" />
-              )}
-            </div>
-          ))}
+              {sortedChats.map((chat) => (
+                <Reorder.Item
+                  key={chat._id}
+                  value={chat}
+                  as="div"
+                  className={`flex items-start gap-3 p-3 md:p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                    selectedChat === chat._id ? "bg-blue-50" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedChatP(chat);
+                    handleChatSelect(chat._id);
+                  }}
+                >
+                  <div className="relative">
+                    <Avatar
+                      size={40}
+                      src={
+                        chat.participant.logoUrl === undefined
+                          ? chat.participant.profilePictureUrl || undefined
+                          : chat.participant.logoUrl || undefined
+                      }
+                      onError={onImgErrorHandler}
+                    >
+                      {imgError
+                        ? chat.participant.companyName === undefined
+                          ? chat.participant.fullName?.charAt(0)
+                          : chat.participant.companyName?.charAt(0)
+                        : null}
+                    </Avatar>
+                    {chat.onlineStatus === "online" && (
+                      <span className="absolute bottom-0 right-0 block w-3 h-3 bg-[#1677ff] rounded-full border-2 border-white" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-gray-900 text-sm md:text-base truncate">
+                        {chat.participant.companyName === undefined
+                          ? chat.participant.fullName
+                          : chat.participant.companyName}
+                      </span>
+                      <span
+                        className={`text-xs ml-2 flex-shrink-0 ${
+                          chat.unReadCount > 0 &&
+                          chat.lastMessage.sender !== profile._id
+                            ? "text-[#1677ff]"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        {chat.updatedAt && formatChatTime(chat.updatedAt)}
+                      </span>
+                    </div>
+                    <p
+                      className="text-xs md:text-sm text-gray-800 flex justify-between"
+                      style={{
+                        fontWeight:
+                          chat.unReadCount > 0 &&
+                          chat.lastMessage.sender !== profile._id
+                            ? "bold"
+                            : "normal",
+                      }}
+                    >
+                      <div className="truncate">
+                        {chat.lastMessage.sender === profile._id && (
+                          <MessageStatus
+                            status={chat.lastMessage.status ?? "000"}
+                          />
+                        )}{" "}
+                        {isImageUrl(chat.lastMessage?.text) ? (
+                          <>
+                            <FileImageOutlined style={{ fontSize: 18 }} />
+                            Image
+                          </>
+                        ) : isDocumentUrl(chat.lastMessage?.text) ? (
+                          <>
+                            <FileTextOutlined style={{ fontSize: 18 }} />
+                            Document
+                          </>
+                        ) : (
+                          <span className="truncate">
+                            {chat.lastMessage?.text ?? "No messages yet ..."}
+                          </span>
+                        )}
+                      </div>
+                      {chat.unReadCount > 0 &&
+                        chat.lastMessage.sender !== profile._id && (
+                          <Badge
+                            color="#1677ff"
+                            count={
+                              chat.unReadCount > 9 ? "9+" : chat.unReadCount
+                            }
+                            className="mt-1 flex-shrink-0"
+                          />
+                        )}
+                    </p>
+                  </div>
+                </Reorder.Item>
+              ))}
+            </Reorder.Group>
+          )}
         </div>
       </div>
 
-      {/* Right Side - Chat Window */}
+      {/* ── Right Side - Chat Window ──────────────────────────────────────── */}
       <div
-        className={`${
-          !showChatList ? "flex" : "hidden"
-        } md:flex flex-1 flex-col`}
+        className={`${!showChatList ? "flex" : "hidden"} md:flex flex-1 flex-col`}
       >
-        {/* Chat Header */}
-        <div className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 border-b border-gray-200">
-          <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-            <Button
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={handleBackToList}
-              className="md:hidden flex-shrink-0"
-            />
-            <Avatar
-              size={40}
-              style={{ backgroundColor: "#1890ff" }}
-              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%231890ff' width='100' height='100'/%3E%3Ctext x='50' y='50' font-size='40' text-anchor='middle' dy='.3em' fill='white' font-family='Arial'%3EIBM%3C/text%3E%3C/svg%3E"
-              className="flex-shrink-0"
-            />
-            <span className="font-medium text-gray-900 text-sm md:text-base truncate">
-              International Business Machines
-            </span>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs md:text-sm text-gray-500 hidden sm:block">
-              Sun, Aug 17, 3:57 PM
-            </span>
-            <Button type="text" icon={<MoreOutlined />} />
-          </div>
-        </div>
-
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-3 md:p-6 bg-gray-50">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`mb-4 md:mb-6 flex ${
-                msg.sender === "you" ? "justify-end" : "justify-start"
-              }`}
-            >
-              {msg.sender !== "you" && (
-                <Avatar
-                  size={32}
-                  className="mr-2 md:mr-3 mt-1 flex-shrink-0"
-                  style={{ backgroundColor: "#1890ff" }}
-                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%231890ff' width='100' height='100'/%3E%3Ctext x='50' y='50' font-size='40' text-anchor='middle' dy='.3em' fill='white' font-family='Arial'%3EIBM%3C/text%3E%3C/svg%3E"
+        {selectedChat ? (
+          <>
+            {/* Header */}
+            <div className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 border-b border-gray-200">
+              <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                <Button
+                  type="text"
+                  icon={<ArrowLeftOutlined />}
+                  onClick={handleBackToList}
+                  className="md:hidden flex-shrink-0"
                 />
-              )}
-              <div
-                className={`max-w-[85%] md:max-w-2xl ${
-                  msg.sender === "you" ? "items-end" : "items-start"
-                } flex flex-col`}
-              >
-                {msg.sender !== "you" && (
-                  <div className="text-xs font-medium text-gray-700 mb-1">
-                    IBM
-                  </div>
-                )}
-                {msg.sender === "you" && msg.attachment && (
-                  <div className="bg-white rounded-lg p-2 md:p-3 mb-2 shadow-sm border border-gray-200 flex items-center gap-2 max-w-full">
-                    <FilePdfOutlined className="text-red-500 text-lg md:text-xl flex-shrink-0" />
-                    <span className="text-xs md:text-sm font-medium truncate">
-                      {msg.attachment}
-                    </span>
-                  </div>
-                )}
+                <Avatar
+                  size={40}
+                  src={
+                    selectedChatP?.participant.logoUrl === undefined
+                      ? selectedChatP?.participant.profilePictureUrl ||
+                        undefined
+                      : selectedChatP?.participant.logoUrl || undefined
+                  }
+                  onError={onImgErrorHandler}
+                />
+                <span className="font-medium text-gray-900 text-sm md:text-base truncate">
+                  {selectedChatP?.participant.companyName === undefined
+                    ? selectedChatP?.participant.fullName
+                    : selectedChatP?.participant.companyName}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Button type="text" icon={<MoreOutlined />} />
+              </div>
+            </div>
+
+            {/* Messages Area */}
+            <div
+              ref={containerRef}
+              className="flex-1 relative overflow-y-auto p-3 md:p-6 bg-gray-50"
+            >
+              {/* ── Animated Sticky Date Pill ──────────────────────────────── */}
+              <div className="sticky top-0 flex justify-center z-10 pointer-events-none py-2">
                 <div
-                  className={`rounded-lg p-3 md:p-4 ${
-                    msg.sender === "you"
-                      ? "bg-white shadow-sm border border-gray-200"
-                      : "bg-white shadow-sm border border-gray-200"
-                  }`}
+                  style={{
+                    transition:
+                      "opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                    opacity: stickyVisible && currentStickyDate ? 1 : 0,
+                    transform:
+                      stickyVisible && currentStickyDate
+                        ? "translateY(0px) scale(1)"
+                        : "translateY(-12px) scale(0.85)",
+                    // Keep it in DOM always so transition plays correctly
+                    pointerEvents: "none",
+                  }}
+                  className="px-4 py-1.5 bg-white text-gray-600 text-xs font-medium rounded-full shadow-md"
                 >
-                  <p className="text-xs md:text-sm text-gray-800 whitespace-pre-line break-words">
-                    {msg.text}
-                  </p>
-                  {msg.emoji && (
-                    <div className="mt-2">
-                      <span className="text-lg md:text-xl">{msg.emoji}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                  <span>{msg.time}</span>
-                  {msg.status && <span>· {msg.status}</span>}
-                  {msg.sender === "you" && (
-                    <span className="text-gray-400">You</span>
-                  )}
+                  {currentStickyDate ? getDateLabel(currentStickyDate) : ""}
                 </div>
               </div>
-              {msg.sender === "you" && (
-                <Avatar
-                  size={32}
-                  className="ml-2 md:ml-3 mt-1 flex-shrink-0"
-                  style={{ backgroundColor: "#52c41a" }}
-                >
-                  U
-                </Avatar>
-              )}
-            </div>
-          ))}
-        </div>
 
-        {/* Message Input */}
-        <div className="p-3 md:p-4 border-t border-gray-200 bg-white">
-          <div className="flex items-center gap-2 md:gap-3">
-            <Button
-              type="primary"
-              icon={<span className="text-base md:text-lg">⚡</span>}
-              className="h-9 md:h-10 px-3 md:px-4 hidden sm:flex"
-              style={{ backgroundColor: "#7c3aed" }}
-            />
-            <Input
-              placeholder="Write a message..."
-              className="flex-1 h-9 md:h-10 text-sm md:text-base"
-              suffix={
-                <div className="flex gap-1 md:gap-2">
-                  <Button
-                    type="text"
-                    icon={<SmileOutlined />}
-                    className="hidden sm:flex"
-                  />
-                  <Button type="text" icon={<PaperClipOutlined />} />
+              {messages.length === 0 && !docLoading ? (
+                <div className="text-center text-gray-500 mt-10">
+                  No messages yet. Start the conversation!
                 </div>
-              }
+              ) : (
+                <div className="flex flex-col">
+                  {messages.map((msg, index) => {
+                    const currentDateKey = getDateKey(msg.createdAt);
+                    const previousDateKey =
+                      index > 0
+                        ? getDateKey(messages[index - 1].createdAt)
+                        : null;
+                    const showDateDivider = currentDateKey !== previousDateKey;
+
+                    return (
+                      <React.Fragment key={msg._id}>
+                        {showDateDivider && (
+                          <div
+                            ref={(el) => {
+                              dateRefs.current[currentDateKey] = el;
+                            }}
+                            data-date={currentDateKey}
+                            className="flex justify-center my-4"
+                          >
+                            <div className="px-3 py-1 bg-white text-gray-600 text-xs rounded-full shadow-sm">
+                              {getDateLabel(currentDateKey)}
+                            </div>
+                          </div>
+                        )}
+
+                        <Message
+                          selectReplyId={selectReplyId}
+                          setSelectReplyId={setSelectReplyId}
+                          onReply={handleReply}
+                          msg={msg}
+                          profile={profile}
+                          hoveredMessageId={hoveredMessageId}
+                          setHoveredMessageId={setHoveredMessageId}
+                          handleReaction={handleReaction}
+                          toggleReactionPicker={toggleReactionPicker}
+                          reactionPickerMessageId={reactionPickerMessageId}
+                          dispatch={dispatch}
+                        />
+                      </React.Fragment>
+                    );
+                  })}
+
+                  {docLoading && <LoadingMessage text="Uploading..." loading />}
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <InputBox
+              setSelectReplyId={setSelectReplyId}
+              replyingTo={replyingTo}
+              selectedChat={selectedChat}
+              sendDocumentMessage={sendDocumentMessage}
+              messageText={messageText}
+              setMessageText={setMessageText}
+              sendMessage={sendMessage}
+              setShowEmoji={setShowEmoji}
+              showEmoji={showEmoji}
             />
-            <Button
-              type="primary"
-              icon={<SendOutlined />}
-              className="h-9 md:h-10 w-9 md:w-10 flex items-center justify-center"
-            />
-          </div>
-        </div>
+          </>
+        ) : (
+          <EmptyChatState />
+        )}
       </div>
     </div>
   );

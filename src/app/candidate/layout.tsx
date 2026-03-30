@@ -70,6 +70,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   useEffect(() => {
     dispatch(setLoading(true));
+    console.log("ilovilov", profile);
     if (profile) return;
     getCandidateProfileApi()
       .then((res) => {
@@ -78,6 +79,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           redirect("/auth");
         };
         if (res.status === "Success") {
+          console.log("youyouyou", res);
           const valuesWithUserType: CandidateProfileResponse & {
             userType: "candidate";
           } = {
