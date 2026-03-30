@@ -176,7 +176,7 @@ const MessagingInterface = () => {
 
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [selectedChat, page]);
+  }, [selectedChat, page,dispatch]);
 
   // Re-calculate sticky date after messages repaint
   useEffect(() => {
@@ -250,7 +250,7 @@ const MessagingInterface = () => {
       socket.off("sendMessage");
       socket.off("updateReaction");
     };
-  }, [selectedChat, selectedChatP, profile]);
+  }, [selectedChat, selectedChatP, profile,dispatch]);
 
   // ── Seen status socket ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -261,7 +261,7 @@ const MessagingInterface = () => {
       );
       dispatch(updateLastMessageStatus({ status: "seen", chatId }));
     });
-  }, [profile]);
+  }, [profile,dispatch]);
 
   const { chats } = useSelector((state: RootState) => state.chats);
 
@@ -299,7 +299,7 @@ const MessagingInterface = () => {
       socket.off("iAmOnline");
       socket.off("iAmOffline");
     };
-  }, [chats, profile]);
+  }, [chats, profile,dispatch]);
 
   // ── Message status socket ──────────────────────────────────────────────────
   useEffect(() => {
@@ -309,7 +309,7 @@ const MessagingInterface = () => {
     return () => {
       socket.off("updateMessageStatus");
     };
-  }, [selectedChat]);
+  }, [selectedChat,dispatch]);
 
   // ── Auto-scroll to bottom for new messages only ────────────────────────────
   useEffect(() => {
@@ -318,7 +318,7 @@ const MessagingInterface = () => {
     if (selectedChat) {
       dispatch(updateUnreadCount({ chatId: selectedChat, unReadCount: -1 }));
     }
-  }, [messages]);
+  }, [messages,dispatch,selectedChat]);
 
   // ── Load all chats on mount ────────────────────────────────────────────────
   useEffect(() => {
@@ -328,7 +328,7 @@ const MessagingInterface = () => {
         dispatch(setChats(res.data.chats));
       })
       .catch(console.error);
-  }, []);
+  }, [dispatch]);
 
   // ── Debug: log all socket events ──────────────────────────────────────────
   useEffect(() => {
@@ -336,7 +336,7 @@ const MessagingInterface = () => {
     return () => {
       socket.offAny();
     };
-  }, []);
+  }, [ ]);
 
   // ── Load messages when a chat is selected ─────────────────────────────────
   useEffect(() => {
@@ -355,7 +355,7 @@ const MessagingInterface = () => {
       if (!res?.data) return;
       dispatch(setMessages(res.data.messages));
     });
-  }, [selectedChat]);
+  }, [selectedChat,profile?._id,selectedChatP,dispatch]);
 
   // ── Reply scroll-to ────────────────────────────────────────────────────────
   useEffect(() => {
