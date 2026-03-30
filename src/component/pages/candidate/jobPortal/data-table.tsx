@@ -306,7 +306,7 @@ const columns: ColumnsType<DataRecord> = [
 
 export default function DataTable() {
   useEffect(() => {
-    getAllInterviewsApi({ page: 1, limit: 50 });
+    getAllInterviewsApi({ page: 1, limit: 50, status: undefined });
   });
   const [activeTab, setActiveTab] = useState("all");
   const [searchText, setSearchText] = useState("");

@@ -110,7 +110,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         console.log("Error fetching profile:", err);
         router.push("/auth/sign-up");
       })
-      .finally(() => {});
+      .finally(() => { });
   }, [profile, dispatch, router]);
 
   //   const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.auth);
@@ -256,11 +256,10 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   removeToken();
                   router.replace("/auth");
                 }}
-                className={`w-full font-bold text-left ${
-                  collapsed
-                    ? "flex justify-center bg-red-600 hover:bg-red-700"
-                    : "bg-red-600 hover:bg-red-700 text-white"
-                }`}
+                className={`w-full font-bold text-left ${collapsed
+                  ? "flex justify-center bg-red-600 hover:bg-red-700"
+                  : "bg-red-600 hover:bg-red-700 text-white"
+                  }`}
               >
                 {!collapsed && "Logout"}
               </Button>

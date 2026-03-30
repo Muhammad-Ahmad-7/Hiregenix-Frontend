@@ -19,7 +19,9 @@ import {
   getAllInterviewsApi,
   getAllTodaysInterviewsApi,
 } from "@/app/api/candidate/interview.api";
-import { ScheduledInterview } from "@/constants/Interfaces/Types/Jobs.interface";
+import { ScheduledInterview, TodayInterviews } from "@/constants/Interfaces/Types/Jobs.interface";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 // Interfaces
 export interface PaginationMeta {
@@ -53,16 +55,23 @@ const InterviewCard = ({
   company,
   type,
   deadline,
-  //  logo,
+  logo,
   onJoin,
 }: InterviewCardProps) => {
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3 mb-3">
         <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-          <span className="text-xl font-bold text-gray-400">
-            {company?.charAt(0) || "C"}
-          </span>
+          {logo ? (
+            <Image
+              src={logo}
+              alt={`${company} logo`}
+              width={48}
+              height={48}
+              className="object-cover w-full h-full rounded-xl"
+            />
+          ) : (<div className="text-gray-400 text-sm">No Logo</div>
+          )}
         </div>
         <div className="flex-1">
           <h3 className="font-semibold text-gray-900">{title}</h3>
@@ -91,11 +100,13 @@ export default function InterviewsPage() {
   const [activeTab, setActiveTab] = useState("schedule");
   const [searchText, setSearchText] = useState("");
   const [todaysInterviews, setTodaysInterviews] =
-    useState<ScheduledInterview[]>([]);
+    useState<TodayInterviews[]>([]);
   const [allInterviews, setAllInterviews] = useState<ScheduledInterview[]>([]);
   const [loading, setLoading] = useState(true);
   const [allInterviewsMeta, setAllInterviewsMeta] =
     useState<PaginationMeta | null>(null);
+
+  const router = useRouter();
 
   // Format date helper
   const formatDate = (dateString: string) => {
@@ -118,7 +129,7 @@ export default function InterviewsPage() {
       try {
         setLoading(true);
         // Replace with your actual API call
-        const res = await getAllInterviewsApi({ page: 1, limit: 50 });
+        const res = await getAllInterviewsApi({ page: 1, limit: 50, status: "scheduled" });
         if (!res || !res.data) {
           setAllInterviews([]);
           setAllInterviewsMeta(null);
@@ -175,10 +186,10 @@ export default function InterviewsPage() {
   ): InterviewTableRecord[] =>
     interviews.map((i) => ({
       key: i._id,
-      name: i.jobId?.title || "N/A",
-      company: i.companyId?.companyName || "N/A",
+      name: i.job?.title || "N/A",
+      company: i.company?.companyName || "N/A",
       type: i.type || "N/A",
-      role: i.jobId?.workMode || "N/A",
+      role: i.job?.workMode || "N/A",
       date: formatDate(i.scheduledDate),
       interviewStatus: i.status,
     }));
@@ -186,6 +197,11 @@ export default function InterviewsPage() {
   const filteredAllInterviews = mapInterviewsToTable(
     scheduledInterviews
   ).filter((i) => i.name.toLowerCase().includes(searchText.toLowerCase()));
+
+  const handleJoinInterview = (interviewId: string) => () => {
+    // Implement join interview logic here
+    router.push(`/candidate/interview-section/${interviewId}`);
+  }
 
   // Columns for Table
   const columns: ColumnsType<InterviewTableRecord> = [
@@ -224,8 +240,8 @@ export default function InterviewsPage() {
           status === "scheduled"
             ? "processing"
             : status === "completed"
-            ? "success"
-            : "error";
+              ? "success"
+              : "error";
         return (
           <Badge
             status={color}
@@ -254,7 +270,7 @@ export default function InterviewsPage() {
   ];
 
   return (
-    <div className="w-full bg-gray-50 min-h-screen p-6">
+    <div className="w-full bg-gray-50 min-h-screen">
       {/* Header */}
       {/* <div className="flex items-center justify-between mb-8">
         <div>
@@ -309,10 +325,8 @@ export default function InterviewsPage() {
                   deadline={formatDate(
                     interview.jobId?.deadline || interview.scheduledDate
                   )}
-                  logo="/logo.png"
-                  onJoin={() =>
-                    alert(`Joining interview for ${interview.jobId?.title}`)
-                  }
+                  logo={interview.companyId?.logoUrl || ""}
+                  onJoin={handleJoinInterview(interview._id)}
                 />
               </Col>
             ))}

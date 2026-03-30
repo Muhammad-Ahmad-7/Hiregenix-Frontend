@@ -19,6 +19,7 @@ import {
   DownOutlined,
   MoreOutlined,
   UserOutlined,
+  EyeFilled,
 } from "@ant-design/icons";
 import type { TablePaginationConfig } from "antd";
 
@@ -43,6 +44,14 @@ export interface InterviewRecord {
   type: string;
   scheduledDate: string;
   status: string;
+  report: {
+    overallInterviewScore: number;
+    communicationScore?: number;
+    confidenceScore?: number;
+    contentScore?: number;
+    fluencyScore?: number;
+    pdfUrl?: string;
+  }
   createdAt: string;
   updatedAt: string;
   aiResult?: AIResult;
@@ -68,25 +77,29 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
 
   // Calculate average score based on AI results
   const calculateAvgScore = (record: InterviewRecord) => {
-    if (
-      record.applicationScore !== undefined &&
-      record.interviewScore !== undefined
-    ) {
-      return Math.round((record.applicationScore + record.interviewScore) / 2);
-    }
-    if (record.applicationScore !== undefined) return record.applicationScore;
-    if (record.interviewScore !== undefined) return record.interviewScore;
+    const report = record?.report;
 
-    // Fallback: Calculate based on AI results if available
-    if (record.aiResult) {
-      const strengthCount = record.aiResult.strengths?.length || 0;
-      const improvementCount = record.aiResult.improvements?.length || 0;
-      const total = strengthCount + improvementCount;
-      if (total > 0) {
-        return Math.round((strengthCount / total) * 100);
+    if (!report) return 0;
+
+    const scores = [
+      report?.communicationScore,
+      report?.confidenceScore,
+      report?.contentScore,
+      report?.fluencyScore
+    ].filter((score) => typeof score === "number");
+
+    if (scores.length === 0) return 0;
+
+    const total = scores.reduce((sum, score) => {
+      if (score !== undefined && sum !== undefined) {
+        return sum + score;
       }
-    }
-    return 0;
+      return 0;
+    });
+
+    if (total === undefined) return 0;
+
+    return Math.round(total / scores.length);
   };
 
   // Get color based on score
@@ -137,8 +150,8 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
   const columns = [
     {
       title: "Candidate",
-      dataIndex: "candidateId",
-      key: "candidateId",
+      dataIndex: "candidate",
+      key: "candidate",
       render: (candidate: CandidateInfo) => (
         <div className="flex items-center gap-3">
           <Avatar
@@ -178,16 +191,28 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       ),
     },
     {
-      title: "Application Score",
-      dataIndex: "applicationScore",
-      key: "applicationScore",
-      render: (score?: number) => (score !== undefined ? `${score}%` : "N/A"),
-    },
-    {
       title: "Interview Score",
-      dataIndex: "interviewScore",
       key: "interviewScore",
-      render: (score?: number) => (score !== undefined ? `${score}%` : "N/A"),
+      render: (record: InterviewRecord) => {
+        const score = record.report?.overallInterviewScore;
+        return score !== undefined ? (
+          <div
+            className={`text-center rounded-md py-1 font-medium ${getAvgColor(
+              score
+            )}`}
+          >
+            {score}%
+          </div>
+        ) : (
+          <div
+            className={`text-center rounded-md py-1 font-medium ${getAvgColor(
+              score
+            )}`}
+          >
+            {0}%
+          </div>
+        );
+      },
     },
     {
       title: "Avg Score",
@@ -216,24 +241,33 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       ),
     },
     {
-      title: "AI Analysis",
+      title: "AI Report",
       key: "aiResult",
       render: (_: unknown, record: InterviewRecord) => {
-        if (!record.aiResult) return <span className="text-gray-400">N/A</span>;
+        if (!record.report) return <span className="text-gray-400">N/A</span>;
 
-        const strengthCount = record.aiResult.strengths?.length || 0;
-        const improvementCount = record.aiResult.improvements?.length || 0;
+        const pdfUrl = record.report?.pdfUrl;
 
         return (
-          <div className="flex gap-2">
-            <Tag color="green">{strengthCount} Strengths</Tag>
-            <Tag color="orange">{improvementCount} Areas</Tag>
+          <div className="">
+            {pdfUrl ? (
+              <a
+                href={pdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                <EyeFilled /> Report
+              </a>
+            ) : (
+              <span className="text-gray-400">N/A</span>
+            )}
           </div>
         );
       },
     },
     {
-      title: "",
+      title: "Actions",
       key: "actions",
       align: "center" as const,
       render: () => (
@@ -265,13 +299,21 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
     if (activeTab === "best") {
       filtered = filtered.filter((item) => {
         const avgScore = calculateAvgScore(item);
-        return avgScore >= 80;
+        return avgScore >= 60;
       });
     } else if (activeTab === "failed") {
       filtered = filtered.filter(
         (item) =>
           item.status?.toLowerCase() === "failed" ||
           item.status?.toLowerCase() === "cancelled"
+      );
+    } else if (activeTab === "scheduled") {
+      filtered = filtered.filter(
+        (item) => item.status?.toLowerCase() === "scheduled"
+      );
+    } else if (activeTab === "completed") {
+      filtered = filtered.filter(
+        (item) => item.status?.toLowerCase() === "completed"
       );
     }
 
@@ -326,7 +368,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
   };
 
   return (
-    <Card className="rounded-2xl shadow-sm p-6">
+    <Card className="rounded-2xl shadow-sm w-full">
       {/* Tabs */}
       <Tabs
         activeKey={activeTab}
@@ -334,7 +376,9 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
         items={[
           { key: "all", label: "All Interviews" },
           { key: "best", label: "Best Matches" },
-          { key: "failed", label: "Failed" },
+          // { key: "failed", label: "Failed" },
+          { key: "scheduled", label: "Scheduled" },
+          { key: "completed", label: "Completed" },
         ]}
         className="mb-4"
       />

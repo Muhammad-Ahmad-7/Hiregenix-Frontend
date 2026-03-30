@@ -46,7 +46,7 @@ export interface AxiosResponse<T> {
 }
 
 export interface ApiResponse<T> {
-  status: string;
+  status: "Success" | "Failed";
   message: string;
   statusCode: number;
   data?: T;
@@ -117,21 +117,9 @@ export const safeApiCall = async <T>({
   returnDataOnly = false,
 }: SafeApiCallProps<T>): Promise<ApiResponse<T> | null> => {
   try {
-    console.log("first");
     const response = await apiCall();
-
-    console.log("first2");
-    console.log(
-      "✅ API Called:",
-      response.config?.url,
-      "| Method:",
-      response.config?.method
-    );
-    console.log("response", response);
     const { data } = response;
-    console.log("data", data);
     if (!showToaster && data.status == "Success") {
-      console.log("i am working ");
       toast.success(data.message);
       return response.data;
     }
@@ -148,7 +136,7 @@ export const safeApiCall = async <T>({
       errorMsg = error.message;
     }
 
-    console.log(errorMsg);
+    console.error(errorMsg);
     toast.error(errorMsg, {
       duration: 3000,
     });
