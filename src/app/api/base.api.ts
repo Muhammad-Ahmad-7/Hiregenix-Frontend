@@ -7,14 +7,16 @@ import toast from "react-hot-toast";
 
 // Create Axios instance
 const api = axios.create({
-  baseURL: "http://localhost:5000/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
 });
+
 // ✅ Add request interceptor (Attach token automatically)
 api.interceptors.request.use(
   (config) => {
+    console.log("🚀 AXIOS REQUEST:", config.baseURL, config.url);
     if (typeof window !== "undefined") {
       const token = getToken();
       if (token) {

@@ -350,8 +350,8 @@ export default function ProfileDashboard() {
               <Title level={4} style={{ marginBottom: 0 }}>
                 {isCandidateProfile(profile)
                   ? profile?.fullName ||
-                    resumeData?.parsedData.name ||
-                    "No Name"
+                  resumeData?.parsedData.name ||
+                  "No Name"
                   : resumeData?.parsedData.name || "No Name"}
               </Title>
               <Text type="secondary">
@@ -376,8 +376,8 @@ export default function ProfileDashboard() {
           <Text>
             {isCandidateProfile(profile)
               ? profile?.userId?.email ||
-                resumeData?.parsedData.email ||
-                "Not specified"
+              resumeData?.parsedData.email ||
+              "Not specified"
               : resumeData?.parsedData.email || "Not specified"}
           </Text>
         </div>
@@ -388,8 +388,8 @@ export default function ProfileDashboard() {
           <Text>
             {isCandidateProfile(profile)
               ? profile?.contactNumber ||
-                resumeData?.parsedData.phone ||
-                "Not specified"
+              resumeData?.parsedData.phone ||
+              "Not specified"
               : resumeData?.parsedData.phone || "Not specified"}
           </Text>
         </div>
@@ -423,17 +423,17 @@ export default function ProfileDashboard() {
               ))}
             {(isCandidateProfile(profile)
               ? profile?.skills?.length ||
-                resumeData?.parsedData.skills?.length ||
-                0
+              resumeData?.parsedData.skills?.length ||
+              0
               : resumeData?.parsedData.skills?.length || 0) > 8 && (
-              <Tag className="rounded-full">
-                +
-                {Math.max(
-                  resumeData?.parsedData.skills?.length || 0,
-                  isCandidateProfile(profile) ? profile?.skills?.length || 0 : 0
-                ) - 8}
-              </Tag>
-            )}
+                <Tag className="rounded-full">
+                  +
+                  {Math.max(
+                    resumeData?.parsedData.skills?.length || 0,
+                    isCandidateProfile(profile) ? profile?.skills?.length || 0 : 0
+                  ) - 8}
+                </Tag>
+              )}
           </Space>
         </div>
 
@@ -591,8 +591,8 @@ export default function ProfileDashboard() {
                         >
                           {(isCandidateProfile(profile)
                             ? profile?.fullName ||
-                              userProfile.fullName ||
-                              "Resume"
+                            userProfile.fullName ||
+                            "Resume"
                             : userProfile.fullName || "Resume"
                           ).replace(/\s+/g, "")}
                           Resume.pdf
@@ -641,7 +641,8 @@ export default function ProfileDashboard() {
                     {resumeData.aiSuggestions.map((suggestion, index) => (
                       <div key={index} className="flex gap-2">
                         <Text type="secondary">{index + 1}.</Text>
-                        <Text>{suggestion}</Text>
+                        {/* <Text>{suggestion}</Text> */}
+                        <AIResponseViewer aiResult={suggestion} />
                       </div>
                     ))}
                   </Space>
@@ -924,3 +925,20 @@ export default function ProfileDashboard() {
     </div>
   );
 }
+
+
+import ReactMarkdown from 'react-markdown';
+
+const AIResponseViewer = ({ aiResult }: { aiResult: string }) => {
+  return (
+    <div className="ai-response-container">
+      {/* 
+          This component automatically detects if 'aiResult' 
+          is plain text or Markdown and renders accordingly.
+      */}
+      <ReactMarkdown>
+        {aiResult}
+      </ReactMarkdown>
+    </div>
+  );
+};
