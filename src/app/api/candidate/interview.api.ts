@@ -44,7 +44,7 @@ export const scheduleInterviewApi = async ({
 }) => {
   return safeApiCall<{ interview: ScheduledInterviewSimple }>({
     apiCall: () =>
-      api.post(`${BASE_API}/schedule-interview/${jobId}`, { scheduledDate }),
+      api.post(`${BASE_API}/schedule-interview/${jobId}`, { scheduledDate: scheduledDate }),
     showToaster: true,
   });
 };
