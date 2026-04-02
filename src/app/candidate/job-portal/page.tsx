@@ -462,7 +462,8 @@ export default function JobDashboard() {
 
   const handleSchedule = async () => {
     if (selectedDate && selectedJob) {
-      const isoString = selectedDate.toISOString();
+      const isoString = new Date(selectedDate.toISOString()).toLocaleDateString('en-CA');
+      console.log("ISO STRING", isoString)
       setLoadingButton(true);
       const res = await scheduleInterviewApi({ jobId: selectedJob._id, scheduledDate: isoString })
       if (!res) {
