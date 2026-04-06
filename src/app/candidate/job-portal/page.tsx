@@ -28,6 +28,7 @@ import {
   HeartFilled,
   ShareAltOutlined,
   WarningOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 
 import UiButton from "@/component/common/CustomButton";
@@ -170,7 +171,9 @@ export default function JobDashboard() {
   const [selectedJob, setSelectedJob] = useState<JobResponse | null>(null);
   const [jobList, setJobList] = useState<JobResponse[]>([]);
   const [filteredJobList, setFilteredJobList] = useState<JobResponse[]>([]);
-  const [recommendedJobList, setRecommendedJobList] = useState<RecommendedJob[]>([]);
+  const [recommendedJobList, setRecommendedJobList] = useState<
+    RecommendedJob[]
+  >([]);
   const [savedJobsList, setSavedJobsList] = useState<SavedJobs[]>([]);
   const [savingJobId, setSavingJobId] = useState<string | null>(null);
 
@@ -178,7 +181,9 @@ export default function JobDashboard() {
   const [loading, setLoading] = useState(false);
   const [loadingButton, setLoadingButton] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [activeTab, setActiveTab] = useState<"all" | "recommended" | "saved">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "recommended" | "saved">(
+    "all",
+  );
 
   // NEW: controls mobile drawer visibility
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -228,7 +233,9 @@ export default function JobDashboard() {
           await unSaveJobApi(savedJobId);
           toast.success("Job unsaved successfully");
           setJobList((prev) =>
-            prev.map((job) => (job._id === jobId ? { ...job, isSaved: false } : job))
+            prev.map((job) =>
+              job._id === jobId ? { ...job, isSaved: false } : job,
+            ),
           );
           if (selectedJob?._id === jobId) {
             setSelectedJob({ ...selectedJob, isSaved: false });
@@ -238,7 +245,9 @@ export default function JobDashboard() {
         await saveJobApi(jobId);
         toast.success("Job saved successfully");
         setJobList((prev) =>
-          prev.map((job) => (job._id === jobId ? { ...job, isSaved: true } : job))
+          prev.map((job) =>
+            job._id === jobId ? { ...job, isSaved: true } : job,
+          ),
         );
         if (selectedJob?._id === jobId) {
           setSelectedJob({ ...selectedJob, isSaved: true });
@@ -268,6 +277,14 @@ export default function JobDashboard() {
       case "report":
         toast.success("Report functionality coming soon");
         break;
+      case "view_profile": {
+        const companyId =
+          selectedJob?.companyId?._id || selectedJob?.company?._id;
+        if (companyId) {
+          window.open(`http://localhost:3000/auth/view/${companyId}`, "_blank");
+        }
+        break;
+      }
     }
   };
 
@@ -288,7 +305,13 @@ export default function JobDashboard() {
       },
       { label: "Share", key: "share", icon: <ShareAltOutlined /> },
       { type: "divider" as const },
-      { label: "Report", key: "report", icon: <WarningOutlined />, danger: true },
+      {
+        label: "Report",
+        key: "report",
+        icon: <WarningOutlined />,
+        danger: true,
+      },
+      { label: "View Profile", key: "view_profile", icon: <UserOutlined /> },
     ];
   };
 
@@ -366,7 +389,7 @@ export default function JobDashboard() {
         setLoading(false);
       }
     },
-    [loading, hasMore, selectedJob]
+    [loading, hasMore, selectedJob],
   );
 
   // ---------------------------------------------
@@ -378,25 +401,29 @@ export default function JobDashboard() {
       filtered = filtered.filter(
         (job) =>
           job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          job.companyId.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          job.role.toLowerCase().includes(searchQuery.toLowerCase())
+          job.companyId.companyName
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          job.role.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
     if (workModeFilter.length > 0) {
       filtered = filtered.filter(
-        (job) => job.workMode && workModeFilter.includes(job.workMode.toLowerCase())
+        (job) =>
+          job.workMode && workModeFilter.includes(job.workMode.toLowerCase()),
       );
     }
     if (experienceFilter.length > 0) {
       filtered = filtered.filter(
         (job) =>
           job.experienceLevel &&
-          experienceFilter.includes(job.experienceLevel.toLowerCase())
+          experienceFilter.includes(job.experienceLevel.toLowerCase()),
       );
     }
     if (countryFilter) {
       filtered = filtered.filter(
-        (job) => job.location.country.toLowerCase() === countryFilter.toLowerCase()
+        (job) =>
+          job.location.country.toLowerCase() === countryFilter.toLowerCase(),
       );
     }
     setFilteredJobList(filtered);
@@ -428,7 +455,7 @@ export default function JobDashboard() {
           fetchJobs(nextCursor);
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.2 },
     );
     const currentTarget = observerTarget.current;
     if (currentTarget) observer.observe(currentTarget);
@@ -464,7 +491,10 @@ export default function JobDashboard() {
     if (selectedDate && selectedJob) {
       const isoString = selectedDate.toISOString();
       setLoadingButton(true);
-      const res = await scheduleInterviewApi({ jobId: selectedJob._id, scheduledDate: isoString })
+      const res = await scheduleInterviewApi({
+        jobId: selectedJob._id,
+        scheduledDate: isoString,
+      });
       if (!res) {
         handleModalClose();
         setLoadingButton(false);
@@ -472,7 +502,7 @@ export default function JobDashboard() {
       }
       if (res.status === "Failed") {
         console.log("Failed", res.message);
-        toast.error(res.message || "Error Interview scheduling....")
+        toast.error(res.message || "Error Interview scheduling....");
         handleModalClose();
         setLoadingButton(false);
         return;
@@ -500,7 +530,9 @@ export default function JobDashboard() {
   // ---------------------------------------------
   // Convert JobData to JobInterface for display
   // ---------------------------------------------
-  const convertToJobInterface = (jobData: Partial<JobResponse>): JobResponse => {
+  const convertToJobInterface = (
+    jobData: Partial<JobResponse>,
+  ): JobResponse => {
     return {
       ...jobData,
       companyId: {
@@ -517,13 +549,10 @@ export default function JobDashboard() {
   // ---------------------------------------------
   return (
     <div className="bg-gray-50 h-[calc(100vh-100px)] overflow-hidden relative">
-
       {/* ── Two-column layout ───────────────────────────────────────────── */}
       <div className="flex gap-4 h-full">
-
         {/* ── LEFT: Sidebar ─────────────────────────────────────────────── */}
         <div className="flex flex-col bg-white rounded-2xl overflow-hidden w-full lg:w-[420px] lg:flex-shrink-0 h-full">
-
           {/* Filters — never scrolls */}
           <div className="flex-shrink-0 p-4">
             <Row gutter={[8, 8]}>
@@ -593,8 +622,11 @@ export default function JobDashboard() {
 
               <Col xs={12}>
                 <UiButton
-                  className={`w-full ${activeTab === "saved" ? "!text-blue-600 !bg-blue-50" : "!text-gray-400"
-                    }`}
+                  className={`w-full ${
+                    activeTab === "saved"
+                      ? "!text-blue-600 !bg-blue-50"
+                      : "!text-gray-400"
+                  }`}
                   onClick={() => setActiveTab("saved")}
                 >
                   Saved ({savedJobsList.length})
@@ -602,8 +634,11 @@ export default function JobDashboard() {
               </Col>
               <Col xs={12}>
                 <UiButton
-                  className={`w-full ${activeTab === "recommended" ? "!text-blue-600 !bg-blue-50" : "!text-gray-400"
-                    }`}
+                  className={`w-full ${
+                    activeTab === "recommended"
+                      ? "!text-blue-600 !bg-blue-50"
+                      : "!text-gray-400"
+                  }`}
                   onClick={() => setActiveTab("recommended")}
                 >
                   Recommended
@@ -611,8 +646,11 @@ export default function JobDashboard() {
               </Col>
               <Col xs={24}>
                 <UiButton
-                  className={`w-full ${activeTab === "all" ? "!text-blue-600 !bg-blue-50" : "!text-gray-400"
-                    }`}
+                  className={`w-full ${
+                    activeTab === "all"
+                      ? "!text-blue-600 !bg-blue-50"
+                      : "!text-gray-400"
+                  }`}
                   onClick={() => setActiveTab("all")}
                 >
                   All Jobs ({filteredJobList.length})
@@ -630,8 +668,11 @@ export default function JobDashboard() {
                   dataSource={filteredJobList}
                   renderItem={(item) => (
                     <List.Item
-                      className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${selectedJob?._id === item._id ? "bg-blue-50 border-l-4 border-l-blue-500" : "border-l-4 border-l-transparent"
-                        }`}
+                      className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${
+                        selectedJob?._id === item._id
+                          ? "bg-blue-50 border-l-4 border-l-blue-500"
+                          : "border-l-4 border-l-transparent"
+                      }`}
                       onClick={() => {
                         setSelectedJob(item);
                         setIsDetailOpen(true);
@@ -648,7 +689,12 @@ export default function JobDashboard() {
                           />
                           {item.isSaved && (
                             <div className="absolute -bottom-1 -right-1 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full shadow-sm text-amber-600">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                className="w-3.5 h-3.5"
+                              >
                                 <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.924-2.438 7.11-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
                               </svg>
                             </div>
@@ -670,9 +716,13 @@ export default function JobDashboard() {
                           </div>
 
                           <div className="flex items-center text-gray-600 mb-3 italic">
-                            <span className="font-medium text-blue-600 not-italic">{item.company?.companyName}</span>
+                            <span className="font-medium text-blue-600 not-italic">
+                              {item.company?.companyName}
+                            </span>
                             <span className="mx-2 text-gray-300">•</span>
-                            <span className="text-sm">{item.location?.city}, {item.location?.country}</span>
+                            <span className="text-sm">
+                              {item.location?.city}, {item.location?.country}
+                            </span>
                           </div>
 
                           <div className="flex flex-wrap gap-2 mb-3">
@@ -683,17 +733,27 @@ export default function JobDashboard() {
                               {item.experienceLevel}
                             </Tag>
                             <Tag className="m-0 border-none bg-orange-50 text-orange-700 font-medium px-2 rounded">
-                              {item.salaryRange?.currency} {item.salaryRange?.min.toLocaleString()} - {item.salaryRange?.max.toLocaleString()}
+                              {item.salaryRange?.currency}{" "}
+                              {item.salaryRange?.min.toLocaleString()} -{" "}
+                              {item.salaryRange?.max.toLocaleString()}
                             </Tag>
                           </div>
 
                           {/* Quick Stats/Summary Footer */}
                           <div className="flex items-center justify-between text-xs text-gray-400 mt-4">
                             <div className="flex gap-4">
-                              <span>Posted: {new Date(item.createdAt).toLocaleDateString()}</span>
-                              <span>Deadline: {new Date(item.deadline).toLocaleDateString()}</span>
+                              <span>
+                                Posted:{" "}
+                                {new Date(item.createdAt).toLocaleDateString()}
+                              </span>
+                              <span>
+                                Deadline:{" "}
+                                {new Date(item.deadline).toLocaleDateString()}
+                              </span>
                             </div>
-                            <div className="font-medium text-blue-500">View Details →</div>
+                            <div className="font-medium text-blue-500">
+                              View Details →
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -701,21 +761,31 @@ export default function JobDashboard() {
                   )}
                 />
                 {loading && (
-                  <div className="p-5 text-center"><Spin /></div>
+                  <div className="p-5 text-center">
+                    <Spin />
+                  </div>
                 )}
                 <div ref={observerTarget} className="h-8" />
                 {!hasMore && jobList.length > 0 && (
-                  <div className="p-5 text-center text-gray-400">No more jobs</div>
+                  <div className="p-5 text-center text-gray-400">
+                    No more jobs
+                  </div>
                 )}
               </>
             ) : activeTab === "saved" ? (
               <>
                 {loading ? (
-                  <div className="p-5 text-center"><Spin /></div>
+                  <div className="p-5 text-center">
+                    <Spin />
+                  </div>
                 ) : savedJobsList.length === 0 ? (
                   <div className="py-10 px-5 text-center">
-                    <div className="text-gray-400 text-lg mb-2">No saved jobs yet</div>
-                    <div className="text-gray-400 text-sm">Start saving jobs to view them here</div>
+                    <div className="text-gray-400 text-lg mb-2">
+                      No saved jobs yet
+                    </div>
+                    <div className="text-gray-400 text-sm">
+                      Start saving jobs to view them here
+                    </div>
                   </div>
                 ) : (
                   <List
@@ -749,13 +819,20 @@ export default function JobDashboard() {
                                   />
                                 </div>
                                 <div className="mt-2">
-                                  <div className="text-blue-600 font-semibold">{job.title}</div>
+                                  <div className="text-blue-600 font-semibold">
+                                    {job.title}
+                                  </div>
                                   <div className="text-gray-500 text-sm">
-                                    Saved {new Date(savedJob.createdAt).toLocaleDateString()}
+                                    Saved{" "}
+                                    {new Date(
+                                      savedJob.createdAt,
+                                    ).toLocaleDateString()}
                                   </div>
                                   <div className="flex gap-2 mt-1">
                                     <Tag color="blue">{job.workMode}</Tag>
-                                    <Tag color="green">{job.experienceLevel}</Tag>
+                                    <Tag color="green">
+                                      {job.experienceLevel}
+                                    </Tag>
                                   </div>
                                 </div>
                               </div>
@@ -770,11 +847,17 @@ export default function JobDashboard() {
             ) : (
               <>
                 {loading ? (
-                  <div className="p-5 text-center"><Spin /></div>
+                  <div className="p-5 text-center">
+                    <Spin />
+                  </div>
                 ) : recommendedJobList.length === 0 ? (
                   <div className="py-10 px-5 text-center">
-                    <div className="text-gray-400 text-lg mb-2">No recommendations yet</div>
-                    <div className="text-gray-400 text-sm">We will recommend jobs based on your profile</div>
+                    <div className="text-gray-400 text-lg mb-2">
+                      No recommendations yet
+                    </div>
+                    <div className="text-gray-400 text-sm">
+                      We will recommend jobs based on your profile
+                    </div>
                   </div>
                 ) : (
                   <List
@@ -784,7 +867,9 @@ export default function JobDashboard() {
                       <List.Item
                         className="cursor-pointer hover:bg-gray-100 transition"
                         onClick={() => {
-                          const fullJob = jobList.find((j) => j._id === item.jobId);
+                          const fullJob = jobList.find(
+                            (j) => j._id === item.jobId,
+                          );
                           if (fullJob) {
                             setSelectedJob(fullJob);
                             setIsDetailOpen(true);
@@ -796,12 +881,18 @@ export default function JobDashboard() {
                             <div className="px-4">
                               <Avatar src={item.companyLogo} size={50} />
                               <div className="mt-2">
-                                <div className="text-blue-600 font-semibold">{item.title}</div>
-                                <div className="text-gray-500 text-sm">{item.companyName}</div>
+                                <div className="text-blue-600 font-semibold">
+                                  {item.title}
+                                </div>
+                                <div className="text-gray-500 text-sm">
+                                  {item.companyName}
+                                </div>
                                 <div className="flex gap-2 mt-1">
                                   <Tag color="blue">{item.workMode}</Tag>
                                   {item.experienceLevel && (
-                                    <Tag color="green">{item.experienceLevel}</Tag>
+                                    <Tag color="green">
+                                      {item.experienceLevel}
+                                    </Tag>
                                   )}
                                 </div>
                               </div>
@@ -852,7 +943,10 @@ export default function JobDashboard() {
 
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1 text-sm text-gray-500 font-medium">
-                          <span>{selectedJob.location?.city}, {selectedJob.location?.country}</span>
+                          <span>
+                            {selectedJob.location?.city},{" "}
+                            {selectedJob.location?.country}
+                          </span>
                         </div>
                         <span className="text-gray-300 hidden sm:block">|</span>
                         <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
@@ -862,28 +956,31 @@ export default function JobDashboard() {
                     </div>
                   </div>
                   <div className="flex gap-4 items-center">
-                    {
-                      selectedJob.isApplied ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800 border border-teal-200">
-                          <svg className="-ml-0.5 mr-1.5 h-2 w-2 text-teal-400" fill="currentColor" viewBox="0 0 8 8">
-                            <circle cx="4" cy="4" r="3" />
-                          </svg>
-                          Applied
-                        </span>
-                      ) : (
-                        <UiButton
-                          type="primary"
-                          className="!rounded-full"
-                          onClick={handleApplyNow}
+                    {selectedJob.isApplied ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800 border border-teal-200">
+                        <svg
+                          className="-ml-0.5 mr-1.5 h-2 w-2 text-teal-400"
+                          fill="currentColor"
+                          viewBox="0 0 8 8"
                         >
-                          Apply Now
-                        </UiButton>
-                      )
-                    }
+                          <circle cx="4" cy="4" r="3" />
+                        </svg>
+                        Applied
+                      </span>
+                    ) : (
+                      <UiButton
+                        type="primary"
+                        className="!rounded-full"
+                        onClick={handleApplyNow}
+                      >
+                        Apply Now
+                      </UiButton>
+                    )}
                     <Dropdown
                       menu={{
                         items: getDropdownItems(selectedJob._id),
-                        onClick: ({ key }) => handleMenuClick(key, selectedJob._id),
+                        onClick: ({ key }) =>
+                          handleMenuClick(key, selectedJob._id),
                       }}
                       trigger={["click"]}
                     >
@@ -892,7 +989,9 @@ export default function JobDashboard() {
                           className="!rounded-full w-8 h-8"
                           loading={savingJobId === selectedJob._id}
                         >
-                          {savingJobId === selectedJob._id ? null : <EllipsisOutlined />}
+                          {savingJobId === selectedJob._id ? null : (
+                            <EllipsisOutlined />
+                          )}
                         </UiButton>
                       </span>
                     </Dropdown>
@@ -913,10 +1012,8 @@ export default function JobDashboard() {
           )}
         </div>
         {/* end desktop detail panel */}
-
       </div>
       {/* end two-column */}
-
 
       {/* ──────────────────────────────────────────────────────────────────
           MOBILE DRAWER — only rendered below lg breakpoint.
@@ -925,15 +1022,19 @@ export default function JobDashboard() {
 
       {/* Backdrop */}
       <div
-        className={`lg:hidden fixed inset-0 z-40 bg-black transition-opacity duration-300 ${isDetailOpen ? "opacity-50 pointer-events-auto" : "opacity-0 pointer-events-none"
-          }`}
+        className={`lg:hidden fixed inset-0 z-40 bg-black transition-opacity duration-300 ${
+          isDetailOpen
+            ? "opacity-50 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
         onClick={() => setIsDetailOpen(false)}
       />
 
       {/* Slide-up sheet */}
       <div
-        className={`lg:hidden fixed bottom-0 left-0 mx-auto right-0 z-50 flex flex-col bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 w-[90%] max-[400px]:w-[99%] ease-out ${isDetailOpen ? "translate-y-0" : "translate-y-full"
-          }`}
+        className={`lg:hidden fixed bottom-0 left-0 mx-auto right-0 z-50 flex flex-col bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 w-[90%] max-[400px]:w-[99%] ease-out ${
+          isDetailOpen ? "translate-y-0" : "translate-y-full"
+        }`}
         style={{ height: "90vh" }}
       >
         {/* Handle bar + close button */}
@@ -980,7 +1081,10 @@ export default function JobDashboard() {
 
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1 text-sm text-gray-500 font-medium">
-                        <span>{selectedJob.location?.city}, {selectedJob.location?.country}</span>
+                        <span>
+                          {selectedJob.location?.city},{" "}
+                          {selectedJob.location?.country}
+                        </span>
                       </div>
                       <span className="text-gray-300 hidden sm:block">|</span>
                       <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
@@ -990,28 +1094,31 @@ export default function JobDashboard() {
                   </div>
                 </div>
                 <div className="flex gap-2 items-center">
-                  {
-                    selectedJob.isApplied ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800 border border-teal-200">
-                        <svg className="-ml-0.5 mr-1.5 h-2 w-2 text-teal-400" fill="currentColor" viewBox="0 0 8 8">
-                          <circle cx="4" cy="4" r="3" />
-                        </svg>
-                        Applied
-                      </span>
-                    ) : (
-                      <UiButton
-                        type="primary"
-                        className="!rounded-full"
-                        onClick={handleApplyNow}
+                  {selectedJob.isApplied ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800 border border-teal-200">
+                      <svg
+                        className="-ml-0.5 mr-1.5 h-2 w-2 text-teal-400"
+                        fill="currentColor"
+                        viewBox="0 0 8 8"
                       >
-                        Apply Now
-                      </UiButton>
-                    )
-                  }
+                        <circle cx="4" cy="4" r="3" />
+                      </svg>
+                      Applied
+                    </span>
+                  ) : (
+                    <UiButton
+                      type="primary"
+                      className="!rounded-full"
+                      onClick={handleApplyNow}
+                    >
+                      Apply Now
+                    </UiButton>
+                  )}
                   <Dropdown
                     menu={{
                       items: getDropdownItems(selectedJob._id),
-                      onClick: ({ key }) => handleMenuClick(key, selectedJob._id),
+                      onClick: ({ key }) =>
+                        handleMenuClick(key, selectedJob._id),
                     }}
                     trigger={["click"]}
                   >
@@ -1020,7 +1127,9 @@ export default function JobDashboard() {
                         className="!rounded-full w-8 h-8"
                         loading={savingJobId === selectedJob._id}
                       >
-                        {savingJobId === selectedJob._id ? null : <EllipsisOutlined />}
+                        {savingJobId === selectedJob._id ? null : (
+                          <EllipsisOutlined />
+                        )}
                       </UiButton>
                     </span>
                   </Dropdown>
@@ -1037,10 +1146,11 @@ export default function JobDashboard() {
       </div>
       {/* end mobile drawer */}
 
-
       {/* ── Modal — unchanged ─────────────────────────────────────────── */}
       <Modal
-        title={<span className="text-xl font-semibold">Schedule Application</span>}
+        title={
+          <span className="text-xl font-semibold">Schedule Application</span>
+        }
         open={isModalOpen}
         onCancel={handleModalClose}
         closeIcon={<CloseOutlined />}
@@ -1078,17 +1188,19 @@ export default function JobDashboard() {
           {selectedDate && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <div>
-                <strong>Selected Date:</strong> {selectedDate.format("MMMM D, YYYY")}
+                <strong>Selected Date:</strong>{" "}
+                {selectedDate.format("MMMM D, YYYY")}
               </div>
               <div>
                 <strong>Deadline:</strong>{" "}
-                {selectedJob ? dayjs(selectedJob.deadline).format("MMMM D, YYYY") : "N/A"}
+                {selectedJob
+                  ? dayjs(selectedJob.deadline).format("MMMM D, YYYY")
+                  : "N/A"}
               </div>
             </div>
           )}
         </div>
       </Modal>
-
     </div>
   );
 }

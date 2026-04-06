@@ -17,7 +17,7 @@ import SignInWrapper from "@/component/pages/login/SignInWrapper";
 const Home = () => (
   <SignInWrapper img={sign_in}>
     {/* <Left1 /> */}
-
+    {/* <CompanyProfilePage /> */}
     <LoginScreen />
     {/* <LoginScreen /> */}
     {/* <Left3 /> */}
