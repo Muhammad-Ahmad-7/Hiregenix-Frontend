@@ -286,18 +286,22 @@ const LiveInterviewPage = () => {
         if (!interviewIdString) { toast.error('Interview ID is invalid'); return; }
 
         const file = new File([blob], `recording_${Date.now()}.webm`, { type: 'video/webm' });
-        const res = await createInterviewQuestionResultApi({
+        createInterviewQuestionResultApi({
             interviewId: interviewIdString,
             questionId: String(interviewState.currentQuestionIndex + 1),
             questionText: interviewState.currentQuestion,
             numberOfTabSwitch: suspicionRef.current,
             file,
+        }).then((res) => {
+            const status = res?.status === 'Success' ? 'success' : 'error';
+            toast[status](res?.message || (status === 'success' ? 'Answer submitted successfully' : 'Failed to submit answer'));
+        }).catch((err) => {
+            console.error('Submission error:', err);
+            toast.error('Failed to submit answer');
         });
 
         suspicionRef.current = 0;
         setInterviewState((prev) => ({ ...prev, isUploading: false }));
-
-        if (res?.status === 'Success') toast.success('Answer submitted successfully');
 
         moveToNextQuestion();
     }, [moveToNextQuestion, interviewState.currentQuestionIndex, interviewId, interviewState.currentQuestion]);

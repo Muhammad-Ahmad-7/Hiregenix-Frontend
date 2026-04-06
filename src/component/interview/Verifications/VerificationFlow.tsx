@@ -64,7 +64,7 @@ interface VerificationFlowProps {
 }
 
 const VerificationFlow: React.FC<VerificationFlowProps> = ({ onVerificationComplete, interviewId }) => {
-    const [phase, setPhase] = useState<VerificationPhase>('intro');
+    const [phase, setPhase] = useState<VerificationPhase>('intro'); // Start at 'complete' for testing, change to 'intro' for production
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 flex items-center justify-center p-4">
