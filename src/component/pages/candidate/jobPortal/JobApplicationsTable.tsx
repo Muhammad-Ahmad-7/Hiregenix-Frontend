@@ -1,10 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Table, Tabs, Modal, Avatar } from "antd";
-import { getAllInterviewsApi } from "@/app/api/candidate/interview.api";
+import { Table, Tabs, Modal, Avatar, DatePicker, Button, Descriptions, Tag, GetProps, Spin } from "antd";
+import { getAllInterviewsApi, scheduleInterviewApi } from "@/app/api/candidate/interview.api";
 import { ScheduledInterview } from "@/constants/Interfaces/Types/Jobs.interface";
 import { EyeFilled } from "@ant-design/icons";
+import { DateTime } from "luxon";
+import toast from "react-hot-toast";
+
+type RangePickerProps = GetProps<typeof DatePicker.RangePicker>;
 
 interface PaginationMeta {
   total: number;
@@ -40,6 +44,84 @@ const JobApplicationsTable = () => {
   const [selectedJobTitle, setSelectedJobTitle] = useState("");
 
   const PAGE_SIZE = 5;
+
+  // States
+  const [jobModalOpen, setJobModalOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<ScheduledInterview | null>(null);
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [newDate, setNewDate] = useState<Date | null>(null); // store ISO string
+  const [loadingButton, setLoadingButton] = useState(false);
+
+  // Open job modal
+  const openJobModal = (job: ScheduledInterview) => {
+    setSelectedJob(job);
+    setJobModalOpen(true);
+  };
+
+  // Open reschedule modal
+  const handleRescheduleClick = () => {
+    setRescheduleModalOpen(true);
+    setNewDate(null);
+  };
+
+  // Handle date change
+  const handleDateChange = (dateString: Date) => {
+    setNewDate(dateString);
+  };
+
+  // Submit reschedule
+  const submitReschedule = async () => {
+    setLoadingButton(true)
+    if (!selectedJob || !newDate) {
+      toast.error("Please select a valid date.");
+      return;
+    }
+    console.log("Rescheduling job:", selectedJob._id, "to", newDate);
+    const date = new Date(newDate.toISOString()).toLocaleDateString('en-CA')
+    console.log("date", date)
+    const res = await scheduleInterviewApi({
+      jobId: selectedJob.job._id,
+      scheduledDate: date,
+    });
+    if (!res) {
+      setRescheduleModalOpen(false);
+      setJobModalOpen(false);
+      setLoadingButton(false);
+      return;
+    }
+    if (res.status === "Failed") {
+      console.log("Failed", res.message);
+      toast.error(res.message || "Error Interview scheduling....");
+      setRescheduleModalOpen(false);
+      setJobModalOpen(false);
+      setLoadingButton(false);
+      return;
+    }
+
+    toast.success(res.message || "Interview rescheduled successfully");
+    setRescheduleModalOpen(false);
+    setJobModalOpen(false);
+    setLoadingButton(false);
+    // fetchInterviews();
+    interviews.map((interview) => {
+      if (interview._id === selectedJob._id) {
+        interview.scheduledDate = date;
+      }
+      return interview;
+    });
+    setInterviews([...interviews]);
+  };
+
+  // Disable dates before today or after deadline
+  const disableDates: RangePickerProps["disabledDate"] = (current) => {
+    if (!selectedJob) return true;
+
+    const selectedDate = DateTime.fromJSDate(current.toDate());
+    const today = DateTime.now().startOf("day");
+    const deadline = DateTime.fromISO(selectedJob.job.deadline).endOf("day");
+
+    return selectedDate < today || selectedDate > deadline;
+  };
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -102,17 +184,30 @@ const JobApplicationsTable = () => {
     }));
 
   const getStatusTag = (status: string) => {
-    const statusConfig: Record<string, { color: string }> = {
-      scheduled: { color: "#1890ff" },
-      completed: { color: "#722ed1" },
-      cancelled: { color: "#f5222d" },
+    const statusConfig: Record<
+      string,
+      { color: string; background: string; border?: string; text?: string }
+    > = {
+      scheduled: { color: "#096dd9", background: "#e6f7ff", text: "Scheduled" }, // blue
+      completed: { color: "#391085", background: "#f3e6ff", text: "Completed" }, // purple
+      cancelled: { color: "#a8071a", background: "#fff1f0", text: "Rejected" }, // red
+      pending: { color: "#ad8b00", background: "#fffbe6", text: "Pending" }, // yellow
     };
-    const config = statusConfig[status] || { color: "#666" };
+
+    const config = statusConfig[status] || { color: "#666", background: "#f0f0f0", text: status };
+
     return (
-      <span className="text-sm text-gray-700">
-        <span style={{ color: config.color }}>•</span>{" "}
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
+      <Tag
+        style={{
+          color: config.color,
+          backgroundColor: config.background,
+          border: config.border || "none",
+          fontWeight: 500,
+          textTransform: "capitalize",
+        }}
+      >
+        {config.text}
+      </Tag>
     );
   };
 
@@ -127,8 +222,13 @@ const JobApplicationsTable = () => {
       title: "Title",
       dataIndex: "title",
       key: "title",
-      render: (text: string) => (
-        <a className="text-blue-600 hover:text-blue-700">{text}</a>
+      render: (text: string, record: ReturnType<typeof getTableData>[number]) => (
+        <a
+          className="text-blue-600 hover:text-blue-700 cursor-pointer"
+          onClick={() => openJobModal(record._raw)}
+        >
+          {text}
+        </a>
       ),
     },
     {
@@ -140,13 +240,7 @@ const JobApplicationsTable = () => {
           {record.logoUrl && (
             <Avatar shape="square" size={32} src={record.logoUrl} />
           )}
-          {/* 
-          <Avatar
-            src={candidate?.profilePictureUrl}
-            icon={<UserOutlined />}
-            size={40}
-          /> */}
-          <a className="text-blue-600 hover:text-blue-700">{companyName}</a>
+          <span className="capitalize">{companyName}</span>
         </div>
       ),
     },
@@ -312,6 +406,82 @@ const JobApplicationsTable = () => {
           </div>
         )}
       </Modal>
+      {/* Job Detail Modal */}
+      <Modal
+        open={jobModalOpen}
+        onCancel={() => setJobModalOpen(false)}
+        footer={
+          <Button type="primary" onClick={handleRescheduleClick} disabled={selectedJob?.status !== "scheduled"}>
+            Reschedule Interview
+          </Button>
+        }
+        width={800}
+        title={
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-semibold">{selectedJob?.job.title}</span>
+          </div>
+        }
+      >
+        {selectedJob && (
+          <Descriptions
+            bordered
+            column={1}
+            size="middle"
+            layout="vertical"
+            labelStyle={{ fontWeight: 600 }}
+          >
+            <Descriptions.Item label="Role">{selectedJob.job.role}</Descriptions.Item>
+            <Descriptions.Item label="Experience Level">{selectedJob.job.experienceLevel}</Descriptions.Item>
+            <Descriptions.Item label="Work Mode">
+              <Tag color={selectedJob.job.workMode === "remote" ? "green" : "blue"}>
+                {selectedJob.job.workMode.toUpperCase()}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Location">
+              {selectedJob.job.location.city}, {selectedJob.job.location.country}
+            </Descriptions.Item>
+            <Descriptions.Item label="Salary">
+              {selectedJob.job.salaryRange.min} - {selectedJob.job.salaryRange.max} {selectedJob.job.salaryRange.currency}
+            </Descriptions.Item>
+            <Descriptions.Item label="Deadline">
+              {formatDate(selectedJob.job.deadline!)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Required Skills">
+              <div className="flex flex-wrap gap-2">
+                {selectedJob.job.requiredSkills.map((skill, i) => (
+                  <Tag color="blue" key={i} style={{ marginBottom: 4 }}>
+                    {skill}
+                  </Tag>
+                ))}
+              </div>
+            </Descriptions.Item>
+          </Descriptions>
+        )}
+      </Modal >
+
+      {/* Reschedule Modal */}
+      < Modal
+        open={rescheduleModalOpen}
+        title="Select a New Interview Date"
+        onCancel={() => setRescheduleModalOpen(false)}
+        footer={
+          [
+            <Button key="submit" type="primary" onClick={submitReschedule} disabled={!newDate}>
+              {loadingButton ? (
+                <Spin size="small" />
+              ) : (
+                "Submit"
+              )}
+            </Button>,
+          ]}
+      >
+        <DatePicker
+          value={newDate}
+          onChange={handleDateChange}
+          disabledDate={disableDates}
+          style={{ width: "100%" }}
+        />
+      </ Modal>
     </>
   );
 };

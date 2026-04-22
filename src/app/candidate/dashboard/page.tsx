@@ -110,14 +110,14 @@ export default function Dashboard() {
   // 🔥 Final merged table data
   const activeJobsToShow: JobData[] =
     candidateStats?.recentAppliedJobs &&
-    candidateStats.recentAppliedJobs.length > 0
+      candidateStats.recentAppliedJobs.length > 0
       ? candidateStats.recentAppliedJobs.map((job, idx: number) => ({
-          key: job._id || idx,
-          title: job.jobId.title,
-          applications: 0, // Only mapped because API doesn't provide counts
-          views: 0,
-          matches: 0,
-        }))
+        key: job._id || idx,
+        title: job.jobId.title,
+        applications: 0, // Only mapped because API doesn't provide counts
+        views: 0,
+        matches: 0,
+      }))
       : jobData;
 
   const jobColumns: ColumnsType<JobData> = [

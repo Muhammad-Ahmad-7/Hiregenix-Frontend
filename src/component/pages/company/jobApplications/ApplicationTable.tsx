@@ -20,8 +20,10 @@ import {
   MoreOutlined,
   UserOutlined,
   EyeFilled,
+  MailOutlined,
 } from "@ant-design/icons";
 import type { TablePaginationConfig } from "antd";
+import toast from "react-hot-toast";
 
 const { Title } = Typography;
 
@@ -274,9 +276,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
         <Dropdown
           menu={{
             items: [
-              { key: "view", label: "View Details" },
-              { key: "reschedule", label: "Reschedule Interview" },
-              { key: "cancel", label: "Cancel Interview", danger: true },
+              { key: "sendHiringEmail", label: "Send Hiring Email", icon: <MailOutlined />, onClick: () => handleHiringEmail() },
             ],
           }}
           trigger={["click"]}
@@ -290,6 +290,11 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       ),
     },
   ];
+
+  const handleHiringEmail = () => {
+    //TODO: Implement hiring email logic here
+    toast.success("Hiring email sent!");
+  };
 
   // Filter data based on active tab
   const getFilteredData = () => {
