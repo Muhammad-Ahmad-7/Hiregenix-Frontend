@@ -31,6 +31,7 @@ export interface IMessage {
   text: string;
   status: MessageStatus;
   reaction: string | null;
+  replyingTo?: { _id: string; text: string } | null;
   createdAt: string;
   updatedAt: string;
   __v?: number;

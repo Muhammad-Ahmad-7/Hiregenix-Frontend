@@ -1,6 +1,15 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
-import { Input, Avatar, Badge, Dropdown, Button } from "antd";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Input,
+  Avatar,
+  Badge,
+  Dropdown,
+  Button,
+  Skeleton,
+  Modal,
+  List,
+} from "antd";
 import {
   SearchOutlined,
   DownOutlined,
@@ -10,10 +19,11 @@ import {
   FileTextOutlined,
   FileImageOutlined,
 } from "@ant-design/icons";
-import { getAllChats, getAllMessages } from "@/app/api/chat/chats.api";
+import { createChatApi, getAllChats, getAllMessages } from "@/app/api/chat/chats.api";
 import { formatChatTime } from "@/utils/dateFormation";
 import {
   setChats,
+  setLoading as setChatsLoading,
   updateLastMessageStatus,
   updateOnlineStatus,
   updateUnreadCount,
@@ -23,12 +33,15 @@ import { RootState } from "@/redux/store";
 import { Reorder } from "framer-motion";
 import { socket } from "@/socket";
 import EmptyChatState from "@/component/chats/EmptyChatState";
+import { getAllCompaniesApi, type CompanyListItem } from "@/app/api/company/companies.api";
 import {
   IChat,
   IMessage,
 } from "@/constants/Interfaces/Types/Chat.interface";
 import {
   addMessage,
+  clearMessages,
+  prependMessages,
   setMessages,
   updateAllMessagesStatusToDelivered,
   updateAllMessagesStatusToSeen,
@@ -41,6 +54,7 @@ import Message from "./Message";
 import LoadingMessage from "./LoadingMessage";
 import { isDocumentUrl } from "@/utils/isDocumentUrl";
 import { isImageUrl } from "@/utils/isImageUrl";
+import { useRouter } from "next/navigation";
 
 const getDateKey = (dateStr: string) =>
   new Date(dateStr).toISOString().split("T")[0];
@@ -54,11 +68,18 @@ const getDateLabel = (isoDate: string) =>
   });
 
 const MessagingInterface = () => {
+  const router = useRouter();
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [selectedChatP, setSelectedChatP] = useState<IChat | null>(null);
   const [messageText, setMessageText] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [page, setPage] = useState(2);
+  const [isMessagesLoading, setIsMessagesLoading] = useState(false);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [companiesModalOpen, setCompaniesModalOpen] = useState(false);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [companies, setCompanies] = useState<CompanyListItem[] | null>(null);
+  const [companiesSearch, setCompaniesSearch] = useState("");
   const { profile } = useSelector((state: RootState) => state.user);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<
@@ -156,19 +177,29 @@ const MessagingInterface = () => {
       if (container.scrollTop <= 0 && selectedChat) {
         const scrollHeightBefore = container.scrollHeight;
         isLoadingOldMessages.current = true;
+        setIsLoadingOlder(true);
+        const requestChatId = selectedChat;
+        const requestPage = page;
 
         getAllMessages({
           chatId: selectedChat,
           params: { page, limit: 20 },
         }).then((res) => {
+          // Ignore late responses for a previously selected chat/page
+          if (selectedChat !== requestChatId || page !== requestPage) {
+            isLoadingOldMessages.current = false;
+            setIsLoadingOlder(false);
+            return;
+          }
           if (!res?.data) return;
-          dispatch(setMessages(res.data.messages));
+          dispatch(prependMessages(res.data.messages));
           setPage((prev) => prev + 1);
 
           requestAnimationFrame(() => {
             const scrollDiff = container.scrollHeight - scrollHeightBefore;
             container.scrollTop = scrollDiff;
             isLoadingOldMessages.current = false;
+            setIsLoadingOlder(false);
           });
         });
       }
@@ -176,7 +207,7 @@ const MessagingInterface = () => {
 
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [selectedChat, page,dispatch]);
+  }, [selectedChat, page, dispatch]);
 
   // Re-calculate sticky date after messages repaint
   useEffect(() => {
@@ -190,7 +221,9 @@ const MessagingInterface = () => {
       dispatch(updateReaction({ messageId, reaction }));
     });
 
-    socket.on("sendMessage", ({ chatId, msg, msgId, sender, isUserOnline }) => {
+    socket.on(
+      "sendMessage",
+      ({ chatId, msg, msgId, sender, isUserOnline, replyingTo }) => {
       if (sender !== profile?._id) {
         if (selectedChat !== chatId) {
           socket.emit("updateMessageStatus", {
@@ -236,6 +269,15 @@ const MessagingInterface = () => {
             text: msg,
             status: "sent",
             reaction: null,
+            replyingTo:
+              replyingTo && typeof replyingTo === "string"
+                ? (() => {
+                    const ref = messages.find((m) => m._id === replyingTo);
+                    return ref ? { _id: ref._id, text: ref.text } : null;
+                  })()
+                : replyingTo && typeof replyingTo === "object"
+                  ? { _id: replyingTo._id, text: replyingTo.text }
+                  : null,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
@@ -244,13 +286,14 @@ const MessagingInterface = () => {
           isUserOnline,
         }),
       );
-    });
+      },
+    );
 
     return () => {
       socket.off("sendMessage");
       socket.off("updateReaction");
     };
-  }, [selectedChat, selectedChatP, profile,dispatch]);
+  }, [selectedChat, selectedChatP, profile, dispatch, messages]);
 
   // ── Seen status socket ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -263,7 +306,20 @@ const MessagingInterface = () => {
     });
   }, [profile,dispatch]);
 
-  const { chats } = useSelector((state: RootState) => state.chats);
+  const { chats, loading: chatsLoading } = useSelector(
+    (state: RootState) => state.chats,
+  );
+
+  const filteredCompanies = useMemo(() => {
+    const q = companiesSearch.trim().toLowerCase();
+    if (!companies) return [];
+    if (!q) return companies;
+    return companies.filter((c) => {
+      const name = (c.companyName ?? "").toLowerCase();
+      const email = (c.contactEmail ?? "").toLowerCase();
+      return name.includes(q) || email.includes(q);
+    });
+  }, [companies, companiesSearch]);
 
   // ── Online/offline socket ──────────────────────────────────────────────────
   useEffect(() => {
@@ -322,13 +378,58 @@ const MessagingInterface = () => {
 
   // ── Load all chats on mount ────────────────────────────────────────────────
   useEffect(() => {
+    dispatch(setChatsLoading(true));
     getAllChats()
       .then((res) => {
         if (!res?.data) return;
         dispatch(setChats(res.data.chats));
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => {
+        dispatch(setChatsLoading(false));
+      });
   }, [dispatch]);
+
+  // ── Load companies when modal opens ────────────────────────────────────────
+  useEffect(() => {
+    if (!companiesModalOpen) return;
+    if (companiesLoading) return;
+    if (companies !== null) return;
+
+    setCompaniesLoading(true);
+    getAllCompaniesApi()
+      .then((res) => {
+        if (!res?.data) return;
+        setCompanies(res.data.companies ?? []);
+      })
+      .catch(console.error)
+      .finally(() => setCompaniesLoading(false));
+  }, [companiesModalOpen, companiesLoading, companies]);
+
+  const handleStartChatWithCompany = async (company: CompanyListItem) => {
+    // create chat uses the company's USER id, not company profile id
+    const participantUserId = company.userId;
+    if (!participantUserId) return;
+
+    const res = await createChatApi(participantUserId);
+    const chat = res?.data?.chat;
+    if (!chat) return;
+
+    // Refresh sidebar list so the chat appears/sorts correctly
+    dispatch(setChatsLoading(true));
+    getAllChats()
+      .then((r) => {
+        if (!r?.data) return;
+        dispatch(setChats(r.data.chats));
+      })
+      .catch(console.error)
+      .finally(() => dispatch(setChatsLoading(false)));
+
+    setSelectedChatP(chat);
+    setSelectedChat(chat._id);
+    setShowChatList(false);
+    setCompaniesModalOpen(false);
+  };
 
   // ── Debug: log all socket events ──────────────────────────────────────────
   useEffect(() => {
@@ -344,6 +445,11 @@ const MessagingInterface = () => {
     dateRefs.current = {};
     setCurrentStickyDate(null);
     setStickyVisible(false);
+    isLoadingOldMessages.current = false;
+    dispatch(clearMessages());
+    setPage(2);
+    setIsMessagesLoading(true);
+    setIsLoadingOlder(false);
 
     socket.emit("private-chat", {
       selectedChat,
@@ -351,10 +457,16 @@ const MessagingInterface = () => {
       selectedChatP,
     });
 
-    getAllMessages({ chatId: selectedChat }).then((res) => {
-      if (!res?.data) return;
-      dispatch(setMessages(res.data.messages));
-    });
+    const requestChatId = selectedChat;
+    getAllMessages({ chatId: selectedChat })
+      .then((res) => {
+        if (selectedChat !== requestChatId) return;
+        if (!res?.data) return;
+        dispatch(setMessages(res.data.messages));
+      })
+      .finally(() => {
+        if (selectedChat === requestChatId) setIsMessagesLoading(false);
+      });
   }, [selectedChat,profile?._id,selectedChatP,dispatch]);
 
   // ── Reply scroll-to ────────────────────────────────────────────────────────
@@ -372,10 +484,20 @@ const MessagingInterface = () => {
   const handleChatSelect = (chatId: string) => {
     setSelectedChat(chatId);
     setShowChatList(false);
-    setPage(2);
   };
 
-  const handleBackToList = () => setShowChatList(true);
+  const handleBackToList = () => {
+    setShowChatList(true);
+    setSelectedChat(null);
+    setSelectedChatP(null);
+    dispatch(clearMessages());
+    setPage(2);
+    setIsMessagesLoading(false);
+    setIsLoadingOlder(false);
+    dateRefs.current = {};
+    setCurrentStickyDate(null);
+    setStickyVisible(false);
+  };
 
   const handleOverlayClick = () => {
     setReactionPickerMessageId(null);
@@ -444,6 +566,90 @@ const MessagingInterface = () => {
       className="flex h-[calc(100vh-100px)] bg-white"
       onClick={handleOverlayClick}
     >
+      <Modal
+        title="Companies"
+        open={companiesModalOpen}
+        onCancel={() => setCompaniesModalOpen(false)}
+        footer={null}
+        centered
+      >
+        <div className="mb-3">
+          <Input
+            value={companiesSearch}
+            onChange={(e) => setCompaniesSearch(e.target.value)}
+            placeholder="Search company..."
+            allowClear
+          />
+        </div>
+
+        {companiesLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton.Avatar active size={40} shape="circle" />
+                <div className="flex-1">
+                  <Skeleton
+                    active
+                    title={{ width: "55%" }}
+                    paragraph={{ rows: 1, width: "80%" }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="max-h-[60vh] overflow-y-auto pr-1">
+            <List
+              dataSource={filteredCompanies}
+              locale={{ emptyText: "No companies found." }}
+              renderItem={(company) => (
+                <List.Item
+                  className="!px-0"
+                  actions={[
+                    <Button
+                      key="view"
+                      size="small"
+                      onClick={() => router.push(`/auth/view/${company._id}`)}
+                    >
+                      View Profile
+                    </Button>,
+                    <Button
+                      key="chat"
+                      size="small"
+                      type="primary"
+                      onClick={() => handleStartChatWithCompany(company)}
+                    >
+                      Chat
+                    </Button>,
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={
+                      <Avatar
+                        size={40}
+                        src={company.logoUrl ?? undefined}
+                      >
+                        {(company.companyName || "?").charAt(0)}
+                      </Avatar>
+                    }
+                    title={
+                      <div className="font-medium text-gray-900">
+                        {company.companyName}
+                      </div>
+                    }
+                    description={
+                      <div className="text-xs text-gray-500">
+                        {company.contactEmail ?? ""}
+                      </div>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          </div>
+        )}
+      </Modal>
+
       {/* ── Left Sidebar ──────────────────────────────────────────────────── */}
       <div
         className={`${
@@ -451,6 +657,9 @@ const MessagingInterface = () => {
         } md:flex w-full md:w-[380px] lg:w-[420px] border-r border-gray-200 flex-col`}
       >
         <div className="p-3 md:p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-semibold text-gray-900">Chats</div>
+          </div>
           <div className="flex gap-2">
             <Input
               placeholder="Search name"
@@ -485,8 +694,21 @@ const MessagingInterface = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {chats == null ? (
-            <div className="p-4 text-center text-gray-500">Loading...</div>
+          {chats == null || chatsLoading ? (
+            <div className="p-3 md:p-4 space-y-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <Skeleton.Avatar active size={40} shape="circle" />
+                  <div className="flex-1 min-w-0">
+                    <Skeleton
+                      active
+                      title={{ width: "55%" }}
+                      paragraph={{ rows: 1, width: "90%" }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <Reorder.Group
               axis="y"
@@ -657,12 +879,38 @@ const MessagingInterface = () => {
                 </div>
               </div>
 
-              {messages.length === 0 && !docLoading ? (
+              {isMessagesLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`flex ${i % 3 === 0 ? "justify-end" : "justify-start"}`}
+                    >
+                      <div className="max-w-[80%] w-[min(520px,80%)]">
+                        <Skeleton
+                          active
+                          title={false}
+                          paragraph={{ rows: 2, width: ["82%", "55%"] }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : messages.length === 0 && !docLoading ? (
                 <div className="text-center text-gray-500 mt-10">
                   No messages yet. Start the conversation!
                 </div>
               ) : (
                 <div className="flex flex-col">
+                  {isLoadingOlder && (
+                    <div className="mb-4">
+                      <Skeleton
+                        active
+                        title={false}
+                        paragraph={{ rows: 1, width: "40%" }}
+                      />
+                    </div>
+                  )}
                   {messages.map((msg, index) => {
                     const currentDateKey = getDateKey(msg.createdAt);
                     const previousDateKey =
@@ -691,7 +939,7 @@ const MessagingInterface = () => {
                           selectReplyId={selectReplyId}
                           setSelectReplyId={setSelectReplyId}
                           onReply={handleReply}
-                          msg={msg}
+                          msg={msg as any}
                           profile={profile}
                           hoveredMessageId={hoveredMessageId}
                           setHoveredMessageId={setHoveredMessageId}
@@ -723,7 +971,11 @@ const MessagingInterface = () => {
             />
           </>
         ) : (
-          <EmptyChatState />
+          <EmptyChatState
+            onCompanyChats={() => {
+              setCompaniesModalOpen(true);
+            }}
+          />
         )}
       </div>
     </div>
