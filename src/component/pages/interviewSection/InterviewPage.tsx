@@ -12,16 +12,24 @@ import {
   Row,
   Col,
   Spin,
+  Modal,
+  DatePicker,
+  GetProps,
 } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import {
   getAllInterviewsApi,
   getAllTodaysInterviewsApi,
+  scheduleInterviewApi,
 } from "@/app/api/candidate/interview.api";
 import { ScheduledInterview, TodayInterviews } from "@/constants/Interfaces/Types/Jobs.interface";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import toast from "react-hot-toast";
+import { DateTime } from "luxon";
+
+type RangePickerProps = GetProps<typeof DatePicker.RangePicker>;
 
 // Interfaces
 export interface PaginationMeta {
@@ -106,7 +114,77 @@ export default function InterviewsPage() {
   const [allInterviewsMeta, setAllInterviewsMeta] =
     useState<PaginationMeta | null>(null);
 
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [newDate, setNewDate] = useState<Date | null>(null); // store ISO string
+  const [loadingButton, setLoadingButton] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<ScheduledInterview | null>(null);
+
+
   const router = useRouter();
+
+  // Handle date change
+  const handleDateChange = (dateString: Date) => {
+    setNewDate(dateString);
+  };
+
+  // Submit reschedule
+  const submitReschedule = async () => {
+    if (!selectedJob || !newDate) {
+      toast.error("Please select a valid date.");
+      return;
+    }
+    setLoadingButton(true)
+    console.log("Rescheduling job:", selectedJob._id, "to", newDate);
+    const date = new Date(newDate.toISOString()).toLocaleDateString('en-CA')
+    console.log("date", date)
+    const res = await scheduleInterviewApi({
+      jobId: selectedJob.job._id,
+      scheduledDate: date,
+    });
+    if (!res) {
+      setRescheduleModalOpen(false);
+      setLoadingButton(false);
+      return;
+    }
+    if (res.status === "Failed") {
+      console.log("Failed", res.message);
+      toast.error(res.message || "Error Interview scheduling....");
+      setRescheduleModalOpen(false);
+      setLoadingButton(false);
+      return;
+    }
+
+    toast.success(res.message || "Interview rescheduled successfully");
+    setRescheduleModalOpen(false);
+    setLoadingButton(false);
+    // fetchInterviews();
+    allInterviews.map((interview) => {
+      if (interview._id === selectedJob._id) {
+        interview.scheduledDate = date;
+      }
+      return interview;
+    });
+    setAllInterviews([...allInterviews]);
+  };
+
+  // Disable dates before today or after deadline
+  const disableDates: RangePickerProps["disabledDate"] = (current) => {
+    if (!selectedJob) return true;
+
+    const selectedDate = DateTime.fromJSDate(current.toDate());
+    const today = DateTime.now().startOf("day");
+    const deadline = DateTime.fromISO(selectedJob?.job?.deadline).endOf("day");
+
+    return selectedDate < today || selectedDate > deadline;
+  };
+
+  const handleRescheduleClick = (data: ScheduledInterview) => {
+    console.log("data", data);
+    setSelectedJob(data._raw)
+    setRescheduleModalOpen(true);
+    setNewDate(null);
+  };
+
 
   // Format date helper
   const formatDate = (dateString: string) => {
@@ -192,6 +270,8 @@ export default function InterviewsPage() {
       role: i.job?.workMode || "N/A",
       date: formatDate(i.scheduledDate),
       interviewStatus: i.status,
+      deadline: i.job.deadline,
+      _raw: i,
     }));
 
   const filteredAllInterviews = mapInterviewsToTable(
@@ -209,8 +289,8 @@ export default function InterviewsPage() {
       title: "Name",
       dataIndex: "name",
       key: "name",
-      render: (text) => (
-        <span className="font-medium text-blue-600 cursor-pointer hover:underline">
+      render: (text: string) => (
+        <span className="font-medium cursor-pointer hover:underline">
           {text}
         </span>
       ),
@@ -220,7 +300,7 @@ export default function InterviewsPage() {
       title: "Type",
       dataIndex: "type",
       key: "type",
-      render: (type) => {
+      render: (type: string) => {
         const colors: Record<string, string> = {
           Onsite: "cyan",
           Task: "purple",
@@ -235,7 +315,7 @@ export default function InterviewsPage() {
       title: "Interview Status",
       dataIndex: "interviewStatus",
       key: "interviewStatus",
-      render: (status) => {
+      render: (status: string) => {
         const color =
           status === "scheduled"
             ? "processing"
@@ -253,13 +333,14 @@ export default function InterviewsPage() {
     {
       title: "Action",
       key: "action",
-      render: () => (
+      render: (raw) => (
         <Space>
           <Tooltip title="Reschedule">
             <Button
               type="link"
               className="text-blue-500 hover:text-blue-700"
               size="small"
+              onClick={() => handleRescheduleClick(raw)}
             >
               Reschedule
             </Button>
@@ -271,32 +352,6 @@ export default function InterviewsPage() {
 
   return (
     <div className="w-full bg-gray-50 min-h-screen">
-      {/* Header */}
-      {/* <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Interviews</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
-        </div>
-        <Space>
-          <Button type="default" icon={<CalendarOutlined />}>
-            Schedule
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            className="bg-blue-500 hover:bg-blue-600"
-          >
-            Schedule Interview
-          </Button>
-        </Space>
-      </div> */}
-
       {/* Interviews Today Section */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold   text-gray-900 ">
@@ -376,13 +431,34 @@ export default function InterviewsPage() {
           pagination={{
             pageSize: 5,
             total: filteredAllInterviews.length,
-            showSizeChanger: true,
-            showQuickJumper: true,
             showTotal: (total) => `Total ${total} items`,
           }}
           scroll={{ x: 1200 }}
           rowClassName="hover:bg-gray-50"
         />
+        {/* Reschedule Modal */}
+        < Modal
+          open={rescheduleModalOpen}
+          title="Select a New Interview Date"
+          onCancel={() => setRescheduleModalOpen(false)}
+          footer={
+            [
+              <Button key="submit" type="primary" onClick={submitReschedule} disabled={!newDate}>
+                {loadingButton ? (
+                  <Spin size="small" />
+                ) : (
+                  "Submit"
+                )}
+              </Button>,
+            ]}
+        >
+          <DatePicker
+            value={newDate}
+            onChange={handleDateChange}
+            disabledDate={disableDates}
+            style={{ width: "100%" }}
+          />
+        </ Modal>
       </div>
     </div>
   );

@@ -7,8 +7,9 @@ import {
 } from "@/constants/enums";
 import { CompanyResponse } from "./Profile.interface";
 
-export interface JobResponse extends JobPosting {
+export interface JobResponse {
   _id: string;
+  title: string;
   companyId: CompanyMini;
   aiSummary: string;
   embeddingSynced: boolean;
@@ -21,10 +22,28 @@ export interface JobResponse extends JobPosting {
   deadline: string; // ISO date string
   createdAt: string;
   updatedAt: string;
+  status: "open" | "closed";
+  workMode: WorkMode;
+  experienceLevel: ExperienceLevel;
+  location: {
+    city: string;
+    country: string;
+  };
+  salaryRange: {
+    min: number;
+    max: number;
+    currency: string;
+  };
+  description: string;
+  role: string;
+  requiredSkills: string[];
+  requirements: string[];
+  interviewGuideline: string;
   __v: number;
 }
 
 export interface JobPosting {
+  _id: string;
   title: string;
   role: string;
   interviewGuideline?: string;
@@ -32,10 +51,40 @@ export interface JobPosting {
   description: string;
   requiredSkills: string[];
   requirements: string[];
-  workMode?: WorkMode;
+  workMode: WorkMode;
   location: Location;
   salaryRange: SalaryRange;
-  deadline?: string; // ISO date string
+  deadline: string; // ISO date string
+  status: "scheduled" | "completed" | "rejected" | "cancelled";
+}
+
+export interface JobUpdate {
+  title: string;
+  role: string;
+  interviewGuideline?: string;
+  experienceLevel?: ExperienceLevel;
+  description: string;
+  requiredSkills: string[];
+  requirements: string[];
+  workMode: WorkMode;
+  location: Location;
+  salaryRange: SalaryRange;
+  deadline: string; // ISO date string
+  status: "open" | "closed";
+}
+
+export interface JobPostingCompany {
+  title: string;
+  role: string;
+  interviewGuideline?: string;
+  experienceLevel?: ExperienceLevel;
+  description: string;
+  requiredSkills: string[];
+  requirements: string[];
+  workMode: WorkMode;
+  location: Location;
+  salaryRange: SalaryRange;
+  deadline: string; // ISO date string
   status: JobStatus;
 }
 
@@ -90,7 +139,7 @@ export interface ScheduledInterview {
   _id: string;
   candidateId: string;
   company: CompanyMini;
-  job: JobMini;
+  job: JobPosting;
   type: "live" | "recorded";
   scheduledDate: string; // ISO string
   status: "scheduled" | "completed" | "cancelled";
@@ -102,6 +151,7 @@ export interface ScheduledInterview {
     overallImprovementSuggestions: string[];
   }
   __v: number;
+  _raw: ScheduledInterview;
 }
 
 export interface TodayInterviews {

@@ -1,9 +1,9 @@
 // auth.api.ts
 
 import {
-  JobPosting,
   JobPostingAI,
   JobResponse,
+  JobUpdate,
 } from "@/constants/Interfaces/Types/Jobs.interface";
 import api, { safeApiCall } from "../base.api";
 import {
@@ -48,7 +48,7 @@ export const updateJobApi = async ({
   body,
 }: {
   jobId: string;
-  body: JobPosting;
+  body: JobUpdate;
 }) => {
   console.log("first");
   return safeApiCall<{ updatedJob: JobResponse }>({
@@ -74,8 +74,41 @@ export const completeCompanyProfileApi = async (
 };
 
 
-export const generateJobDataUsingAIApi = async (jobTitle: string) => {
+export const generateJobDataUsingAIApi = async ({ jobTitle, jobRole, experienceLevel, workMode, skills, type }: {
+  jobTitle: string;
+  jobRole: string;
+  experienceLevel: string;
+  workMode: string;
+  skills: string[];
+  type: "requirements" | "interviewGuideline" | "description";
+}) => {
   return safeApiCall<{ jobData: JobPostingAI }>({
-    apiCall: () => api.get(`/job/generate-job-ai/${jobTitle}`),
+    apiCall: () => api.post(`/job/generate-job-ai`, {
+      jobTitle,
+      jobRole,
+      experienceLevel,
+      workMode,
+      skills,
+      type
+    }),
+  });
+};
+
+
+export const generateJobDescriptionUsingAI = async ({ jobTitle, jobRole, experienceLevel, workMode, skills }: {
+  jobTitle: string;
+  jobRole: string;
+  experienceLevel: string;
+  workMode: string;
+  skills: string[];
+}) => {
+  return safeApiCall<{ jobData: { description: string } }>({
+    apiCall: () => api.post(`/job/generate-job-ai/`, {
+      jobTitle,
+      jobRole,
+      experienceLevel,
+      workMode,
+      skills
+    }),
   });
 };

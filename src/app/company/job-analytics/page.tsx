@@ -59,6 +59,7 @@ interface EditJobFormValues {
   salaryMax: number;
   currency: string;
   deadline: Dayjs;
+  status: "open" | "closed";
 }
 
 interface JobWithKey extends JobResponse {
@@ -79,6 +80,8 @@ const MyJobsTable: React.FC = () => {
   const [editingJob, setEditingJob] = useState<JobResponse | null>(null);
   const [form] = Form.useForm<EditJobFormValues>();
 
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingJob, setViewingJob] = useState<JobResponse | null>(null);
   // -----------------------
   // Fetch Jobs
   // -----------------------
@@ -187,7 +190,7 @@ const MyJobsTable: React.FC = () => {
         currency: values.currency,
       },
       deadline: values.deadline.toISOString(),
-      status: editingJob.status,
+      status: values.status,
     };
 
     try {
@@ -214,6 +217,11 @@ const MyJobsTable: React.FC = () => {
     (activeTab === "open" ? openJobs : closedJobs)?.filter((job) =>
       job.title.toLowerCase().includes(search.toLowerCase())
     ) || [];
+
+  const openViewModal = (job: JobResponse) => {
+    setViewingJob(job);
+    setIsViewModalOpen(true);
+  };
 
   // -----------------------
   // Table Columns
@@ -255,7 +263,11 @@ const MyJobsTable: React.FC = () => {
           trigger={["click"]}
           menu={{
             items: [
-              { key: "1", label: "View Details" },
+              {
+                key: "1",
+                label: "View Details",
+                onClick: () => openViewModal(record),
+              },
 
               {
                 key: "2",
@@ -361,6 +373,20 @@ const MyJobsTable: React.FC = () => {
               />
             </Form.Item>
           </Col>
+          <Col span={12}>
+            <Form.Item
+              name="status"
+              label="Status"
+              rules={[{ required: true }]}
+            >
+              <Select
+                options={[
+                  { label: "Open", value: "open" },
+                  { label: "Closed", value: "closed" },
+                ]}
+              />
+            </Form.Item>
+          </Col>
         </Row>
 
         <Form.Item name="requiredSkills" label="Required Skills">
@@ -445,9 +471,83 @@ const MyJobsTable: React.FC = () => {
     </Modal>
   );
 
+  const viewModal = (
+    <Modal
+      title="Job Details"
+      open={isViewModalOpen}
+      onCancel={() => setIsViewModalOpen(false)}
+      footer={null}
+      width={800}
+    >
+      {viewingJob && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">{viewingJob.title}</h2>
+
+          <p><b>Role:</b> {viewingJob.role}</p>
+
+          <p>
+            <b>Location:</b>{" "}
+            {viewingJob.location.city}, {viewingJob.location.country}
+          </p>
+
+          <p><b>Work Mode:</b> {viewingJob.workMode}</p>
+          <p><b>Experience:</b> {viewingJob.experienceLevel}</p>
+
+          <p>
+            <b>Salary:</b>{" "}
+            {viewingJob.salaryRange
+              ? `${viewingJob.salaryRange.min} - ${viewingJob.salaryRange.max} ${viewingJob.salaryRange.currency}`
+              : "—"}
+          </p>
+
+          <p>
+            <b>Deadline:</b>{" "}
+            {dayjs(viewingJob.deadline).format("DD MMM YYYY")}
+          </p>
+
+          <div>
+            <b>Description:</b>
+            <p className="text-gray-600 mt-1">{viewingJob.description}</p>
+          </div>
+
+          <div>
+            <b>Interview Guideline:</b>
+            <p className="text-gray-600 mt-1">
+              {viewingJob.interviewGuideline}
+            </p>
+          </div>
+
+          <div>
+            <b>Skills:</b>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {viewingJob.requiredSkills?.map((skill) => (
+                <span
+                  key={skill}
+                  className="px-2 py-1 bg-gray-100 rounded-md text-sm"
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <b>Requirements:</b>
+            <ul className="list-disc pl-5 text-gray-600">
+              {viewingJob.requirements?.map((req, i) => (
+                <li key={i}>{req}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+
   return (
     <>
       {editModal}
+      {viewModal}
 
       <Card className="rounded-2xl shadow-sm p-6">
         {/* Tabs */}
@@ -497,9 +597,9 @@ const MyJobsTable: React.FC = () => {
             {openMeta &&
               closedMeta &&
               (activeTab === "open" ? openMeta : closedMeta)?.page <
-                (activeTab === "open"
-                  ? openMeta?.totalPages
-                  : closedMeta?.totalPages) && (
+              (activeTab === "open"
+                ? openMeta?.totalPages
+                : closedMeta?.totalPages) && (
                 <div className="flex justify-center mt-4">
                   <Button onClick={loadMoreJobs} type="dashed">
                     Load More
