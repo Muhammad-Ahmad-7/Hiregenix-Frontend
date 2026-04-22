@@ -15,6 +15,7 @@ import {
   Modal,
   DatePicker,
   GetProps,
+  Tag,
 } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
@@ -54,6 +55,7 @@ interface InterviewCardProps {
   company: string;
   type: string;
   deadline: string;
+  status: string;
   logo?: string;
   onJoin: () => void;
 }
@@ -63,6 +65,7 @@ const InterviewCard = ({
   company,
   type,
   deadline,
+  status,
   logo,
   onJoin,
 }: InterviewCardProps) => {
@@ -91,14 +94,24 @@ const InterviewCard = ({
           <Badge color="blue" text={type} />
           <div className="mt-1">{deadline}</div>
         </div>
-        <Button
-          type="primary"
-          size="small"
-          onClick={onJoin}
-          className="bg-blue-500 hover:bg-blue-600"
-        >
-          Join
-        </Button>
+        {
+          status === "scheduled" ? (
+            <Button
+              type="primary"
+              size="small"
+              onClick={onJoin}
+              className="bg-blue-500 hover:bg-blue-600"
+            >
+              Join
+            </Button>
+          ) : (
+            <Tag
+              color="success"
+            >
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </Tag>
+          )
+        }
       </div>
     </div>
   );
@@ -238,7 +251,6 @@ export default function InterviewsPage() {
           return;
         }
         setTodaysInterviews(res.data.interviews || []);
-
         // Mock data
         // setTodaysInterviews([]);
       } catch (err) {
@@ -376,6 +388,7 @@ export default function InterviewsPage() {
                 <InterviewCard
                   title={interview.jobId?.title || "N/A"}
                   company={interview.companyId?.companyName || "N/A"}
+                  status={interview.status}
                   type={interview.type}
                   deadline={formatDate(
                     interview.jobId?.deadline || interview.scheduledDate

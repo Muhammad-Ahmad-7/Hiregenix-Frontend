@@ -16,7 +16,6 @@ import {
   Grid,
   Upload,
   message,
-  Spin,
   Empty,
   Modal,
   Form,
@@ -441,7 +440,12 @@ export default function ProfileDashboard() {
 
         {/* Bio */}
         <Text strong>Bio</Text>
-        <Paragraph>
+        <Paragraph
+          ellipsis={{
+            rows: 6,             // Show only 3 lines
+          }}
+          style={{ marginBottom: 0 }}
+        >
           {isCandidateProfile(profile)
             ? profile?.bio || "No bio available"
             : "No bio available"}
@@ -468,7 +472,7 @@ export default function ProfileDashboard() {
               : resumeData?.parsedData.portfolio;
 
             return (
-              <>
+              <div className="flex gap-4">
                 {githubUrl && (
                   <div className="flex items-center justify-between">
                     <div className="flex gap-2 items-center">
@@ -501,7 +505,7 @@ export default function ProfileDashboard() {
                     </div>
                   </div>
                 )}
-              </>
+              </div>
             );
           })()}
         </div>
@@ -511,12 +515,7 @@ export default function ProfileDashboard() {
 
   if (loading) {
     return (
-      <div
-        className="flex justify-center items-center"
-        style={{ minHeight: "100vh" }}
-      >
-        <Spin size="large" />
-      </div>
+      <ProfileSkeleton />
     );
   }
 
@@ -526,7 +525,7 @@ export default function ProfileDashboard() {
         <Col xs={24} md={24} lg={9}>
           {isLargeScreen ? (
             <Affix offsetTop={80}>{SidebarCard}</Affix>
-            // <div className="fixed">{SidebarCard}</div>
+            // <div className="fixed w-[25%]">{SidebarCard}</div>
           ) : (
             SidebarCard
           )}
@@ -928,6 +927,7 @@ export default function ProfileDashboard() {
 
 
 import ReactMarkdown from 'react-markdown';
+import ProfileSkeleton from "@/component/Skeletons/ProfileSkeleton";
 
 const AIResponseViewer = ({ aiResult }: { aiResult: string }) => {
   return (
