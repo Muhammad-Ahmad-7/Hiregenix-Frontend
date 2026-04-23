@@ -16,11 +16,13 @@ import {
   Select,
   Button,
   message,
+  Upload,
 } from "antd";
 import {
   EditOutlined,
   GlobalOutlined,
   LinkedinFilled,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/redux/store";
@@ -31,6 +33,7 @@ import {
   CompleteCompanyProfile,
   CompanyResponse,
 } from "@/constants/Interfaces/Types/Profile.interface";
+import { uploadCompanyKnowledgeBasePdfApi } from "@/app/api/company/knowledgeBase.api";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -54,6 +57,7 @@ export default function CompanyProfile() {
   const [form] = Form.useForm();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [kbUploading, setKbUploading] = useState(false);
   const { profile } = useSelector((state: RootState) => state.user);
 
   type CompanyProfile = CompanyResponse & { userType: "company" };
@@ -61,6 +65,30 @@ export default function CompanyProfile() {
     profile?.userType === "company" ? (profile as CompanyProfile) : null;
 
   if (!companyProfile) return null;
+
+  const handleKbUpload = async (file: File) => {
+    setKbUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await uploadCompanyKnowledgeBasePdfApi(fd);
+      const pdfUrl = res?.data?.pdfUrl;
+      if (pdfUrl) {
+        dispatch(
+          setProfile({
+            ...(companyProfile as any),
+            knowledgeBasePdfUrl: pdfUrl,
+          }),
+        );
+      }
+      message.success("Knowledge base uploaded. Indexing will start shortly.");
+    } catch (e) {
+      console.error(e);
+      message.error("Failed to upload knowledge base PDF.");
+    } finally {
+      setKbUploading(false);
+    }
+  };
 
   const handleEditClick = () => {
     form.setFieldsValue({
@@ -168,6 +196,34 @@ export default function CompanyProfile() {
         <div className="flex justify-between items-center">
           <Text strong>Contact Email</Text>
           <Text>{companyProfile.contactEmail || "No email available"}</Text>
+        </div>
+
+        <Divider className="!my-3" />
+
+        {/* Knowledge Base PDF */}
+        <Text strong>Knowledge Base (PDF)</Text>
+        <div className="flex items-center justify-between gap-3">
+          <Text type="secondary" className="truncate">
+            {(companyProfile as any).knowledgeBasePdfUrl
+              ? "PDF uploaded"
+              : "No PDF uploaded"}
+          </Text>
+          <Upload
+            accept="application/pdf"
+            showUploadList={false}
+            beforeUpload={(file) => {
+              handleKbUpload(file as unknown as File);
+              return false;
+            }}
+          >
+            <Button
+              icon={<UploadOutlined />}
+              loading={kbUploading}
+              disabled={kbUploading}
+            >
+              Upload PDF
+            </Button>
+          </Upload>
         </div>
 
         <Divider className="!my-3" />
