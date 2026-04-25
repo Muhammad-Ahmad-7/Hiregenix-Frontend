@@ -25,6 +25,7 @@ import type { TablePaginationConfig } from "antd";
 import toast from "react-hot-toast";
 import TextArea from "antd/es/input/TextArea";
 import { sendHiringEmailApi, sendRejectionEmailApi } from "@/app/api/company/jobs.api";
+import TableSkeleton from "@/component/Skeletons/TableSkeleton";
 
 const { Title } = Typography;
 
@@ -519,20 +520,25 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       </div>
 
       {/* Table */}
-      <Table
-        columns={columns}
-        dataSource={sortedData.map((item) => ({ ...item, key: item._id }))}
-        loading={loading}
-        pagination={
-          pagination || {
-            position: ["bottomCenter"],
-            pageSize: 10,
-          }
-        }
-        bordered
-        className="rounded-lg overflow-hidden"
-        scroll={{ x: 1200 }}
-      />
+      {
+        loading ? (
+          <TableSkeleton rows={5} />
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={sortedData.map((item) => ({ ...item, key: item._id }))}
+            pagination={
+              pagination || {
+                position: ["bottomCenter"],
+                pageSize: 10,
+              }
+            }
+            bordered
+            className="rounded-lg overflow-hidden"
+            scroll={{ x: 1200 }}
+          />
+        )
+      }
       <Modal
         title={
           <div className="flex items-center gap-2">

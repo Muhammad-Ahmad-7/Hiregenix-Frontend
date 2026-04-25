@@ -98,8 +98,8 @@ const LivenessCheck: React.FC<Props> = ({ onPassed, interviewId }) => {
         if (aiMetrics.blinkCount < 2) {
             return `Blink twice slowly (${aiMetrics.blinkCount}/2)`;
         }
-        if (!aiMetrics.headLeft) return "Turn your head left";
-        if (!aiMetrics.headRight) return "Turn your head right";
+        if (!aiMetrics.headLeft) return "Turn your head right";
+        if (!aiMetrics.headRight) return "Turn your head left";
         return "Hold still…";
     };
 
@@ -171,8 +171,8 @@ const LivenessCheck: React.FC<Props> = ({ onPassed, interviewId }) => {
                         {/* Progress pills */}
                         <div className="absolute bottom-4 right-4 flex flex-col gap-1 items-end">
                             <Pill done={aiMetrics.blinkCount >= 2} label={`Blink (${aiMetrics.blinkCount}/2)`} />
-                            <Pill done={aiMetrics.headLeft} label="Head left" />
-                            <Pill done={aiMetrics.headRight} label="Head right" />
+                            <Pill done={aiMetrics.headLeft} label="Head right" />
+                            <Pill done={aiMetrics.headRight} label="Head left" />
                         </div>
                     </>
                 )}
