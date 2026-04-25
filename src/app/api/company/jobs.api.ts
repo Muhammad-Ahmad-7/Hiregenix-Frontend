@@ -3,7 +3,6 @@
 import {
   JobPostingAI,
   JobResponse,
-  JobUpdate,
 } from "@/constants/Interfaces/Types/Jobs.interface";
 import api, { safeApiCall } from "../base.api";
 import {
@@ -48,7 +47,7 @@ export const updateJobApi = async ({
   body,
 }: {
   jobId: string;
-  body: JobUpdate;
+  body: { deadline: string };
 }) => {
   console.log("first");
   return safeApiCall<{ updatedJob: JobResponse }>({
@@ -112,3 +111,18 @@ export const generateJobDescriptionUsingAI = async ({ jobTitle, jobRole, experie
     }),
   });
 };
+
+
+export const sendHiringEmailApi = async (interviewId: string, emailQuery: string) => {
+  return safeApiCall<{ taskId: string }>({
+    apiCall: () => api.post(`/interview/send-hiring-email`, { interviewId, emailQuery }),
+    showToaster: true,
+  });
+}
+
+export const sendRejectionEmailApi = async (interviewId: string) => {
+  return safeApiCall<{ taskId: string }>({
+    apiCall: () => api.post(`/interview/send-rejection-email`, { interviewId }),
+    showToaster: true,
+  });
+}

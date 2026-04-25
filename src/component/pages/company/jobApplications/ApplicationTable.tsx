@@ -1,11 +1,10 @@
 // ==================== ApplicationTable.tsx ====================
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Tabs,
-  Input,
   Dropdown,
   Button,
   Space,
@@ -13,17 +12,19 @@ import {
   Card,
   Tag,
   Avatar,
+  Modal,
 } from "antd";
 import {
-  SearchOutlined,
-  DownOutlined,
   MoreOutlined,
   UserOutlined,
   EyeFilled,
   MailOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import type { TablePaginationConfig } from "antd";
 import toast from "react-hot-toast";
+import TextArea from "antd/es/input/TextArea";
+import { sendHiringEmailApi, sendRejectionEmailApi } from "@/app/api/company/jobs.api";
 
 const { Title } = Typography;
 
@@ -74,7 +75,6 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
   pagination,
 }) => {
   const [activeTab, setActiveTab] = useState("all");
-  const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<string>("date");
 
   // Calculate average score based on AI results
@@ -135,6 +135,10 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
         return "warning";
       case "in-progress":
         return "processing";
+      case "hired":
+        return "green";
+      case "rejected":
+        return "red";
       default:
         return "default";
     }
@@ -148,6 +152,108 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       <Tag color="cyan">Recorded</Tag>
     );
   };
+
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailQuery, setEmailQuery] = useState("");
+  const [selectedRecord, setSelectedRecord] = useState<InterviewRecord | null>(null);
+  const [loadingEmail, setLoadingEmail] = useState(false);
+
+  const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
+  const [rejectionRecord, setRejectionRecord] = useState<InterviewRecord | null>(null);
+  const [isRejecting, setIsRejecting] = useState(false);
+
+  // 1. Add local state for the data
+  const [localData, setLocalData] = useState<InterviewRecord[]>(data);
+
+  // 2. Sync if parent data changes
+  useEffect(() => {
+    setLocalData(data);
+  }, [data]);
+
+  const handleHiringEmail = (record: InterviewRecord) => {
+    setSelectedRecord(record);
+    setIsEmailModalOpen(true);
+  };
+
+  const handleEmailSubmit = async () => {
+    setLoadingEmail(true);
+    console.log("Email Query:", emailQuery);
+    console.log("Record:", selectedRecord);
+    const res = await sendHiringEmailApi(selectedRecord?._id || "", emailQuery);
+    setLoadingEmail(false);
+    if (!res || res.status === "Failed") {
+      toast.error("Failed to send hiring email. Please try again.");
+      setIsEmailModalOpen(false);
+      setEmailQuery("");
+      setSelectedRecord(null);
+      return;
+    }
+    if (res.status === "Success") {
+      toast.success("Hiring email sent successfully!");
+    }
+    setIsEmailModalOpen(false);
+    setEmailQuery("");
+    setSelectedRecord(null);
+    setLocalData((prev) =>
+      prev.map((item) =>
+        item._id === selectedRecord?._id ? { ...item, status: "hired" } : item
+      )
+    );
+  };
+
+  const handleEmailModalClose = () => {
+    setIsEmailModalOpen(false);
+    setEmailQuery("");
+    setSelectedRecord(null);
+  };
+
+
+  const handleRejectionClick = (record: InterviewRecord) => {
+    setRejectionRecord(record);
+    setIsRejectionModalOpen(true);
+  };
+
+  const handleRejectionConfirm = async () => {
+    if (!rejectionRecord) return;
+
+    try {
+      setIsRejecting(true);
+
+      // Call API to send rejection email
+      const res = await sendRejectionEmailApi(rejectionRecord._id);
+
+      if (!res || res.status === "Failed") {
+        toast.error("Failed to send rejection email. Please try again.");
+        setIsRejectionModalOpen(false);
+        setRejectionRecord(null);
+        return;
+      }
+
+      if (res.status === "Success") {
+        toast.success("Rejection email sent successfully!");
+      }
+
+
+      setIsRejectionModalOpen(false);
+      setRejectionRecord(null);
+      setLocalData((prev) =>
+        prev.map((item) =>
+          item._id === rejectionRecord._id ? { ...item, status: "rejected" } : item
+        )
+      );
+    } catch (error) {
+      console.error("Failed to send rejection email:", error);
+    } finally {
+      setIsRejecting(false);
+    }
+  };
+
+  const handleRejectionCancel = () => {
+    if (isRejecting) return; // prevent close while loading
+    setIsRejectionModalOpen(false);
+    setRejectionRecord(null);
+  };
+
 
   const columns = [
     {
@@ -272,11 +378,13 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       title: "Actions",
       key: "actions",
       align: "center" as const,
-      render: () => (
+      render: (_: unknown, record: InterviewRecord) => (
         <Dropdown
           menu={{
             items: [
-              { key: "sendHiringEmail", label: "Send Hiring Email", icon: <MailOutlined />, onClick: () => handleHiringEmail() },
+              { key: "sendHiringEmail", label: "Send Hiring Email", icon: <MailOutlined />, onClick: () => handleHiringEmail(record) },
+              { key: "sendRejectionEmail", label: "Send Rejection Email", icon: <MailOutlined />, onClick: () => handleRejectionClick(record) },
+
             ],
           }}
           trigger={["click"]}
@@ -284,27 +392,24 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
           <Button
             type="text"
             icon={<MoreOutlined />}
+            disabled={record.status?.toLowerCase() === "rejected" || record.status?.toLowerCase() === "hired"}
             className="hover:bg-gray-100 rounded-full"
           />
         </Dropdown>
+
       ),
     },
   ];
 
-  const handleHiringEmail = () => {
-    //TODO: Implement hiring email logic here
-    toast.success("Hiring email sent!");
-  };
-
   // Filter data based on active tab
   const getFilteredData = () => {
-    let filtered = data;
+    let filtered = localData;
 
     // Filter by tab
     if (activeTab === "best") {
       filtered = filtered.filter((item) => {
         const avgScore = calculateAvgScore(item);
-        return avgScore >= 60;
+        return avgScore >= 50;
       });
     } else if (activeTab === "failed") {
       filtered = filtered.filter(
@@ -320,12 +425,13 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       filtered = filtered.filter(
         (item) => item.status?.toLowerCase() === "completed"
       );
-    }
-
-    // Filter by search
-    if (search) {
-      filtered = filtered.filter((item) =>
-        item.candidateId?.fullName?.toLowerCase().includes(search.toLowerCase())
+    } else if (activeTab === "rejected") {
+      filtered = filtered.filter(
+        (item) => item.status?.toLowerCase() === "rejected"
+      );
+    } else if (activeTab === "hired") {
+      filtered = filtered.filter(
+        (item) => item.status?.toLowerCase() === "hired"
       );
     }
 
@@ -384,6 +490,8 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
           // { key: "failed", label: "Failed" },
           { key: "scheduled", label: "Scheduled" },
           { key: "completed", label: "Completed" },
+          { key: "hired", label: "Hired" },
+          { key: "rejected", label: "Rejected" },
         ]}
         className="mb-4"
       />
@@ -396,17 +504,17 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
 
         <Space>
           <Dropdown menu={filterMenu} trigger={["click"]}>
-            <Button>
+            {/* <Button>
               Sort by <DownOutlined />
-            </Button>
+            </Button> */}
           </Dropdown>
-          <Input
+          {/* <Input
             placeholder="Search by candidate name"
             prefix={<SearchOutlined />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ width: 240 }}
-          />
+          /> */}
         </Space>
       </div>
 
@@ -425,6 +533,85 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
         className="rounded-lg overflow-hidden"
         scroll={{ x: 1200 }}
       />
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <MailOutlined className="text-blue-500" />
+            <span>Send Hiring Email</span>
+          </div>
+        }
+        open={isEmailModalOpen}
+        onCancel={handleEmailModalClose}
+        footer={[
+          <Button key="cancel" onClick={handleEmailModalClose}>
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            disabled={!emailQuery.trim()}
+            onClick={handleEmailSubmit}
+          >
+            {loadingEmail ? "Submitting..." : "Submit"}
+          </Button>,
+        ]}
+        width={520}
+      >
+        <div className="py-4 flex flex-col gap-3">
+          <p className="text-gray-500 text-sm">
+            Describe the role, requirements, joining date, or any specific details you&apos;d like
+            included in the hiring email.
+          </p>
+
+          <TextArea
+            rows={5}
+            placeholder="e.g. Senior React Developer, 5+ years experience, remote position, competitive salary..."
+            value={emailQuery}
+            onChange={(e) => setEmailQuery(e.target.value)}
+            className="resize-none"
+            maxLength={500}
+            showCount
+          />
+        </div>
+      </Modal>
+
+      <Modal
+        open={isRejectionModalOpen}
+        onCancel={handleRejectionCancel}
+        closable={!isRejecting}
+        maskClosable={!isRejecting}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={handleRejectionCancel}
+            disabled={isRejecting}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="confirm"
+            danger
+            type="primary"
+            loading={isRejecting}
+            onClick={handleRejectionConfirm}
+          >
+            Yes, Send Rejection
+          </Button>,
+        ]}
+        width={440}
+      >
+        <div className="flex items-start gap-4 py-4">
+          <ExclamationCircleOutlined className="text-red-500 text-2xl mt-0.5 shrink-0" />
+          <div className="flex flex-col gap-1">
+            <p className="text-gray-800 font-semibold text-base m-0">
+              Send Rejection Email?
+            </p>
+            <p className="text-gray-500 text-sm m-0">
+              You are about to send a rejection email. This action cannot be undone.
+            </p>
+          </div>
+        </div>
+      </Modal>
     </Card>
   );
 };

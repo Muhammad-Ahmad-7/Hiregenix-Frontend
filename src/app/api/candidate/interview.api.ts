@@ -25,6 +25,8 @@ export const getAllInterviewsApi = async (params: {
   page: number;
   limit: number;
   status: string | undefined;
+  withInLastOneWeek?: boolean;
+  withInLastOneMonth?: boolean;
 }) => {
   return safeApiCall<{ interviews: ScheduledInterview[] }>({
     apiCall: () =>

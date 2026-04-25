@@ -19,7 +19,7 @@ export interface JobResponse {
   company?: CompanyResponse;
   isSaved?: boolean;
   isApplied?: boolean;
-  deadline: string; // ISO date string
+  deadline: Date; // ISO date string
   createdAt: string;
   updatedAt: string;
   status: "open" | "closed";

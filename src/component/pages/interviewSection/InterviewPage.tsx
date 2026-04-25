@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -29,6 +29,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import { DateTime } from "luxon";
+import TableSkeleton from "@/component/Skeletons/TableSkeleton";
+import CardSkeleton from "@/component/Skeletons/CardSkeleton";
 
 type RangePickerProps = GetProps<typeof DatePicker.RangePicker>;
 
@@ -57,7 +59,7 @@ interface InterviewCardProps {
   deadline: string;
   status: string;
   logo?: string;
-  onJoin: () => void;
+  onStart: () => void;
 }
 
 const InterviewCard = ({
@@ -67,8 +69,8 @@ const InterviewCard = ({
   deadline,
   status,
   logo,
-  onJoin,
-}: InterviewCardProps) => {
+  onStart,
+}: InterviewCardProps & { onStart: () => void }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3 mb-3">
@@ -81,37 +83,37 @@ const InterviewCard = ({
               height={48}
               className="object-cover w-full h-full rounded-xl"
             />
-          ) : (<div className="text-gray-400 text-sm">No Logo</div>
+          ) : (
+            <div className="text-gray-400 text-sm">No Logo</div>
           )}
         </div>
+
         <div className="flex-1">
           <h3 className="font-semibold text-gray-900">{title}</h3>
           <p className="text-sm text-gray-500">{company}</p>
         </div>
       </div>
+
       <div className="flex items-center justify-between">
         <div className="text-xs text-gray-500">
           <Badge color="blue" text={type} />
           <div className="mt-1">{deadline}</div>
         </div>
-        {
-          status === "scheduled" ? (
-            <Button
-              type="primary"
-              size="small"
-              onClick={onJoin}
-              className="bg-blue-500 hover:bg-blue-600"
-            >
-              Join
-            </Button>
-          ) : (
-            <Tag
-              color="success"
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </Tag>
-          )
-        }
+
+        {status === "scheduled" ? (
+          <Button
+            type="primary"
+            size="small"
+            onClick={onStart}
+            className="bg-blue-500 hover:bg-blue-600"
+          >
+            Start
+          </Button>
+        ) : (
+          <Tag color="success">
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </Tag>
+        )}
       </div>
     </div>
   );
@@ -124,6 +126,7 @@ export default function InterviewsPage() {
     useState<TodayInterviews[]>([]);
   const [allInterviews, setAllInterviews] = useState<ScheduledInterview[]>([]);
   const [loading, setLoading] = useState(true);
+  const [todayInterviewsLoading, setTodayInterviewsLoading] = useState(true);
   const [allInterviewsMeta, setAllInterviewsMeta] =
     useState<PaginationMeta | null>(null);
 
@@ -131,7 +134,10 @@ export default function InterviewsPage() {
   const [newDate, setNewDate] = useState<Date | null>(null); // store ISO string
   const [loadingButton, setLoadingButton] = useState(false);
   const [selectedJob, setSelectedJob] = useState<ScheduledInterview | null>(null);
+  const [dateFilter, setDateFilter] = useState<"week" | "month" | null>(null);
 
+  const [guidelineModalOpen, setGuidelineModalOpen] = useState(false);
+  const [selectedInterviewId, setSelectedInterviewId] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -214,13 +220,39 @@ export default function InterviewsPage() {
     }
   };
 
+  const fetchTodaysInterviews = useCallback(async () => {
+    try {
+      setTodayInterviewsLoading(true);
+      // Replace with your actual API call
+      const res = await getAllTodaysInterviewsApi();
+      if (!res || !res.data) {
+        setTodaysInterviews([]);
+        return;
+      }
+      setTodaysInterviews(res.data.interviews || []);
+      // Mock data
+      // setTodaysInterviews([]);
+    } catch (err) {
+      console.error("Error fetching today's interviews:", err);
+      setTodaysInterviews([]);
+    } finally {
+      setTodayInterviewsLoading(false);
+    }
+  }, []);
+
   // Fetch data
+  useEffect(() => {
+    fetchTodaysInterviews();
+  }, [fetchTodaysInterviews]);
+
+
+
   useEffect(() => {
     const fetchAllInterviews = async () => {
       try {
         setLoading(true);
         // Replace with your actual API call
-        const res = await getAllInterviewsApi({ page: 1, limit: 50, status: "scheduled" });
+        const res = await getAllInterviewsApi({ page: 1, limit: 50, status: "scheduled", withInLastOneWeek: dateFilter === "week", withInLastOneMonth: dateFilter === "month" });
         if (!res || !res.data) {
           setAllInterviews([]);
           setAllInterviewsMeta(null);
@@ -240,30 +272,8 @@ export default function InterviewsPage() {
         setLoading(false);
       }
     };
-
-    const fetchTodaysInterviews = async () => {
-      try {
-        setLoading(true);
-        // Replace with your actual API call
-        const res = await getAllTodaysInterviewsApi();
-        if (!res || !res.data) {
-          setTodaysInterviews([]);
-          return;
-        }
-        setTodaysInterviews(res.data.interviews || []);
-        // Mock data
-        // setTodaysInterviews([]);
-      } catch (err) {
-        console.error("Error fetching today's interviews:", err);
-        setTodaysInterviews([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAllInterviews();
-    fetchTodaysInterviews();
-  }, []);
+  }, [dateFilter]);
 
   // Filter only scheduled interviews
   const scheduledInterviews = allInterviews.filter(
@@ -290,10 +300,15 @@ export default function InterviewsPage() {
     scheduledInterviews
   ).filter((i) => i.name.toLowerCase().includes(searchText.toLowerCase()));
 
-  const handleJoinInterview = (interviewId: string) => () => {
-    // Implement join interview logic here
-    router.push(`/candidate/interview-section/${interviewId}`);
-  }
+  // const handleJoinInterview = (interviewId: string) => () => {
+  //   // Implement join interview logic here
+  //   router.push(`/candidate/interview-section/${interviewId}`);
+  // }
+
+  const handleStartInterview = (id: string) => {
+    setSelectedInterviewId(id);
+    setGuidelineModalOpen(true);
+  };
 
   // Columns for Table
   const columns: ColumnsType<InterviewTableRecord> = [
@@ -377,10 +392,8 @@ export default function InterviewsPage() {
           })}
         </p>
 
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <Spin size="large" />
-          </div>
+        {todayInterviewsLoading ? (
+          <CardSkeleton />
         ) : todaysInterviews.length > 0 ? (
           <Row gutter={[16, 16]}>
             {todaysInterviews.map((interview) => (
@@ -394,7 +407,7 @@ export default function InterviewsPage() {
                     interview.jobId?.deadline || interview.scheduledDate
                   )}
                   logo={interview.companyId?.logoUrl || ""}
-                  onJoin={handleJoinInterview(interview._id)}
+                  onStart={() => handleStartInterview(interview._id)}
                 />
               </Col>
             ))}
@@ -437,18 +450,47 @@ export default function InterviewsPage() {
           className="mb-6"
         />
 
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Button
+            type={dateFilter === "week" ? "primary" : "default"}
+            onClick={() => setDateFilter("week")}
+          >
+            Last 7 Days
+          </Button>
+
+          <Button
+            type={dateFilter === "month" ? "primary" : "default"}
+            onClick={() => setDateFilter("month")}
+          >
+            Last 1 Month
+          </Button>
+
+          <Button
+            onClick={() => setDateFilter(null)}
+          >
+            Reset
+          </Button>
+        </div>
+
         {/* Table */}
-        <Table
-          columns={columns}
-          dataSource={filteredAllInterviews}
-          pagination={{
-            pageSize: 5,
-            total: filteredAllInterviews.length,
-            showTotal: (total) => `Total ${total} items`,
-          }}
-          scroll={{ x: 1200 }}
-          rowClassName="hover:bg-gray-50"
-        />
+        {
+          loading ? (
+            <TableSkeleton />
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={filteredAllInterviews}
+              pagination={{
+                pageSize: 5,
+                total: filteredAllInterviews.length,
+                showTotal: (total) => `Total ${total} items`,
+              }}
+              scroll={{ x: 1200 }}
+              rowClassName="hover:bg-gray-50"
+            />
+          )
+
+        }
         {/* Reschedule Modal */}
         < Modal
           open={rescheduleModalOpen}
@@ -472,6 +514,38 @@ export default function InterviewsPage() {
             style={{ width: "100%" }}
           />
         </ Modal>
+        <Modal
+          open={guidelineModalOpen}
+          title="Before You Start the Interview"
+          onCancel={() => setGuidelineModalOpen(false)}
+          footer={[
+            <Button key="cancel" onClick={() => setGuidelineModalOpen(false)}>
+              Cancel
+            </Button>,
+            <Button
+              key="next"
+              type="primary"
+              onClick={() => {
+                if (selectedInterviewId) {
+                  router.push(
+                    `/candidate/interview-section/${selectedInterviewId}`
+                  );
+                }
+              }}
+            >
+              I Understand, Continue
+            </Button>,
+          ]}
+        >
+          <ul className="list-disc pl-5 space-y-2 text-gray-700">
+            <li>Do not switch tabs during the interview</li>
+            <li>Sit in a well-lit environment</li>
+            <li>Ensure your face is clearly visible</li>
+            <li>Check camera & microphone before starting</li>
+            <li>Maintain stable internet connection</li>
+            <li>Avoid background noise and distractions</li>
+          </ul>
+        </Modal>
       </div>
     </div>
   );
