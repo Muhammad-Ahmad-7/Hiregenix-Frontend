@@ -1,7 +1,7 @@
 'use client';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { AudioOutlined, StopOutlined } from '@ant-design/icons';
-import { Button, Typography, Progress, Modal, Result } from 'antd';
+import { Button, Typography, Progress, Modal, Result, Input } from 'antd';
 import { redirect, useParams, usePathname, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -70,6 +70,9 @@ const LiveInterviewPage = () => {
 
     const { aiMetrics } = useInterviewAI(videoRef);
     const { interviewId } = useParams();
+
+    const [showEndInterviewModal, setShowEndInterviewModal] = useState(false);
+    const [confirmEndText, setConfirmEndText] = useState("");
 
     // ── Camera (interview phase — initialised only after verification) ─────────
     useEffect(() => {
@@ -447,7 +450,7 @@ const LiveInterviewPage = () => {
                     )}
 
                     {/* Record / Stop button */}
-                    <div className="mt-8">
+                    <div className="mt-8 flex flex-row gap-2 max-lg:flex-wrap">
                         {!interviewState.isRecording ? (
                             <Button
                                 type="primary"
@@ -476,6 +479,16 @@ const LiveInterviewPage = () => {
                                 Stop & Submit Answer
                             </Button>
                         )}
+
+                        <Button
+                            danger
+                            size="large"
+                            block
+                            className="h-12 rounded-xl font-semibold mt-4"
+                            onClick={() => setShowEndInterviewModal(true)}
+                        >
+                            End Interview
+                        </Button>
                     </div>
                 </div>
 
@@ -521,6 +534,60 @@ const LiveInterviewPage = () => {
                         </div>
                     </Modal>
                 )}
+
+                <Modal
+                    open={showEndInterviewModal}
+                    title="End Interview?"
+                    onCancel={() => setShowEndInterviewModal(false)}
+                    footer={null}
+                    centered
+                >
+                    <div className="space-y-3 text-gray-700">
+
+                        <p className="text-red-600 font-semibold">
+                            ⚠️ This action is irreversible
+                        </p>
+
+                        <ul className="list-disc pl-5 space-y-2 text-sm">
+                            <li>You will NOT be able to continue this interview again</li>
+                            <li>Your current progress will be permanently lost</li>
+                            <li>Any unanswered questions will be marked as incomplete</li>
+                            <li>Final Interview AI evaluation will not be generated.</li>
+                        </ul>
+
+                        <p className="text-sm text-gray-600">
+                            Type <b>END</b> to confirm you want to stop the interview.
+                        </p>
+
+                        <Input
+                            value={confirmEndText}
+                            onChange={(e) => setConfirmEndText(e.target.value)}
+                            placeholder="Type END"
+                        />
+
+                        <div className="flex gap-2 mt-4">
+                            <Button
+                                onClick={() => setShowEndInterviewModal(false)}
+                                block
+                            >
+                                Cancel
+                            </Button>
+
+                            <Button
+                                danger
+                                block
+                                disabled={confirmEndText !== "END"}
+                                onClick={() => {
+                                    // finalize interview end logic here
+                                    setShowEndInterviewModal(false);
+                                    redirect("/candidate/interview-section");
+                                }}
+                            >
+                                Permanently End Interview
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
             </div>
         </div>
     );

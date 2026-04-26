@@ -15,7 +15,6 @@ import {
   Input,
   Select,
   Button,
-  message,
 } from "antd";
 import {
   EditOutlined,
@@ -31,6 +30,7 @@ import {
   CompleteCompanyProfile,
   CompanyResponse,
 } from "@/constants/Interfaces/Types/Profile.interface";
+import toast from "react-hot-toast";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -95,10 +95,10 @@ export default function CompanyProfile() {
         updatedProfile as CompleteCompanyProfile
       );
 
-      message.success("Company profile updated successfully!");
+      toast.success("Company profile updated successfully!");
       setIsEditModalOpen(false);
     } catch (error) {
-      message.error("Failed to update company profile");
+      toast.error("Failed to update company profile");
       console.error(error);
     } finally {
       setSaveLoading(false);

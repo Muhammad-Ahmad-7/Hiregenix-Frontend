@@ -1,6 +1,6 @@
 "use client";
 //can we change (means not tested yet)
-import { Col, Form, Row, Typography, Upload, message, Avatar } from "antd";
+import { Col, Form, Row, Typography, Upload, Avatar } from "antd";
 import React, { useState } from "react";
 import PlusIcon from "@/icons/PlusIcon";
 import {
@@ -15,6 +15,7 @@ import { uploadFileApi } from "@/app/api/auth.api";
 import { AxiosError } from "axios";
 import type { UploadProps } from "antd";
 import { Dayjs } from "dayjs";
+import toast from "react-hot-toast";
 
 const { Text } = Typography;
 
@@ -100,9 +101,9 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
       if (response?.data?.url) {
         setProfilePictureUrl(response.data.url);
         form.setFieldValue("profilePictureUrl", response.data.url);
-        message.success("Profile picture uploaded successfully!");
+        toast.success("Profile picture uploaded successfully!");
       } else {
-        message.error("Upload failed: Invalid response from server");
+        toast.error("Upload failed: Invalid response from server");
         console.error("Invalid response structure:", response);
       }
     } catch (error: unknown) {
@@ -111,7 +112,7 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
         err?.response?.data?.message ||
         err?.message ||
         "Failed to upload image. Please try again.";
-      message.error(errorMessage);
+      toast.error(errorMessage);
       console.error("Upload error:", error);
     } finally {
       setUploading(false);
@@ -125,12 +126,12 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
         file.type === "image/png" ||
         file.type === "image/svg+xml";
       if (!isImage) {
-        message.error("You can only upload JPEG, PNG, or SVG files!");
+        toast.error("You can only upload JPEG, PNG, or SVG files!");
         return false;
       }
       const isLt5M = file.size / 1024 / 1024 < 5;
       if (!isLt5M) {
-        message.error("Image must be smaller than 5MB!");
+        toast.error("Image must be smaller than 5MB!");
         return false;
       }
       handleImageUpload(file);
@@ -142,7 +143,7 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
   const onFinish = (values: Step1FormValues): void => {
     // Check if profile picture is uploaded
     if (!profilePictureUrl) {
-      message.error("Please upload a profile picture");
+      toast.error("Please upload a profile picture");
       return;
     }
 

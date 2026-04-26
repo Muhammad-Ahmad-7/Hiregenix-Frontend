@@ -44,13 +44,16 @@ import "antd/dist/reset.css";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { ReduxProviders } from "./ReduxProvider";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 const RootLayout = ({ children }: React.PropsWithChildren) => (
   <html lang="en">
     <body>
-      <ReduxProviders>
-        <Toaster position="top-center" />
-        <AntdRegistry>{children}</AntdRegistry>
-      </ReduxProviders>
+      <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
+        <ReduxProviders>
+          <Toaster position="top-center" />
+          <AntdRegistry>{children}</AntdRegistry>
+        </ReduxProviders>
+      </GoogleOAuthProvider>
     </body>
   </html>
 );

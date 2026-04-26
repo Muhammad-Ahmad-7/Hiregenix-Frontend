@@ -12,6 +12,11 @@ export interface CandidateResume {
   updatedAt: string;
 }
 
+export interface ResumeAddDataResponse {
+  CandidateResume: CandidateResume;
+  parsedData: ParsedData;
+}
+
 export interface ParsedData {
   portfolio: string | null;
   name: string;
@@ -53,7 +58,7 @@ export interface Project {
 }
 
 export interface Certification {
-  _id?: string;
+  _id: string;
   name?: string;
   issuingOrganization?: string;
   issueDate?: string;

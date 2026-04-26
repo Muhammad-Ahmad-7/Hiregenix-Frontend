@@ -55,11 +55,11 @@ const items = [
     icon: <FileTextOutlined />,
     label: <Link href="/company/job-applications">Jobs Applications</Link>,
   },
-  {
-    key: "/company/hire",
-    icon: <MailOutlined />,
-    label: <Link href="/company/hire">Hire</Link>,
-  },
+  // {
+  //   key: "/company/hire",
+  //   icon: <MailOutlined />,
+  //   label: <Link href="/company/hire">Hire</Link>,
+  // },
 ];
 
 type DashboardLayoutProps = {
@@ -210,8 +210,8 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   router.replace("/auth");
                 }}
                 className={`w-full font-bold text-left ${collapsed && !isMobile
-                    ? "flex justify-center bg-red-600 hover:bg-red-700"
-                    : "bg-red-600 hover:bg-red-700 text-white"
+                  ? "flex justify-center bg-red-600 hover:bg-red-700"
+                  : "bg-red-600 hover:bg-red-700 text-white"
                   }`}
               >
                 {(!collapsed || isMobile) && "Logout"}

@@ -7,6 +7,7 @@ import { ScheduledInterview } from "@/constants/Interfaces/Types/Jobs.interface"
 import { EyeFilled } from "@ant-design/icons";
 import { DateTime } from "luxon";
 import toast from "react-hot-toast";
+import TableSkeleton from "@/component/Skeletons/TableSkeleton";
 
 type RangePickerProps = GetProps<typeof DatePicker.RangePicker>;
 
@@ -251,7 +252,7 @@ const JobApplicationsTable = () => {
       render: (type: string) => <span className="capitalize">{type}</span>,
     },
     {
-      title: "Date",
+      title: "Scheduled Date",
       dataIndex: "date",
       key: "date",
     },
@@ -314,25 +315,30 @@ const JobApplicationsTable = () => {
           </div>
         </div>
 
-        <Table
-          columns={columns}
-          dataSource={tableData}
-          loading={loading}
-          pagination={{
-            current: currentPage,
-            total: meta?.total ?? tableData.length,
-            pageSize: PAGE_SIZE,
-            showSizeChanger: false,
-            onChange: (page) => setCurrentPage(page),
-            className: "flex justify-end",
-            itemRender: (page, type, originalElement) => {
-              if (type === "jump-prev" || type === "jump-next")
-                return <span className="px-2">...</span>;
-              return originalElement;
-            },
-          }}
-          className="border border-gray-200 rounded-lg overflow-x-auto"
-        />
+        {
+          loading ? (
+            <TableSkeleton />
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={tableData}
+              pagination={{
+                current: currentPage,
+                total: meta?.total ?? tableData.length,
+                pageSize: PAGE_SIZE,
+                showSizeChanger: false,
+                onChange: (page) => setCurrentPage(page),
+                className: "flex justify-end",
+                itemRender: (page, type, originalElement) => {
+                  if (type === "jump-prev" || type === "jump-next")
+                    return <span className="px-2">...</span>;
+                  return originalElement;
+                },
+              }}
+              className="border border-gray-200 rounded-lg overflow-x-auto"
+            />
+          )
+        }
       </div>
 
       {/* AI Report Modal */}

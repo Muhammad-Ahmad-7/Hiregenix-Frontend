@@ -21,6 +21,9 @@ import {
   Form,
   Input,
   Select,
+  DatePicker,
+  InputNumber,
+  Popconfirm,
 } from "antd";
 import {
   EditOutlined,
@@ -32,9 +35,14 @@ import {
   CheckCircleOutlined,
   TrophyOutlined,
   ProjectOutlined,
+  PlusOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  addResumeData,
+  deleteResumeData,
+  editResumeData,
   getResumeDataApi,
   updateProfileApi,
   uploadResumeApi,
@@ -44,6 +52,7 @@ import { CandidateResume } from "@/constants/Interfaces/Types/Resume.interface";
 import { RootState } from "@/redux/store";
 import { setProfile } from "@/redux/slices/userSlice";
 import type { UploadProps } from "antd";
+import dayjs from "dayjs";
 
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
@@ -75,9 +84,10 @@ interface ResumeProject {
 }
 
 interface ResumeCertification {
+  _id: string;
   name?: string;
   issuer?: string;
-  date?: string;
+  year?: string;
 }
 
 interface ResumeParsedData {
@@ -115,7 +125,6 @@ interface UserProfile {
   resumeUrl?: string;
 }
 
-// Type guard to check if profile is a candidate
 const isCandidateProfile = (
   profile: CandidateProfileResponse | unknown
 ): profile is CandidateProfileResponse => {
@@ -123,6 +132,9 @@ const isCandidateProfile = (
     profile !== null && typeof profile === "object" && "fullName" in profile
   );
 };
+
+// ─── helper to generate temp IDs for new entries ───────────────────────────
+const tempId = () => `temp_${Date.now()}_${Math.random()}`;
 
 export default function ProfileDashboard() {
   const screens = useBreakpoint();
@@ -135,14 +147,23 @@ export default function ProfileDashboard() {
   const { profile } = useSelector((state: RootState) => state.user);
   const dispatch = useDispatch();
 
+  // ─── section-edit modal state ────────────────────────────────────────────
+  type SectionType = "experience" | "education" | "project" | "certification";
+  const [sectionModal, setSectionModal] = useState<{
+    open: boolean;
+    type: SectionType | null;
+    editingItem: ResumeExperience | ResumeEducation | ResumeProject | ResumeCertification | null;
+  }>({ open: false, type: null, editingItem: null });
+  const [sectionForm] = Form.useForm();
+
   const [userProfile, setUserProfile] = useState<UserProfile>({
     fullName: "",
     profilePictureUrl:
-      "https://api.dicebear.com/8.x/avataaars/svg?seed=Muhammad",
+      "https://api.dicebear.com/8.x/avataaars/svg?seed=Ahmad",
     tagline: "Full Stack Developer | AI Enthusiast",
     city: "Lahore",
     country: "Pakistan",
-    bio: "Passionate about building innovative solutions with modern technologies. Experienced in full-stack development and machine learning.",
+    bio: "Passionate about building innovative solutions with modern technologies.",
     githubUrl: "https://github.com/tahaxd77",
     linkedinUrl: "https://www.linkedin.com/in/muhammad-taha-ayaz",
     portfolioUrl: "",
@@ -152,7 +173,6 @@ export default function ProfileDashboard() {
 
   const mapApiResumeToState = (apiResume: CandidateResume): ResumeData => {
     const parsed = apiResume.parsedData || {};
-
     return {
       parsedData: {
         portfolio: parsed.portfolio ?? null,
@@ -178,21 +198,12 @@ export default function ProfileDashboard() {
     const fetchResumeData = async (): Promise<void> => {
       try {
         setLoading(true);
-
         const response = await getResumeDataApi();
         const apiResume = response?.data?.resume;
-
-        if (!apiResume) {
-          setResumeData(null);
-          setResumeUrl(null);
-          return;
-        }
-
+        if (!apiResume) { setResumeData(null); setResumeUrl(null); return; }
         const mapped = mapApiResumeToState(apiResume);
-
         setResumeData(mapped);
         setResumeUrl(mapped.fileUrl);
-
         if (mapped.parsedData) {
           setUserProfile((prev) => ({
             ...prev,
@@ -203,13 +214,12 @@ export default function ProfileDashboard() {
           }));
         }
       } catch (error) {
-        message.error("Failed to load resume data");
+        toast.error("Failed to load resume data");
         console.error(error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchResumeData();
   }, []);
 
@@ -218,15 +228,12 @@ export default function ProfileDashboard() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-
       const response = await uploadResumeApi(formData);
       const apiResume = response?.data?.resume;
-
       if (apiResume) {
         const mapped = mapApiResumeToState(apiResume);
         setResumeData(mapped);
         setResumeUrl(mapped.fileUrl);
-
         if (mapped.parsedData) {
           setUserProfile((prev) => ({
             ...prev,
@@ -237,10 +244,9 @@ export default function ProfileDashboard() {
           }));
         }
       }
-
-      message.success("Resume uploaded successfully!");
+      toast.success("Resume uploaded successfully! We're parsing your resume and updating your profile...");
     } catch (error: unknown) {
-      message.error("Failed to upload resume");
+      toast.error("Failed to upload resume");
       console.error(error);
     } finally {
       setUploading(false);
@@ -248,31 +254,28 @@ export default function ProfileDashboard() {
   };
 
   const uploadProps: UploadProps = {
-    beforeUpload: (file: File) => {
-      const isPdf = file.type === "application/pdf";
-      if (!isPdf) {
-        message.error("You can only upload PDF files!");
-        return false;
+    customRequest: async ({ file, onSuccess, onError }) => {
+      try {
+        setUploading(true);
+
+        await handleResumeUpload(file as File);
+
+        onSuccess?.("ok");
+      } catch (err) {
+        onError?.(err as Error);
+      } finally {
+        setUploading(false);
       }
-      const isLt5M = file.size / 1024 / 1024 < 5;
-      if (!isLt5M) {
-        message.error("File must be smaller than 5MB!");
-        return false;
-      }
-      handleResumeUpload(file);
-      return false;
     },
     showUploadList: false,
   };
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      year: "numeric",
-    });
+    return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
   };
 
+  // ─── Profile edit ─────────────────────────────────────────────────────────
   const handleEditClick = (): void => {
     if (isCandidateProfile(profile)) {
       form.setFieldsValue({
@@ -284,52 +287,341 @@ export default function ProfileDashboard() {
         country: profile?.country || "",
         bio: profile?.bio || "",
         githubUrl: profile?.githubUrl || resumeData?.parsedData.github || "",
-        linkedinUrl:
-          profile?.linkedinUrl || resumeData?.parsedData.linkedin || "",
-        portfolioUrl:
-          profile?.portfolioUrl || resumeData?.parsedData.portfolio || "",
+        linkedinUrl: profile?.linkedinUrl || resumeData?.parsedData.linkedin || "",
+        portfolioUrl: profile?.portfolioUrl || resumeData?.parsedData.portfolio || "",
         skills: profile?.skills || resumeData?.parsedData.skills || [],
       } as Partial<CandidateProfileResponse>);
     }
     setIsEditModalOpen(true);
   };
 
-  const handleEditSave = async (
-    values: CandidateProfileResponse
-  ): Promise<void> => {
+  const handleEditSave = async (values: CandidateProfileResponse): Promise<void> => {
     try {
-      // Update Redux state locally
-      const valuesWithUserType: CandidateProfileResponse & {
-        userType: "candidate";
-      } = { ...values, userType: "candidate" };
+      const valuesWithUserType: CandidateProfileResponse & { userType: "candidate" } = { ...values, userType: "candidate" };
       dispatch(setProfile(valuesWithUserType));
-
-      // Update backend
       await updateProfileApi(values);
-
-      // Update local UI state
-      setUserProfile((prev) => ({
-        ...prev,
-        ...values,
-      }));
-
-      message.success("Profile updated successfully!");
+      setUserProfile((prev) => ({ ...prev, ...values }));
+      toast.success("Profile updated successfully!");
       setIsEditModalOpen(false);
     } catch (error) {
-      message.error("Failed to update profile");
+      toast.error("Failed to update profile");
       console.error(error);
     }
   };
 
-  // Build skill options from existing skills
+  // ─── Section CRUD helpers ─────────────────────────────────────────────────
+  const openAddSection = (type: SectionType) => {
+    sectionForm.resetFields();
+    setSectionModal({ open: true, type, editingItem: null });
+  };
+
+  const openEditSection = (type: SectionType, item: ResumeExperience | ResumeEducation | ResumeProject | ResumeCertification) => {
+    // Pre-populate form
+    if (type === "experience") {
+      const exp = item as ResumeExperience;
+      sectionForm.setFieldsValue({
+        ...exp,
+        startDate: exp.startDate ? dayjs(exp.startDate) : null,
+        endDate: exp.endDate ? dayjs(exp.endDate) : null,
+      });
+    } else if (type === "project") {
+      const proj = item as ResumeProject;
+      sectionForm.setFieldsValue({
+        ...proj,
+        technologies: proj.technologies || [],
+      });
+    } else {
+      sectionForm.setFieldsValue(item);
+    }
+    setSectionModal({ open: true, type, editingItem: item });
+  };
+
+  const closeSectionModal = () => {
+    setSectionModal({ open: false, type: null, editingItem: null });
+    sectionForm.resetFields();
+  };
+
+  const [isEditModalLoading, setIsEditModalLoading] = useState(false);
+
+  const handleSectionSave = async () => {
+    setIsEditModalLoading(true);
+    try {
+      const values = await sectionForm.validateFields();
+      if (!resumeData) { message.error("Resume data not loaded"); return; }
+      const updated = { ...resumeData };
+
+      if (sectionModal.type === "experience") {
+        console.log("in experience editing")
+        const formatted: ResumeExperience = {
+          _id: (sectionModal.editingItem as ResumeExperience)?._id || tempId(),
+          company: values.company,
+          position: values.position,
+          startDate: values.startDate ? values.startDate.toISOString() : "",
+          endDate: values.endDate ? values.endDate.toISOString() : "",
+          description: values.description,
+        };
+        if (sectionModal.editingItem) {
+          const res = await editResumeData({ type: "experience", _id: formatted._id, data: { company: formatted.company, position: formatted.position, startDate: formatted.startDate, endDate: formatted.endDate, description: formatted.description } });
+          if (!res || res.status === "Failed") {
+            toast.error("Failed to update experience");
+            return;
+          }
+          updated.parsedData.experience = res.data?.resume.parsedData.experience || updated.parsedData.experience;
+        } else {
+          const { company, position, startDate, endDate, description } = formatted
+          updated.parsedData.experience = [...updated.parsedData.experience, formatted];
+          const res = await addResumeData({ type: "experience", data: { company, position, startDate, endDate, description } });
+          if (!res || res.status === "Failed") {
+            toast.error("Failed to add experience");
+            return;
+          }
+          updated.parsedData.experience = res.data?.resume.parsedData.experience || [...updated.parsedData.experience, formatted];
+        }
+      }
+
+      if (sectionModal.type === "education") {
+        const formatted: ResumeEducation = {
+          _id: (sectionModal.editingItem as ResumeEducation)?._id || tempId(),
+          institution: values.institution,
+          degree: values.degree,
+          startYear: values.startYear,
+          endYear: values.endYear,
+        };
+        console.log("formatted", formatted)
+        if (sectionModal.editingItem) {
+          const res = await editResumeData({ type: "education", _id: formatted._id, data: { institution: formatted.institution, degree: formatted.degree, startYear: formatted.startYear, endYear: formatted.endYear } });
+          if (!res || res.status === "Failed") {
+            toast.error("Failed to update education");
+            return;
+          }
+          updated.parsedData.education = res.data?.resume.parsedData.education || updated.parsedData.education;
+        } else {
+          const { institution, degree, startYear, endYear } = formatted
+          const res = await addResumeData({ type: "education", data: { institution, degree, startYear, endYear } });
+          if (!res || res.status === "Failed") {
+            toast.error("Failed to add education");
+            return;
+          }
+          updated.parsedData.education = res.data?.resume.parsedData.education || [...updated.parsedData.education, formatted];
+        }
+      }
+
+      if (sectionModal.type === "project") {
+        const formatted: ResumeProject = {
+          _id: (sectionModal.editingItem as ResumeProject)?._id || tempId(),
+          name: values.name,
+          description: values.description,
+          technologies: values.technologies || [],
+          link: values.link || "",
+        };
+        if (sectionModal.editingItem) {
+          const res = await editResumeData({ type: "project", _id: formatted._id, data: { name: formatted.name, description: formatted.description, technologies: formatted.technologies, link: formatted.link } });
+          if (!res || res.status === "Failed") {
+            toast.error("Failed to update project");
+            return;
+          }
+          updated.parsedData.projects = res.data?.resume.parsedData.projects || updated.parsedData.projects;
+        } else {
+          const { name, description, technologies, link } = formatted
+          const res = await addResumeData({ type: "project", data: { name, description, technologies, link } });
+          if (!res || res.status === "Failed") {
+            toast.error("Failed to add project");
+            return;
+          }
+          updated.parsedData.projects = res.data?.resume.parsedData.projects || [...updated.parsedData.projects, formatted];
+        }
+      }
+
+      if (sectionModal.type === "certification") {
+        const formatted: ResumeCertification = {
+          _id: (sectionModal.editingItem as ResumeCertification)?._id || tempId(),
+          name: values.name,
+          issuer: values.issuer,
+          year: values.year,
+        };
+        console.log("data", formatted);
+        if (sectionModal.editingItem) {
+          const res = await editResumeData({ type: "certification", _id: formatted._id, data: { name: formatted.name, issuer: formatted.issuer, year: Number(formatted.year) } });
+          if (!res || res.status === "Failed") {
+            toast.error("Failed to update certification");
+            return;
+          }
+          updated.parsedData.certifications = res.data?.resume.parsedData.certifications || updated.parsedData.certifications;
+        } else {
+          const { name, issuer, year } = formatted
+          const res = await addResumeData({ type: "certification", data: { name, issuer, year: Number(year) } });
+          if (!res || res.status === "Failed") {
+            toast.error("Failed to add certification");
+            return;
+          }
+          updated.parsedData.certifications = res.data?.resume.parsedData.certifications || [...(updated.parsedData.certifications || []), formatted];
+        }
+      }
+
+      setResumeData(updated);
+      toast.success(`${sectionModal.editingItem ? "Updated" : "Added"} successfully!`);
+      setIsEditModalLoading(false);
+      closeSectionModal();
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong");
+    } finally {
+      setIsEditModalLoading(false);
+    }
+  };
+
+  const handleDeleteItem = async (type: SectionType, id: string) => {
+    if (!resumeData) return;
+    const updated = { ...resumeData };
+    if (type === "experience") {
+      console.log("data", id);
+      const res = await deleteResumeData({ type, _id: id });
+      if (!res || res.status === "Failed") {
+        toast.error("Failed to delete experience");
+        return;
+      }
+      updated.parsedData.experience = updated.parsedData.experience.filter((e) => e._id !== id);
+    }
+    if (type === "education") {
+      const res = await deleteResumeData({ type, _id: id });
+      if (!res || res.status === "Failed") {
+        toast.error("Failed to delete education");
+        return;
+      }
+      updated.parsedData.education = updated.parsedData.education.filter((e) => e._id !== id);
+    }
+    if (type === "project") {
+      const res = await deleteResumeData({ type, _id: id });
+      if (!res || res.status === "Failed") {
+        toast.error("Failed to delete project");
+        return;
+      }
+      updated.parsedData.projects = updated.parsedData.projects.filter((p) => p._id !== id);
+    }
+    if (type === "certification") {
+      const res = await deleteResumeData({ type, _id: id });
+      if (!res || res.status === "Failed") {
+        toast.error("Failed to delete certification");
+        return;
+      }
+      updated.parsedData.certifications = updated.parsedData.certifications?.filter((c) => c._id !== id);
+    }
+    setResumeData(updated);
+    toast.success("Deleted successfully!");
+  };
+
+  // ─── Section modal form ───────────────────────────────────────────────────
+  const renderSectionForm = () => {
+    switch (sectionModal.type) {
+      case "experience":
+        return (
+          <>
+            <Form.Item label="Position" name="position" rules={[{ required: true }]}>
+              <Input placeholder="e.g. Frontend Developer" />
+            </Form.Item>
+            <Form.Item label="Company" name="company" rules={[{ required: true }]}>
+              <Input placeholder="e.g. Acme Corp" />
+            </Form.Item>
+            <Row gutter={12}>
+              <Col span={12}>
+                <Form.Item label="Start Date" name="startDate" rules={[{ required: true }]}>
+                  <DatePicker picker="month" style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item label="End Date" name="endDate">
+                  <DatePicker picker="month" style={{ width: "100%" }} placeholder="Present (leave blank)" />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item label="Description" name="description" rules={[{ required: true }]}>
+              <TextArea rows={4} placeholder="Describe your responsibilities..." />
+            </Form.Item>
+          </>
+        );
+      case "education":
+        return (
+          <>
+            <Form.Item label="Degree / Qualification" name="degree" rules={[{ required: true }]}>
+              <Input placeholder="e.g. B.Sc Computer Science" />
+            </Form.Item>
+            <Form.Item label="Institution" name="institution" rules={[{ required: true }]}>
+              <Input placeholder="e.g. LUMS" />
+            </Form.Item>
+            <Row gutter={12}>
+              <Col span={12}>
+                <Form.Item label="Start Year" name="startYear" rules={[{ required: true }]}>
+                  <InputNumber style={{ width: "100%" }} min={1950} max={2100} placeholder="2020" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item label="End Year" name="endYear" rules={[{ required: true }]}>
+                  <InputNumber style={{ width: "100%" }} min={1950} max={2100} placeholder="2024" />
+                </Form.Item>
+              </Col>
+            </Row>
+          </>
+        );
+      case "project":
+        return (
+          <>
+            <Form.Item label="Project Name" name="name" rules={[{ required: true }]}>
+              <Input placeholder="e.g. Portfolio Website" />
+            </Form.Item>
+            <Form.Item label="Description" name="description" rules={[{ required: true }]}>
+              <TextArea rows={3} placeholder="Describe the project..." />
+            </Form.Item>
+            <Form.Item label="Technologies" name="technologies">
+              <Select mode="tags" placeholder="e.g. React, Node.js, MongoDB" />
+            </Form.Item>
+            <Form.Item label="Project Link" name="link" rules={[{ type: "url", message: "Enter a valid URL" }]}>
+              <Input placeholder="https://github.com/you/project" />
+            </Form.Item>
+          </>
+        );
+      case "certification":
+        return (
+          <>
+            <Form.Item label="Certification Name" name="name" rules={[{ required: true }]}>
+              <Input placeholder="e.g. AWS Solutions Architect" />
+            </Form.Item>
+            <Form.Item label="Issuer" name="issuer">
+              <Input placeholder="e.g. Amazon Web Services" />
+            </Form.Item>
+            <Form.Item label="Year" name="year">
+              <Input placeholder="e.g. 2024" type="number" />
+            </Form.Item>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const sectionModalTitle = {
+    experience: sectionModal.editingItem ? "Edit Experience" : "Add Experience",
+    education: sectionModal.editingItem ? "Edit Education" : "Add Education",
+    project: sectionModal.editingItem ? "Edit Project" : "Add Project",
+    certification: sectionModal.editingItem ? "Edit Certification" : "Add Certification",
+  };
+
+  // ─── Card extra (+ add button) ────────────────────────────────────────────
+  const sectionExtra = (type: SectionType) => (
+    <Button
+      type="text"
+      icon={<PlusOutlined />}
+      onClick={() => openAddSection(type)}
+      size="small"
+    >
+      Add
+    </Button>
+  );
+
   const skillOptions =
     (isCandidateProfile(profile)
       ? profile?.skills || resumeData?.parsedData.skills || []
       : resumeData?.parsedData.skills || []
-    ).map((s: string) => ({
-      label: s,
-      value: s,
-    })) || [];
+    ).map((s: string) => ({ label: s, value: s })) || [];
 
   const SidebarCard = (
     <Card className="rounded-xl">
@@ -344,167 +636,69 @@ export default function ProfileDashboard() {
                   : "https://api.dicebear.com/8.x/avataaars/svg?seed=user"
               }
             />
-
             <div>
               <Title level={4} style={{ marginBottom: 0 }}>
                 {isCandidateProfile(profile)
-                  ? profile?.fullName ||
-                  resumeData?.parsedData.name ||
-                  "No Name"
+                  ? profile?.fullName || resumeData?.parsedData.name || "No Name"
                   : resumeData?.parsedData.name || "No Name"}
               </Title>
               <Text type="secondary">
-                {isCandidateProfile(profile)
-                  ? profile?.tagline || "No tagline available"
-                  : "No tagline available"}
+                {isCandidateProfile(profile) ? profile?.tagline || "No tagline available" : "No tagline available"}
               </Text>
             </div>
           </div>
-
-          <EditOutlined
-            className="cursor-pointer text-lg hover:text-blue-500 transition-colors"
-            onClick={handleEditClick}
-          />
+          <EditOutlined className="cursor-pointer text-lg hover:text-blue-500 transition-colors" onClick={handleEditClick} />
         </div>
 
         <Divider className="!my-3" />
 
-        {/* Email */}
         <div className="flex justify-between items-center">
           <Text strong>Email</Text>
-          <Text>
-            {isCandidateProfile(profile)
-              ? profile?.userId?.email ||
-              resumeData?.parsedData.email ||
-              "Not specified"
-              : resumeData?.parsedData.email || "Not specified"}
-          </Text>
+          <Text>{isCandidateProfile(profile) ? profile?.userId?.email || resumeData?.parsedData.email || "Not specified" : resumeData?.parsedData.email || "Not specified"}</Text>
         </div>
-
-        {/* Phone */}
         <div className="flex justify-between items-center">
           <Text strong>Phone</Text>
-          <Text>
-            {isCandidateProfile(profile)
-              ? profile?.contactNumber ||
-              resumeData?.parsedData.phone ||
-              "Not specified"
-              : resumeData?.parsedData.phone || "Not specified"}
-          </Text>
+          <Text>{isCandidateProfile(profile) ? profile?.contactNumber || resumeData?.parsedData.phone || "Not specified" : resumeData?.parsedData.phone || "Not specified"}</Text>
         </div>
-
-        {/* Location */}
         <div className="flex justify-between items-center">
           <Text strong>Location</Text>
-          <Text>
-            {isCandidateProfile(profile) && profile?.city && profile?.country
-              ? `${profile.city}, ${profile.country}`
-              : "Not specified"}
-          </Text>
+          <Text>{isCandidateProfile(profile) && profile?.city && profile?.country ? `${profile.city}, ${profile.country}` : "Not specified"}</Text>
         </div>
 
-        {/* Skills */}
         <div className="flex justify-between items-start">
-          <Text strong className="!w-[35%]">
-            Skills
-          </Text>
-
+          <Text strong className="!w-[35%]">Skills</Text>
           <Space wrap className="!flex justify-end">
-            {(isCandidateProfile(profile)
-              ? profile?.skills || resumeData?.parsedData.skills || []
-              : resumeData?.parsedData.skills || []
-            )
+            {(isCandidateProfile(profile) ? profile?.skills || resumeData?.parsedData.skills || [] : resumeData?.parsedData.skills || [])
               .slice(0, 8)
               .map((skill: string, index: number) => (
-                <Tag key={index} className="rounded-full" color="blue">
-                  {skill}
-                </Tag>
+                <Tag key={index} className="rounded-full" color="blue">{skill}</Tag>
               ))}
-            {(isCandidateProfile(profile)
-              ? profile?.skills?.length ||
-              resumeData?.parsedData.skills?.length ||
-              0
-              : resumeData?.parsedData.skills?.length || 0) > 8 && (
-                <Tag className="rounded-full">
-                  +
-                  {Math.max(
-                    resumeData?.parsedData.skills?.length || 0,
-                    isCandidateProfile(profile) ? profile?.skills?.length || 0 : 0
-                  ) - 8}
-                </Tag>
-              )}
+            {(isCandidateProfile(profile) ? profile?.skills?.length || resumeData?.parsedData.skills?.length || 0 : resumeData?.parsedData.skills?.length || 0) > 8 && (
+              <Tag className="rounded-full">+{Math.max(resumeData?.parsedData.skills?.length || 0, isCandidateProfile(profile) ? profile?.skills?.length || 0 : 0) - 8}</Tag>
+            )}
           </Space>
         </div>
 
         <Divider className="!my-3" />
 
-        {/* Bio */}
         <Text strong>Bio</Text>
-        <Paragraph
-          ellipsis={{
-            rows: 6,             // Show only 3 lines
-          }}
-          style={{ marginBottom: 0 }}
-        >
-          {isCandidateProfile(profile)
-            ? profile?.bio || "No bio available"
-            : "No bio available"}
+        <Paragraph ellipsis={{ rows: 6 }} style={{ marginBottom: 0 }}>
+          {isCandidateProfile(profile) ? profile?.bio || "No bio available" : "No bio available"}
         </Paragraph>
 
         <Divider className="!my-3" />
 
-        {/* Links */}
         <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center">
-            <Text strong>Links</Text>
-            <></>
-          </div>
-
+          <Text strong>Links</Text>
           {(() => {
-            const githubUrl = isCandidateProfile(profile)
-              ? profile?.githubUrl || resumeData?.parsedData.github
-              : resumeData?.parsedData.github;
-            const linkedinUrl = isCandidateProfile(profile)
-              ? profile?.linkedinUrl || resumeData?.parsedData.linkedin
-              : resumeData?.parsedData.linkedin;
-            const portfolioUrl = isCandidateProfile(profile)
-              ? profile?.portfolioUrl || resumeData?.parsedData.portfolio
-              : resumeData?.parsedData.portfolio;
-
+            const githubUrl = isCandidateProfile(profile) ? profile?.githubUrl || resumeData?.parsedData.github : resumeData?.parsedData.github;
+            const linkedinUrl = isCandidateProfile(profile) ? profile?.linkedinUrl || resumeData?.parsedData.linkedin : resumeData?.parsedData.linkedin;
+            const portfolioUrl = isCandidateProfile(profile) ? profile?.portfolioUrl || resumeData?.parsedData.portfolio : resumeData?.parsedData.portfolio;
             return (
               <div className="flex gap-4">
-                {githubUrl && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-2 items-center">
-                      <GithubFilled className="text-3xl" />
-                      <a href={githubUrl} target="_blank" rel="noreferrer">
-                        <Text strong>GitHub</Text>
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {linkedinUrl && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-2 items-center">
-                      <LinkedinFilled className="text-3xl text-[#0A66C2]" />
-                      <a href={linkedinUrl} target="_blank" rel="noreferrer">
-                        <Text strong>LinkedIn</Text>
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {portfolioUrl && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-2 items-center">
-                      <GlobalOutlined className="text-3xl" />
-                      <a href={portfolioUrl} target="_blank" rel="noreferrer">
-                        <Text strong>Portfolio</Text>
-                      </a>
-                    </div>
-                  </div>
-                )}
+                {githubUrl && (<div className="flex gap-2 items-center"><GithubFilled className="text-3xl" /><a href={githubUrl} target="_blank" rel="noreferrer"><Text strong>GitHub</Text></a></div>)}
+                {linkedinUrl && (<div className="flex gap-2 items-center"><LinkedinFilled className="text-3xl text-[#0A66C2]" /><a href={linkedinUrl} target="_blank" rel="noreferrer"><Text strong>LinkedIn</Text></a></div>)}
+                {portfolioUrl && (<div className="flex gap-2 items-center"><GlobalOutlined className="text-3xl" /><a href={portfolioUrl} target="_blank" rel="noreferrer"><Text strong>Portfolio</Text></a></div>)}
               </div>
             );
           })()}
@@ -514,106 +708,57 @@ export default function ProfileDashboard() {
   );
 
   if (loading) {
-    return (
-      <ProfileSkeleton />
-    );
+    return <ProfileSkeleton />;
   }
 
   return (
     <div style={{ minHeight: "100vh" }}>
       <Row gutter={[24, 24]}>
         <Col xs={24} md={24} lg={9}>
-          {isLargeScreen ? (
-            <Affix offsetTop={80}>{SidebarCard}</Affix>
-            // <div className="fixed w-[25%]">{SidebarCard}</div>
-          ) : (
-            SidebarCard
-          )}
+          {isLargeScreen ? <Affix offsetTop={80}>{SidebarCard}</Affix> : SidebarCard}
         </Col>
 
         <Col xs={24} md={24} lg={15}>
           <Space direction="vertical" style={{ width: "100%" }} size="large">
-            {/* AI Score Card */}
+
+            {/* AI Score */}
             {resumeData && (
-              <Card
-                className="rounded-xl"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                }}
-              >
-                <div className="text-white">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <Title level={5} style={{ color: "white", margin: 0 }}>
-                        AI Resume Score
-                      </Title>
-                      <Text style={{ color: "rgba(255,255,255,0.9)" }}>
-                        Your resume has been analyzed by AI
-                      </Text>
-                    </div>
-                    <div className="text-right">
-                      <Title level={2} style={{ color: "white", margin: 0 }}>
-                        {resumeData.aiScore}/100
-                      </Title>
-                      <Text style={{ color: "rgba(255,255,255,0.9)" }}>
-                        Score
-                      </Text>
-                    </div>
+              <Card className="rounded-xl" style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+                <div className="text-white flex justify-between items-center">
+                  <div>
+                    <Title level={5} style={{ color: "white", margin: 0 }}>AI Resume Score</Title>
+                    <Text style={{ color: "rgba(255,255,255,0.9)" }}>Your resume has been analyzed by AI</Text>
+                  </div>
+                  <div className="text-right">
+                    <Title level={2} style={{ color: "white", margin: 0 }}>{resumeData.aiScore}/100</Title>
+                    <Text style={{ color: "rgba(255,255,255,0.9)" }}>Score</Text>
                   </div>
                 </div>
               </Card>
             )}
 
-            {/* Resume Upload Card */}
+            {/* Resume Upload */}
             <Card className="rounded-xl">
               <div className="flex justify-between items-center">
                 <div>
                   {resumeUrl ? (
                     <>
-                      <Title level={5} style={{ margin: 0 }}>
-                        <CheckCircleOutlined
-                          style={{ color: "#52c41a", marginRight: 8 }}
-                        />
-                        Resume Uploaded Successfully
-                      </Title>
-                      <Text type="secondary">
-                        Your resume has been received and analyzed.
-                      </Text>
+                      <Title level={5} style={{ margin: 0 }}><CheckCircleOutlined style={{ color: "#52c41a", marginRight: 8 }} />Resume Uploaded Successfully</Title>
+                      <Text type="secondary">Your resume has been received and analyzed.</Text>
                       <div className="!mt-4 gap-2 flex items-center">
                         <PaperClipOutlined />
-                        <a
-                          href={resumeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="!text-[#52C41A] hover:!text-[#73D13D]"
-                        >
-                          {(isCandidateProfile(profile)
-                            ? profile?.fullName ||
-                            userProfile.fullName ||
-                            "Resume"
-                            : userProfile.fullName || "Resume"
-                          ).replace(/\s+/g, "")}
-                          Resume.pdf
+                        <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="!text-[#52C41A] hover:!text-[#73D13D]">
+                          {(isCandidateProfile(profile) ? profile?.fullName || userProfile.fullName || "Resume" : userProfile.fullName || "Resume").replace(/\s+/g, "")}Resume.pdf
                         </a>
                       </div>
                     </>
                   ) : (
                     <>
-                      <Title level={5} style={{ margin: 0 }}>
-                        Upload Your Resume
-                      </Title>
-                      <Text type="secondary">
-                        Upload your resume in PDF format to complete your
-                        profile.
-                      </Text>
+                      <Title level={5} style={{ margin: 0 }}>Upload Your Resume</Title>
+                      <Text type="secondary">Upload your resume in PDF format to complete your profile.</Text>
                       <div className="!mt-4">
-                        <Upload {...uploadProps}>
-                          <Button
-                            icon={<UploadOutlined />}
-                            loading={uploading}
-                            type="primary"
-                          >
+                        <Upload {...uploadProps} accept=".pdf">
+                          <Button icon={<UploadOutlined />} loading={uploading} type="primary">
                             {uploading ? "Uploading..." : "Upload Resume"}
                           </Button>
                         </Upload>
@@ -621,324 +766,253 @@ export default function ProfileDashboard() {
                     </>
                   )}
                 </div>
-                {resumeUrl && (
-                  <Upload {...uploadProps}>
-                    <EditOutlined className="cursor-pointer text-lg" />
-                  </Upload>
-                )}
+                {
+                  resumeUrl &&
+                  (
+                    <Upload {...uploadProps}>
+                      <Button
+                        type="text"
+                        loading={uploading}
+                        icon={<EditOutlined />}
+                        disabled={uploading}
+                      />
+                    </Upload>
+                  )
+                }
               </div>
             </Card>
 
             {/* AI Suggestions */}
-            {resumeData?.aiSuggestions &&
-              resumeData.aiSuggestions.length > 0 && (
-                <Card
-                  title={<Title level={5}>AI Suggestions</Title>}
-                  className="rounded-xl"
-                >
-                  <Space direction="vertical" style={{ width: "100%" }}>
-                    {resumeData.aiSuggestions.map((suggestion, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Text type="secondary">{index + 1}.</Text>
-                        {/* <Text>{suggestion}</Text> */}
-                        <AIResponseViewer aiResult={suggestion} />
-                      </div>
-                    ))}
-                  </Space>
-                </Card>
-              )}
+            {resumeData?.aiSuggestions && resumeData.aiSuggestions.length > 0 && (
+              <Card title={<Title level={5}>AI Suggestions</Title>} className="rounded-xl">
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  {resumeData.aiSuggestions.map((suggestion, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Text type="secondary">{index + 1}.</Text>
+                      <AIResponseViewer aiResult={suggestion} />
+                    </div>
+                  ))}
+                </Space>
+              </Card>
+            )}
 
-            {/* Experience Section */}
+            {/* ── Experience ──────────────────────────────────────────────── */}
             <Card
               title={<Title level={5}>Experience</Title>}
               className="rounded-xl"
+              extra={sectionExtra("experience")}
             >
-              {resumeData?.parsedData.experience &&
-                resumeData.parsedData.experience.length > 0 ? (
+              {resumeData?.parsedData.experience && resumeData.parsedData.experience.length > 0 ? (
                 <Timeline>
                   {resumeData.parsedData.experience.map((exp) => (
                     <Timeline.Item key={exp._id}>
                       <div className="mb-4">
-                        <Text strong className="text-lg">
-                          {exp.position}
-                        </Text>
-                        <div>
-                          <Text type="secondary">
-                            {exp.company} • {formatDate(exp.startDate)}
-                          </Text>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <Text strong className="text-lg">{exp.position}</Text>
+                            <div>
+                              <Text type="secondary">{exp.company} • {formatDate(exp.startDate)}{exp.endDate ? ` – ${formatDate(exp.endDate)}` : " – Present"}</Text>
+                            </div>
+                            <Paragraph className="mt-2" style={{ whiteSpace: "pre-line" }}>{exp.description}</Paragraph>
+                          </div>
+                          <Space>
+                            <Button type="text" icon={<EditOutlined />} size="small" onClick={() => openEditSection("experience", exp)} />
+                            <Popconfirm title="Delete this experience?" onConfirm={() => handleDeleteItem("experience", exp._id)} okText="Yes" cancelText="No">
+                              <Button type="text" icon={<DeleteOutlined />} size="small" danger />
+                            </Popconfirm>
+                          </Space>
                         </div>
-                        <Paragraph
-                          className="mt-2"
-                          style={{ whiteSpace: "pre-line" }}
-                        >
-                          {exp.description}
-                        </Paragraph>
                       </div>
                     </Timeline.Item>
                   ))}
                 </Timeline>
               ) : (
-                <Empty description="No experience data available" />
+                <Empty description="No experience data available">
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => openAddSection("experience")}>Add Experience</Button>
+                </Empty>
               )}
             </Card>
 
-            {/* Education Section */}
+            {/* ── Education ───────────────────────────────────────────────── */}
             <Card
               title={<Title level={5}>Education</Title>}
               className="rounded-xl"
+              extra={sectionExtra("education")}
             >
-              {resumeData?.parsedData.education &&
-                resumeData.parsedData.education.length > 0 ? (
+              {resumeData?.parsedData.education && resumeData.parsedData.education.length > 0 ? (
                 <Timeline>
                   {resumeData.parsedData.education.map((edu) => (
                     <Timeline.Item key={edu._id}>
                       <div className="mb-4">
-                        <Text strong className="text-lg">
-                          {edu.degree}
-                        </Text>
-                        <div>
-                          <Text type="secondary">
-                            {edu.institution} • {edu.startYear} - {edu.endYear}
-                          </Text>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <Text strong className="text-lg">{edu.degree}</Text>
+                            <div>
+                              <Text type="secondary">{edu.institution} • {edu.startYear} - {edu.endYear}</Text>
+                            </div>
+                          </div>
+                          <Space>
+                            <Button type="text" icon={<EditOutlined />} size="small" onClick={() => openEditSection("education", edu)} />
+                            <Popconfirm title="Delete this education?" onConfirm={() => handleDeleteItem("education", edu._id)} okText="Yes" cancelText="No">
+                              <Button type="text" icon={<DeleteOutlined />} size="small" danger />
+                            </Popconfirm>
+                          </Space>
                         </div>
                       </div>
                     </Timeline.Item>
                   ))}
                 </Timeline>
               ) : (
-                <Empty description="No education data available" />
+                <Empty description="No education data available">
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => openAddSection("education")}>Add Education</Button>
+                </Empty>
               )}
             </Card>
 
-            {/* Projects Section */}
+            {/* ── Projects ────────────────────────────────────────────────── */}
             <Card
-              title={
-                <Title level={5}>
-                  <ProjectOutlined /> Projects
-                </Title>
-              }
+              title={<Title level={5}><ProjectOutlined /> Projects</Title>}
               className="rounded-xl"
+              extra={sectionExtra("project")}
             >
-              {resumeData?.parsedData.projects &&
-                resumeData.parsedData.projects.length > 0 ? (
-                <Space
-                  direction="vertical"
-                  style={{ width: "100%" }}
-                  size="large"
-                >
+              {resumeData?.parsedData.projects && resumeData.parsedData.projects.length > 0 ? (
+                <Space direction="vertical" style={{ width: "100%" }} size="large">
                   {resumeData.parsedData.projects.map((project) => (
                     <div key={project._id}>
                       <div className="flex justify-between items-start">
-                        <Text strong className="text-lg">
-                          {project.name}
-                        </Text>
-                        {project.link && (
-                          <a
-                            href={project.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <Button size="small">View Project</Button>
-                          </a>
-                        )}
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center">
+                            <Text strong className="text-lg">{project?.name}</Text>
+                            <Space>
+                              {project?.link && (
+                                <a href={project?.link} target="_blank" rel="noopener noreferrer">
+                                  <Button size="small">View Project</Button>
+                                </a>
+                              )}
+                              <Button type="text" icon={<EditOutlined />} size="small" onClick={() => openEditSection("project", project)} />
+                              <Popconfirm title="Delete this project?" onConfirm={() => handleDeleteItem("project", project._id)} okText="Yes" cancelText="No">
+                                <Button type="text" icon={<DeleteOutlined />} size="small" danger />
+                              </Popconfirm>
+                            </Space>
+                          </div>
+                          <Paragraph className="mt-2">{project.description}</Paragraph>
+                          <Space wrap className="mt-2">
+                            {project.technologies.map((tech, i) => (
+                              <Tag key={i} color="blue" className="rounded-full">{tech}</Tag>
+                            ))}
+                          </Space>
+                        </div>
                       </div>
-                      <Paragraph className="mt-2">
-                        {project.description}
-                      </Paragraph>
-                      <Space wrap className="mt-2">
-                        {project.technologies.map((tech, i) => (
-                          <Tag key={i} color="blue" className="rounded-full">
-                            {tech}
-                          </Tag>
-                        ))}
-                      </Space>
                       <Divider />
                     </div>
                   ))}
                 </Space>
               ) : (
-                <Empty description="No projects available" />
+                <Empty description="No projects available">
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => openAddSection("project")}>Add Project</Button>
+                </Empty>
               )}
             </Card>
 
-            {/* Certifications */}
-            {resumeData?.parsedData.certifications &&
-              resumeData.parsedData.certifications.length > 0 && (
-                <Card
-                  title={
-                    <Title level={5}>
-                      <TrophyOutlined /> Certifications
-                    </Title>
-                  }
-                  className="rounded-xl"
-                >
-                  <Space direction="vertical" style={{ width: "100%" }}>
-                    {resumeData.parsedData.certifications.map((cert, index) => (
-                      <div key={index}>
+            {/* ── Certifications ──────────────────────────────────────────── */}
+            <Card
+              title={<Title level={5}><TrophyOutlined /> Certifications</Title>}
+              className="rounded-xl"
+              extra={sectionExtra("certification")}
+            >
+              {resumeData?.parsedData.certifications && resumeData.parsedData.certifications.length > 0 ? (
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  {resumeData.parsedData.certifications.map((cert, index) => (
+                    <div key={index} className="flex justify-between items-start">
+                      <div>
                         <Text strong>{cert.name}</Text>
-                        <div>
-                          <Text type="secondary">{cert.issuer}</Text>
-                        </div>
+                        <div><Text type="secondary">{cert.issuer}{cert.year ? ` • ${cert.year}` : ""}</Text></div>
                       </div>
-                    ))}
-                  </Space>
-                </Card>
+                      <Space>
+                        <Button type="text" icon={<EditOutlined />} size="small" onClick={() => openEditSection("certification", cert)} />
+                        <Popconfirm title="Delete this certification?" onConfirm={() => handleDeleteItem("certification", cert._id || "")} okText="Yes" cancelText="No">
+                          <Button type="text" icon={<DeleteOutlined />} size="small" danger />
+                        </Popconfirm>
+                      </Space>
+                    </div>
+                  ))}
+                </Space>
+              ) : (
+                <Empty description="No certifications available">
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => openAddSection("certification")}>Add Certification</Button>
+                </Empty>
               )}
+            </Card>
+
           </Space>
         </Col>
       </Row>
 
-      {/* Edit Profile Modal */}
-      <Modal
-        title="Edit Profile"
-        open={isEditModalOpen}
-        onCancel={() => setIsEditModalOpen(false)}
-        footer={null}
-        width={600}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleEditSave}
-          className="mt-4"
-        >
-          <Form.Item
-            label="Full Name"
-            name="fullName"
-            rules={[{ required: true, message: "Please enter your full name" }]}
-          >
+      {/* ── Profile Edit Modal ──────────────────────────────────────────────── */}
+      <Modal confirmLoading={isEditModalLoading} cancelButtonProps={{ disabled: isEditModalLoading }} title="Edit Profile" open={isEditModalOpen} onCancel={() => setIsEditModalOpen(false)} footer={null} width={600}>
+        <Form form={form} layout="vertical" onFinish={handleEditSave} className="mt-4">
+          <Form.Item label="Full Name" name="fullName" rules={[{ required: true, message: "Please enter your full name" }]}>
             <Input placeholder="Enter your full name" />
           </Form.Item>
-
-          <Form.Item
-            label="Tagline"
-            name="tagline"
-            rules={[{ required: true, message: "Please enter your tagline" }]}
-          >
+          <Form.Item label="Tagline" name="tagline" rules={[{ required: true, message: "Please enter your tagline" }]}>
             <Input placeholder="e.g., Full Stack Developer | AI Enthusiast" />
           </Form.Item>
-
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                label="City"
-                name="city"
-                rules={[{ required: true, message: "Please enter your city" }]}
-              >
-                <Input placeholder="Your city" />
-              </Form.Item>
+              <Form.Item label="City" name="city" rules={[{ required: true }]}><Input placeholder="Your city" /></Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                label="Country"
-                name="country"
-                rules={[
-                  { required: true, message: "Please enter your country" },
-                ]}
-              >
-                <Input placeholder="Your country" />
-              </Form.Item>
+              <Form.Item label="Country" name="country" rules={[{ required: true }]}><Input placeholder="Your country" /></Form.Item>
             </Col>
           </Row>
-
-          <Form.Item
-            label="Bio"
-            name="bio"
-            rules={[{ required: true, message: "Please enter your bio" }]}
-          >
-            <TextArea
-              rows={4}
-              placeholder="Tell us about yourself..."
-              maxLength={500}
-              showCount
-            />
+          <Form.Item label="Bio" name="bio" rules={[{ required: true }]}>
+            <TextArea rows={4} placeholder="Tell us about yourself..." maxLength={500} showCount />
           </Form.Item>
-
-          <Form.Item
-            label={
-              <span>
-                Skills{" "}
-                <span style={{ color: "rgba(0,0,0,.45)" }}>(up to 5)</span>
-              </span>
-            }
-            name="skills"
-            rules={[
-              { required: true, message: "Please select at least one skill" },
-            ]}
-          >
-            <Select
-              mode="tags"
-              style={{ width: "100%" }}
-              placeholder="Add or select skills"
-              options={skillOptions}
-              maxTagCount={5}
-            />
+          <Form.Item label={<span>Skills <span style={{ color: "rgba(0,0,0,.45)" }}>(up to 5)</span></span>} name="skills" rules={[{ required: true }]}>
+            <Select mode="tags" style={{ width: "100%" }} placeholder="Add or select skills" options={skillOptions} maxTagCount={5} />
           </Form.Item>
-
-          <Form.Item
-            label="GitHub URL"
-            name="githubUrl"
-            rules={[{ type: "url", message: "Please enter a valid URL" }]}
-          >
-            <Input
-              placeholder="https://github.com/yourusername"
-              prefix={<GithubFilled />}
-            />
+          <Form.Item label="GitHub URL" name="githubUrl" rules={[{ type: "url" }]}>
+            <Input placeholder="https://github.com/yourusername" prefix={<GithubFilled />} />
           </Form.Item>
-
-          <Form.Item
-            label="LinkedIn URL"
-            name="linkedinUrl"
-            rules={[{ type: "url", message: "Please enter a valid URL" }]}
-          >
-            <Input
-              placeholder="https://linkedin.com/in/yourusername"
-              prefix={<LinkedinFilled />}
-            />
+          <Form.Item label="LinkedIn URL" name="linkedinUrl" rules={[{ type: "url" }]}>
+            <Input placeholder="https://linkedin.com/in/yourusername" prefix={<LinkedinFilled />} />
           </Form.Item>
-
-          <Form.Item
-            label="Portfolio URL"
-            name="portfolioUrl"
-            rules={[{ type: "url", message: "Please enter a valid URL" }]}
-          >
-            <Input
-              placeholder="https://yourportfolio.com"
-              prefix={<GlobalOutlined />}
-            />
+          <Form.Item label="Portfolio URL" name="portfolioUrl" rules={[{ type: "url" }]}>
+            <Input placeholder="https://yourportfolio.com" prefix={<GlobalOutlined />} />
           </Form.Item>
-
           <div style={{ textAlign: "right", marginTop: 16 }}>
-            <Button
-              onClick={() => setIsEditModalOpen(false)}
-              style={{ marginRight: 8 }}
-            >
-              Cancel
-            </Button>
-            <Button type="primary" htmlType="submit">
-              Save Changes
-            </Button>
+            <Button onClick={() => setIsEditModalOpen(false)} style={{ marginRight: 8 }}>Cancel</Button>
+            <Button type="primary" htmlType="submit">Save Changes</Button>
           </div>
+        </Form>
+      </Modal>
+
+      {/* ── Section Add/Edit Modal ──────────────────────────────────────────── */}
+      <Modal
+        title={sectionModal.type ? sectionModalTitle[sectionModal.type] : ""}
+        open={sectionModal.open}
+        onCancel={closeSectionModal}
+        onOk={handleSectionSave}
+        okText={sectionModal.editingItem ? "Save Changes" : "Add"}
+        confirmLoading={isEditModalLoading}
+        cancelButtonProps={{ disabled: isEditModalLoading }}
+        width={520}
+        destroyOnClose
+      >
+        <Form form={sectionForm} layout="vertical" className="mt-4">
+          {renderSectionForm()}
         </Form>
       </Modal>
     </div>
   );
 }
 
-
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown from "react-markdown";
 import ProfileSkeleton from "@/component/Skeletons/ProfileSkeleton";
+import toast from "react-hot-toast";
 
-const AIResponseViewer = ({ aiResult }: { aiResult: string }) => {
-  return (
-    <div className="ai-response-container">
-      {/* 
-          This component automatically detects if 'aiResult' 
-          is plain text or Markdown and renders accordingly.
-      */}
-      <ReactMarkdown>
-        {aiResult}
-      </ReactMarkdown>
-    </div>
-  );
-};
+const AIResponseViewer = ({ aiResult }: { aiResult: string }) => (
+  <div className="ai-response-container">
+    <ReactMarkdown>{aiResult}</ReactMarkdown>
+  </div>
+);
