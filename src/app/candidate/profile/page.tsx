@@ -214,7 +214,7 @@ export default function ProfileDashboard() {
           }));
         }
       } catch (error) {
-        message.error("Failed to load resume data");
+        toast.error("Failed to load resume data");
         console.error(error);
       } finally {
         setLoading(false);

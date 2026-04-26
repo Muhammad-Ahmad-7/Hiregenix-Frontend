@@ -85,16 +85,16 @@
 //   //     // Check if response exists and has the expected data structure
 //   //     if (response && response.data && response.data.resumeUrl) {
 //   //       setResumeUrl(response.data.resumeUrl);
-//   //       message.success("Resume uploaded successfully!");
+//   //       toast.success("Resume uploaded successfully!");
 //   //     } else {
 //   //       // Handle case where API returns but without expected data
-//   //       message.error("Upload failed: Invalid response from server");
+//   //       toast.error("Upload failed: Invalid response from server");
 //   //       console.error("Invalid response structure:", response);
 //   //     }
 //   //   } catch (err) {
 //   //     const errorMessage = "Failed to upload resume. Please try again.";
 
-//   //     message.error(errorMessage);
+//   //     toast.error(errorMessage);
 //   //     console.error("Upload error:", err);
 //   //   } finally {
 //   //     setUploading(false);
@@ -105,12 +105,12 @@
 //   //   beforeUpload: (file: File) => {
 //   //     const isPdf = file.type === "application/pdf";
 //   //     if (!isPdf) {
-//   //       message.error("You can only upload PDF files!");
+//   //       toast.error("You can only upload PDF files!");
 //   //       return false;
 //   //     }
 //   //     const isLt5M = file.size / 1024 / 1024 < 5;
 //   //     if (!isLt5M) {
-//   //       message.error("File must be smaller than 5MB!");
+//   //       toast.error("File must be smaller than 5MB!");
 //   //       return false;
 //   //     }
 //   //     handleResumeUpload(file);

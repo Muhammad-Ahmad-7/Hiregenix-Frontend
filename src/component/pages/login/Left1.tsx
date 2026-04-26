@@ -3,30 +3,35 @@ import { ROUTES } from "@/constants/routes";
 import Fire from "@/icons/Fire";
 import { Col, Typography } from "antd";
 import React from "react";
+
 const { Text, Title } = Typography;
+
 export default function Left1() {
   return (
     <Col
       xs={24}
       md={12}
-      className="!flex !flex-col !justify-center !items-center  p-4 lg:p-32"
+      className="flex flex-col justify-center items-center min-h-screen p-6 lg:p-12 overflow-y-auto"
     >
-      {/* Logo Circle */}
-      <div className="flex w-full">
-        <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg border border-gray-200 mb-4">
+      {/* Logo */}
+      <div className="flex w-full mb-4">
+        <div className="flex items-center justify-center w-14 h-14 rounded-full bg-white shadow-lg border border-gray-200">
           <Fire />
         </div>
       </div>
 
-      {/* Text & Buttons */}
-      <div className="w-full shadow-none">
-        <Title level={1} className="!mb-2">
-          Let’s get you what you are looking for
+      {/* Content */}
+      <div className="w-full max-w-md">
+        <Title level={1} className="!mb-1">
+          Let&apos;s get you what you are looking for
         </Title>
 
-        <Text type="secondary">Select your role for joining our platform</Text>
+        <Text type="secondary">
+          Select your role for joining our platform
+        </Text>
 
-        <div className="mt-8 gap-2 flex flex-col">
+        {/* Buttons */}
+        <div className="mt-6 flex flex-col gap-3">
           <UiButton
             href={ROUTES.company}
             block
@@ -35,6 +40,7 @@ export default function Left1() {
           >
             Join as recruiter
           </UiButton>
+
           <UiButton
             href={ROUTES.candidate}
             block
