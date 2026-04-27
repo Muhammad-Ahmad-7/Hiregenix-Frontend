@@ -19,7 +19,11 @@ import {
   FileTextOutlined,
   FileImageOutlined,
 } from "@ant-design/icons";
-import { createChatApi, getAllChats, getAllMessages } from "@/app/api/chat/chats.api";
+import {
+  createChatApi,
+  getAllChats,
+  getAllMessages,
+} from "@/app/api/chat/chats.api";
 import { formatChatTime } from "@/utils/dateFormation";
 import {
   setChats,
@@ -33,11 +37,11 @@ import { RootState } from "@/redux/store";
 import { Reorder } from "framer-motion";
 import { socket } from "@/socket";
 import EmptyChatState from "@/component/chats/EmptyChatState";
-import { getAllCompaniesApi, type CompanyListItem } from "@/app/api/company/companies.api";
 import {
-  IChat,
-  IMessage,
-} from "@/constants/Interfaces/Types/Chat.interface";
+  getAllCompaniesApi,
+  type CompanyListItem,
+} from "@/app/api/company/companies.api";
+import { IChat, IMessage } from "@/constants/Interfaces/Types/Chat.interface";
 import {
   addMessage,
   clearMessages,
@@ -224,68 +228,68 @@ const MessagingInterface = () => {
     socket.on(
       "sendMessage",
       ({ chatId, msg, msgId, sender, isUserOnline, replyingTo }) => {
-      if (sender !== profile?._id) {
-        if (selectedChat !== chatId) {
-          socket.emit("updateMessageStatus", {
-            messageId: msgId,
-            status: "delivered",
-            chatId,
-            sender,
-            toUser: selectedChatP?.participant._id,
-          });
-          dispatch(updateLastMessageStatus({ status: "delivered", chatId }));
+        if (sender !== profile?._id) {
+          if (selectedChat !== chatId) {
+            socket.emit("updateMessageStatus", {
+              messageId: msgId,
+              status: "delivered",
+              chatId,
+              sender,
+              toUser: selectedChatP?.participant._id,
+            });
+            dispatch(updateLastMessageStatus({ status: "delivered", chatId }));
+          } else {
+            socket.emit("updateMessageStatus", {
+              messageId: msgId,
+              status: "seen",
+              chatId,
+              sender,
+              toUser: selectedChatP?.participant._id,
+            });
+            dispatch(updateLastMessageStatus({ status: "seen", chatId }));
+          }
         } else {
           socket.emit("updateMessageStatus", {
             messageId: msgId,
-            status: "seen",
+            status: isUserOnline ? "delivered" : "sent",
             chatId,
             sender,
             toUser: selectedChatP?.participant._id,
           });
-          dispatch(updateLastMessageStatus({ status: "seen", chatId }));
+          dispatch(
+            updateLastMessageStatus({
+              status: isUserOnline ? "delivered" : "sent",
+              chatId,
+            }),
+          );
         }
-      } else {
-        socket.emit("updateMessageStatus", {
-          messageId: msgId,
-          status: isUserOnline ? "delivered" : "sent",
-          chatId,
-          sender,
-          toUser: selectedChatP?.participant._id,
-        });
+
         dispatch(
-          updateLastMessageStatus({
-            status: isUserOnline ? "delivered" : "sent",
-            chatId,
+          addMessage({
+            message: {
+              _id: msgId,
+              chat: chatId,
+              sender,
+              text: msg,
+              status: "sent",
+              reaction: null,
+              replyingTo:
+                replyingTo && typeof replyingTo === "string"
+                  ? (() => {
+                      const ref = messages.find((m) => m._id === replyingTo);
+                      return ref ? { _id: ref._id, text: ref.text } : null;
+                    })()
+                  : replyingTo && typeof replyingTo === "object"
+                    ? { _id: replyingTo._id, text: replyingTo.text }
+                    : null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            selectedId: selectedChat,
+            userId: profile?._id,
+            isUserOnline,
           }),
         );
-      }
-
-      dispatch(
-        addMessage({
-          message: {
-            _id: msgId,
-            chat: chatId,
-            sender,
-            text: msg,
-            status: "sent",
-            reaction: null,
-            replyingTo:
-              replyingTo && typeof replyingTo === "string"
-                ? (() => {
-                    const ref = messages.find((m) => m._id === replyingTo);
-                    return ref ? { _id: ref._id, text: ref.text } : null;
-                  })()
-                : replyingTo && typeof replyingTo === "object"
-                  ? { _id: replyingTo._id, text: replyingTo.text }
-                  : null,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          selectedId: selectedChat,
-          userId: profile?._id,
-          isUserOnline,
-        }),
-      );
       },
     );
 
@@ -304,7 +308,7 @@ const MessagingInterface = () => {
       );
       dispatch(updateLastMessageStatus({ status: "seen", chatId }));
     });
-  }, [profile,dispatch]);
+  }, [profile, dispatch]);
 
   const { chats, loading: chatsLoading } = useSelector(
     (state: RootState) => state.chats,
@@ -355,7 +359,7 @@ const MessagingInterface = () => {
       socket.off("iAmOnline");
       socket.off("iAmOffline");
     };
-  }, [chats, profile,dispatch]);
+  }, [chats, profile, dispatch]);
 
   // ── Message status socket ──────────────────────────────────────────────────
   useEffect(() => {
@@ -365,7 +369,7 @@ const MessagingInterface = () => {
     return () => {
       socket.off("updateMessageStatus");
     };
-  }, [selectedChat,dispatch]);
+  }, [selectedChat, dispatch]);
 
   // ── Auto-scroll to bottom for new messages only ────────────────────────────
   useEffect(() => {
@@ -374,7 +378,7 @@ const MessagingInterface = () => {
     if (selectedChat) {
       dispatch(updateUnreadCount({ chatId: selectedChat, unReadCount: -1 }));
     }
-  }, [messages,dispatch,selectedChat]);
+  }, [messages, dispatch, selectedChat]);
 
   // ── Load all chats on mount ────────────────────────────────────────────────
   useEffect(() => {
@@ -437,7 +441,7 @@ const MessagingInterface = () => {
     return () => {
       socket.offAny();
     };
-  }, [ ]);
+  }, []);
 
   // ── Load messages when a chat is selected ─────────────────────────────────
   useEffect(() => {
@@ -467,7 +471,7 @@ const MessagingInterface = () => {
       .finally(() => {
         if (selectedChat === requestChatId) setIsMessagesLoading(false);
       });
-  }, [selectedChat,profile?._id,selectedChatP,dispatch]);
+  }, [selectedChat, profile?._id, selectedChatP, dispatch]);
 
   // ── Reply scroll-to ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -625,10 +629,7 @@ const MessagingInterface = () => {
                 >
                   <List.Item.Meta
                     avatar={
-                      <Avatar
-                        size={40}
-                        src={company.logoUrl ?? undefined}
-                      >
+                      <Avatar size={40} src={company.logoUrl ?? undefined}>
                         {(company.companyName || "?").charAt(0)}
                       </Avatar>
                     }
@@ -939,7 +940,7 @@ const MessagingInterface = () => {
                           selectReplyId={selectReplyId}
                           setSelectReplyId={setSelectReplyId}
                           onReply={handleReply}
-                          msg={msg as any}
+                          msg={msg}
                           profile={profile}
                           hoveredMessageId={hoveredMessageId}
                           setHoveredMessageId={setHoveredMessageId}

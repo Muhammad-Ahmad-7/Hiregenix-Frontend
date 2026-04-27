@@ -297,6 +297,7 @@ export default function CompanyProfilePage() {
 
   // ── PAGE ──
   return (
+    // FIX 1: Root must be h-screen overflow-hidden flex flex-col — already correct
     <div
       className="h-screen w-screen overflow-hidden flex flex-col"
       style={{
@@ -351,16 +352,29 @@ export default function CompanyProfilePage() {
       </div>
 
       {/* ── Body ── */}
+      {/*
+        FIX 2: Body wrapper is flex-1 min-h-0 — this is critical.
+        flex-1 makes it fill remaining space, min-h-0 allows it to shrink
+        below content size (without this, flex children expand infinitely).
+      */}
       <div className="flex-1 min-h-0 overflow-hidden px-4 lg:px-6 py-3">
+        {/*
+          FIX 3: motion.div grid also needs min-h-0 AND h-full.
+          h-full fills the parent, min-h-0 prevents grid rows from overflowing.
+        */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className="h-full grid grid-cols-1 lg:grid-cols-3 gap-4"
+          className="h-full min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-4"
         >
           {/* LEFT — scrollable profile column */}
+          {/*
+            FIX 4: Left column needs min-h-0 so it doesn't stretch the grid row.
+            overflow-y-auto handles the internal scroll.
+          */}
           <div
-            className="lg:col-span-2 h-full overflow-y-auto flex flex-col gap-3 pb-2 pr-0.5"
+            className="lg:col-span-2 h-full min-h-0 overflow-y-auto flex flex-col gap-3 pb-2 pr-0.5"
             style={{
               scrollbarWidth: "thin",
               scrollbarColor: "#bae0ff transparent",
@@ -725,12 +739,21 @@ export default function CompanyProfilePage() {
           </div>
 
           {/* RIGHT — inline chat (lg+ only) */}
-          <div className="hidden lg:flex lg:col-span-1 h-full flex-col">
+          {/*
+            FIX 5: Right column wrapper needs min-h-0 so it doesn't push
+            the grid beyond viewport height. h-full fills the grid cell,
+            min-h-0 allows it to actually be constrained to that height.
+          */}
+          <div className="hidden lg:flex lg:col-span-1 h-full min-h-0 flex-col">
+            {/*
+              FIX 6: motion.div also needs min-h-0. Without it, flex-1
+              causes this element to grow beyond its parent's bounds.
+            */}
             <motion.div
               initial={{ opacity: 0, x: 16 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
-              className="flex-1 flex flex-col rounded-2xl overflow-hidden min-h-0"
+              className="flex-1 min-h-0 flex flex-col rounded-2xl overflow-hidden"
               style={{
                 boxShadow:
                   "0 4px 24px rgba(22,119,255,0.12),0 1px 6px rgba(0,0,0,0.05)",
@@ -847,10 +870,16 @@ function ChatPanel({
   onClose,
 }: ChatPanelProps) {
   return (
-    <>
-      {/* Header */}
+    /*
+      FIX 7: ChatPanel must be a proper flex column that fills its parent
+      completely. Use h-full w-full flex flex-col min-h-0 on the wrapper.
+      This is the key: the panel itself must participate in the flex shrink
+      chain so the messages area — and only the messages area — scrolls.
+    */
+    <div className="h-full w-full flex flex-col min-h-0">
+      {/* Header — flex-shrink-0 so it never compresses */}
       <div
-        className="px-4 py-3 flex-shrink-0 relative overflow-hidden"
+        className="flex-shrink-0 px-4 py-3 relative overflow-hidden"
         style={{
           background: "linear-gradient(135deg,#1677ff 0%,#0958d9 100%)",
         }}
@@ -900,9 +929,15 @@ function ChatPanel({
         </div>
       </div>
 
-      {/* Messages */}
+      {/*
+        FIX 8: Messages area — this is THE scroll container.
+        flex-1 + min-h-0 + overflow-y-auto is the complete fix.
+        flex-1 → takes all remaining vertical space after header+input+footer
+        min-h-0 → allows it to shrink (flex default is min-height: auto which prevents shrink)
+        overflow-y-auto → shows scrollbar only when content overflows
+      */}
       <div
-        className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2 min-h-0"
+        className="flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-2"
         style={{
           background: "#fafcff",
           scrollbarWidth: "thin",
@@ -1044,12 +1079,13 @@ function ChatPanel({
           )}
         </AnimatePresence>
 
+        {/* Scroll anchor — always stays at the bottom of messages */}
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
+      {/* Input — flex-shrink-0 so it never compresses */}
       <div
-        className="px-3 py-2.5 flex-shrink-0"
+        className="flex-shrink-0 px-3 py-2.5"
         style={{ borderTop: "1px solid #e6f0ff", background: "white" }}
       >
         <div className="flex gap-2 items-end">
@@ -1082,9 +1118,9 @@ function ChatPanel({
         </p>
       </div>
 
-      {/* Footer */}
+      {/* Footer — flex-shrink-0 so it never compresses */}
       <div
-        className="flex items-center justify-center gap-1 py-1.5 flex-shrink-0"
+        className="flex-shrink-0 flex items-center justify-center gap-1 py-1.5"
         style={{ borderTop: "1px solid #f0f7ff", background: "#fafcff" }}
       >
         <ThunderboltFilled style={{ color: "#1677ff", fontSize: 9 }} />
@@ -1095,6 +1131,6 @@ function ChatPanel({
           </span>
         </span>
       </div>
-    </>
+    </div>
   );
 }

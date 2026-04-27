@@ -57,7 +57,7 @@ export default function StepperForm() {
       | Partial<Profile>
       | FormattedStep1Values
       | Step2FormValues
-      | Step3FormValues
+      | Step3FormValues,
   ) => {
     console.log(values);
     if (values) setProfile((prev) => ({ ...prev, ...values }));

@@ -200,6 +200,13 @@ export default function JobDashboard() {
   const [experienceFilter, setExperienceFilter] = useState<string[]>([]);
   const [countryFilter, setCountryFilter] = useState<string | undefined>();
 
+  const [filteredSavedJobsList, setFilteredSavedJobsList] = useState<
+    SavedJobs[]
+  >([]);
+  const [filteredRecommendedJobList, setFilteredRecommendedJobList] = useState<
+    RecommendedJob[]
+  >([]);
+
   const listRef = useRef<HTMLDivElement>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
 
@@ -401,10 +408,10 @@ export default function JobDashboard() {
       filtered = filtered.filter(
         (job) =>
           job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          job.companyId.companyName
-            .toLowerCase()
+          job.companyId?.companyName
+            ?.toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
-          job.role.toLowerCase().includes(searchQuery.toLowerCase()),
+          job.role?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
     if (workModeFilter.length > 0) {
@@ -428,6 +435,79 @@ export default function JobDashboard() {
     }
     setFilteredJobList(filtered);
   }, [jobList, searchQuery, workModeFilter, experienceFilter, countryFilter]);
+
+  // Filter Saved Jobs
+  useEffect(() => {
+    let filtered = [...savedJobsList];
+    if (searchQuery) {
+      filtered = filtered.filter((savedJob) => {
+        const job = savedJob.jobId;
+        return (
+          job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          job.company?.companyName
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          job.role?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      });
+    }
+    if (workModeFilter.length > 0) {
+      filtered = filtered.filter(
+        (savedJob) =>
+          savedJob.jobId.workMode &&
+          workModeFilter.includes(savedJob.jobId.workMode.toLowerCase()),
+      );
+    }
+    if (experienceFilter.length > 0) {
+      filtered = filtered.filter(
+        (savedJob) =>
+          savedJob.jobId.experienceLevel &&
+          experienceFilter.includes(
+            savedJob.jobId.experienceLevel.toLowerCase(),
+          ),
+      );
+    }
+    if (countryFilter) {
+      filtered = filtered.filter(
+        (savedJob) =>
+          savedJob.jobId.location?.country?.toLowerCase() ===
+          countryFilter.toLowerCase(),
+      );
+    }
+    setFilteredSavedJobsList(filtered);
+  }, [
+    savedJobsList,
+    searchQuery,
+    workModeFilter,
+    experienceFilter,
+    countryFilter,
+  ]);
+
+  // Filter Recommended Jobs
+  useEffect(() => {
+    let filtered = [...recommendedJobList];
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (item) =>
+          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.companyName?.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+    }
+    if (workModeFilter.length > 0) {
+      filtered = filtered.filter(
+        (item) =>
+          item.workMode && workModeFilter.includes(item.workMode.toLowerCase()),
+      );
+    }
+    if (experienceFilter.length > 0) {
+      filtered = filtered.filter(
+        (item) =>
+          item.experienceLevel &&
+          experienceFilter.includes(item.experienceLevel.toLowerCase()),
+      );
+    }
+    setFilteredRecommendedJobList(filtered);
+  }, [recommendedJobList, searchQuery, workModeFilter, experienceFilter]);
 
   // ---------------------------------------------
   // Initial fetch
@@ -489,8 +569,10 @@ export default function JobDashboard() {
 
   const handleSchedule = async () => {
     if (selectedDate && selectedJob) {
-      const isoString = new Date(selectedDate.toISOString()).toLocaleDateString('en-CA');
-      console.log("ISO STRING", isoString)
+      const isoString = new Date(selectedDate.toISOString()).toLocaleDateString(
+        "en-CA",
+      );
+      console.log("ISO STRING", isoString);
       setLoadingButton(true);
       const res = await scheduleInterviewApi({
         jobId: selectedJob._id,
@@ -779,24 +861,32 @@ export default function JobDashboard() {
                   <div className="p-5 text-center">
                     <Spin />
                   </div>
-                ) : savedJobsList.length === 0 ? (
+                ) : filteredSavedJobsList.length === 0 ? (
                   <div className="py-10 px-5 text-center">
                     <div className="text-gray-400 text-lg mb-2">
-                      No saved jobs yet
+                      {savedJobsList.length === 0
+                        ? "No saved jobs yet"
+                        : "No saved jobs match your search"}
                     </div>
                     <div className="text-gray-400 text-sm">
-                      Start saving jobs to view them here
+                      {savedJobsList.length === 0
+                        ? "Start saving jobs to view them here"
+                        : "Try adjusting your filters"}
                     </div>
                   </div>
                 ) : (
                   <List
                     itemLayout="horizontal"
-                    dataSource={savedJobsList}
+                    dataSource={filteredSavedJobsList}
                     renderItem={(savedJob) => {
                       const job = savedJob.jobId;
                       return (
                         <List.Item
-                          className="cursor-pointer hover:bg-gray-100 transition"
+                          className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${
+                            selectedJob?._id === job._id
+                              ? "bg-blue-50 border-l-4 border-l-blue-500"
+                              : "border-l-4 border-l-transparent"
+                          }`}
                           onClick={() => {
                             const fullJob = convertToJobInterface(job);
                             fullJob.isSaved = true;
@@ -804,41 +894,87 @@ export default function JobDashboard() {
                             setIsDetailOpen(true);
                           }}
                         >
-                          <List.Item.Meta
-                            avatar={
-                              <div className="px-4">
-                                <div className="relative">
-                                  <Avatar size={50} icon={<BuildFilled />} />
-                                  <HeartFilled
-                                    style={{
-                                      position: "absolute",
-                                      top: -5,
-                                      right: -5,
-                                      color: "#ff4d4f",
-                                      fontSize: 16,
-                                    }}
-                                  />
-                                </div>
-                                <div className="mt-2">
-                                  <div className="text-blue-600 font-semibold">
-                                    {job.title}
-                                  </div>
-                                  <div className="text-gray-500 text-sm">
-                                    Saved{" "}
+                          <div className="flex w-full items-start gap-4 p-1">
+                            {/* Left: Company Logo */}
+                            <div className="relative flex-shrink-0">
+                              <Avatar
+                                src={job.company?.logoUrl}
+                                shape="square"
+                                size={64}
+                                className="rounded-lg border border-gray-100 shadow-sm"
+                              />
+                              <div className="absolute -bottom-1 -right-1 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full shadow-sm text-amber-600">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
+                                  className="w-3.5 h-3.5"
+                                >
+                                  <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.924-2.438 7.11-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                                </svg>
+                              </div>
+                            </div>
+
+                            {/* Middle: Main Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className="text-lg font-bold text-gray-900 truncate pr-4">
+                                  {job.title}
+                                </h3>
+                                {job.isApplied && (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>
+                                    Applied
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center text-gray-600 mb-3 italic">
+                                <span className="font-medium text-blue-600 not-italic">
+                                  {job.company?.companyName}
+                                </span>
+                                <span className="mx-2 text-gray-300">•</span>
+                                <span className="text-sm">
+                                  {job.location?.city}, {job.location?.country}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <Tag className="m-0 border-none bg-blue-50 text-blue-700 font-medium px-2 rounded">
+                                  {job.workMode}
+                                </Tag>
+                                <Tag className="m-0 border-none bg-purple-50 text-purple-700 font-medium px-2 rounded capitalize">
+                                  {job.experienceLevel}
+                                </Tag>
+                                <Tag className="m-0 border-none bg-orange-50 text-orange-700 font-medium px-2 rounded">
+                                  {job.salaryRange?.currency}{" "}
+                                  {job.salaryRange?.min.toLocaleString()} -{" "}
+                                  {job.salaryRange?.max.toLocaleString()}
+                                </Tag>
+                              </div>
+
+                              {/* Quick Stats/Summary Footer */}
+                              <div className="flex items-center justify-between text-xs text-gray-400 mt-4">
+                                <div className="flex gap-4">
+                                  <span>
+                                    Posted:{" "}
                                     {new Date(
-                                      savedJob.createdAt,
+                                      job.createdAt,
                                     ).toLocaleDateString()}
-                                  </div>
-                                  <div className="flex gap-2 mt-1">
-                                    <Tag color="blue">{job.workMode}</Tag>
-                                    <Tag color="green">
-                                      {job.experienceLevel}
-                                    </Tag>
-                                  </div>
+                                  </span>
+                                  <span>
+                                    Deadline:{" "}
+                                    {new Date(
+                                      job.deadline,
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <div className="font-medium text-blue-500">
+                                  View Details →
                                 </div>
                               </div>
-                            }
-                          />
+                            </div>
+                          </div>
                         </List.Item>
                       );
                     }}
@@ -851,57 +987,122 @@ export default function JobDashboard() {
                   <div className="p-5 text-center">
                     <Spin />
                   </div>
-                ) : recommendedJobList.length === 0 ? (
+                ) : filteredRecommendedJobList.length === 0 ? (
                   <div className="py-10 px-5 text-center">
                     <div className="text-gray-400 text-lg mb-2">
-                      No recommendations yet
+                      {recommendedJobList.length === 0
+                        ? "No recommendations yet"
+                        : "No recommendations match your search"}
                     </div>
                     <div className="text-gray-400 text-sm">
-                      We will recommend jobs based on your profile
+                      {recommendedJobList.length === 0
+                        ? "We will recommend jobs based on your profile"
+                        : "Try adjusting your filters"}
                     </div>
                   </div>
                 ) : (
                   <List
                     itemLayout="horizontal"
-                    dataSource={recommendedJobList}
-                    renderItem={(item) => (
-                      <List.Item
-                        className="cursor-pointer hover:bg-gray-100 transition"
-                        onClick={() => {
-                          const fullJob = jobList.find(
-                            (j) => j._id === item.jobId,
-                          );
-                          if (fullJob) {
-                            setSelectedJob(fullJob);
-                            setIsDetailOpen(true);
-                          }
-                        }}
-                      >
-                        <List.Item.Meta
-                          avatar={
-                            <div className="px-4">
-                              <Avatar src={item.companyLogo} size={50} />
-                              <div className="mt-2">
-                                <div className="text-blue-600 font-semibold">
+                    dataSource={filteredRecommendedJobList}
+                    renderItem={(item) => {
+                      const fullJob = jobList.find((j) => j._id === item.jobId);
+                      return (
+                        <List.Item
+                          className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${
+                            selectedJob?._id === item.jobId
+                              ? "bg-blue-50 border-l-4 border-l-blue-500"
+                              : "border-l-4 border-l-transparent"
+                          }`}
+                          onClick={() => {
+                            if (fullJob) {
+                              setSelectedJob(fullJob);
+                              setIsDetailOpen(true);
+                            }
+                          }}
+                        >
+                          <div className="flex w-full items-start gap-4 p-1">
+                            {/* Left: Company Logo */}
+                            <div className="relative flex-shrink-0">
+                              <Avatar
+                                src={item.companyLogo}
+                                shape="square"
+                                size={64}
+                                className="rounded-lg border border-gray-100 shadow-sm"
+                              />
+                            </div>
+
+                            {/* Middle: Main Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className="text-lg font-bold text-gray-900 truncate pr-4">
                                   {item.title}
-                                </div>
-                                <div className="text-gray-500 text-sm">
+                                </h3>
+                                {fullJob?.isApplied && (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>
+                                    Applied
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center text-gray-600 mb-3 italic">
+                                <span className="font-medium text-blue-600 not-italic">
                                   {item.companyName}
+                                </span>
+                                <span className="mx-2 text-gray-300">•</span>
+                                <span className="text-sm">
+                                  {fullJob?.location?.city},{" "}
+                                  {fullJob?.location?.country}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <Tag className="m-0 border-none bg-blue-50 text-blue-700 font-medium px-2 rounded">
+                                  {item.workMode}
+                                </Tag>
+                                {item.experienceLevel && (
+                                  <Tag className="m-0 border-none bg-purple-50 text-purple-700 font-medium px-2 rounded capitalize">
+                                    {item.experienceLevel}
+                                  </Tag>
+                                )}
+                                {fullJob?.salaryRange && (
+                                  <Tag className="m-0 border-none bg-orange-50 text-orange-700 font-medium px-2 rounded">
+                                    {fullJob.salaryRange.currency}{" "}
+                                    {fullJob.salaryRange.min.toLocaleString()} -{" "}
+                                    {fullJob.salaryRange.max.toLocaleString()}
+                                  </Tag>
+                                )}
+                              </div>
+
+                              {/* Quick Stats/Summary Footer */}
+                              <div className="flex items-center justify-between text-xs text-gray-400 mt-4">
+                                <div className="flex gap-4">
+                                  <span>
+                                    Posted:{" "}
+                                    {fullJob
+                                      ? new Date(
+                                          fullJob.createdAt,
+                                        ).toLocaleDateString()
+                                      : "N/A"}
+                                  </span>
+                                  <span>
+                                    Deadline:{" "}
+                                    {fullJob
+                                      ? new Date(
+                                          fullJob.deadline,
+                                        ).toLocaleDateString()
+                                      : "N/A"}
+                                  </span>
                                 </div>
-                                <div className="flex gap-2 mt-1">
-                                  <Tag color="blue">{item.workMode}</Tag>
-                                  {item.experienceLevel && (
-                                    <Tag color="green">
-                                      {item.experienceLevel}
-                                    </Tag>
-                                  )}
+                                <div className="font-medium text-blue-500">
+                                  View Details →
                                 </div>
                               </div>
                             </div>
-                          }
-                        />
-                      </List.Item>
-                    )}
+                          </div>
+                        </List.Item>
+                      );
+                    }}
                   />
                 )}
               </>

@@ -115,6 +115,11 @@ import React from "react";
 import { LabelInput } from "../common";
 import UiButton from "../common/CustomButton";
 import LeftArrow from "@/icons/LeftArrow";
+import {
+  gitHubUrlValidator,
+  linkedInUrlValidator,
+  portfolioUrlValidator,
+} from "@/utils/urlValidator";
 
 // Define proper types for form values
 export interface Step2FormValues {
@@ -158,8 +163,11 @@ export default function Step2Form({
             required
             rules={[
               {
-                type: "url",
-                message: "Provide Link ",
+                required: true,
+                message: "GitHub URL is required",
+              },
+              {
+                validator: gitHubUrlValidator,
               },
             ]}
           />
@@ -169,11 +177,10 @@ export default function Step2Form({
             name="linkedinUrl"
             label="Linkdin Url"
             itemProps={{ tooltip: "(optional)" }}
-            placeholder="e.g : linkdin.com/ad-dev07"
+            placeholder="e.g : linkedin.com/in/ad-dev07"
             rules={[
               {
-                type: "url",
-                message: "Provide Link ",
+                validator: linkedInUrlValidator,
               },
             ]}
           />
@@ -190,8 +197,7 @@ export default function Step2Form({
             placeholder="e.g : abd.com"
             rules={[
               {
-                type: "url",
-                message: "Provide Link ",
+                validator: portfolioUrlValidator,
               },
             ]}
           />

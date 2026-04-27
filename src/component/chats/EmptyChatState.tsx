@@ -1,5 +1,4 @@
 import React from "react";
-import { Button } from "antd";
 import {
   MessageOutlined,
   UserOutlined,
@@ -61,10 +60,13 @@ const EmptyChatState = ({
             <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center mb-3 mx-auto">
               <TeamOutlined className="text-green-500 text-lg" />
             </div>
-            <button className="text-xs text-gray-600 font-medium" 
-            onClick={onCompanyChats}
-            disabled={!onCompanyChats}
-            >Company Chats</button>
+            <button
+              className="text-xs text-gray-600 font-medium"
+              onClick={onCompanyChats}
+              disabled={!onCompanyChats}
+            >
+              Company Chats
+            </button>
           </div>
 
           <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
