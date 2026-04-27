@@ -1,15 +1,15 @@
 "use client";
 import { getTimeOnly } from "@/utils/dateFormation";
 import {
-  DownOutlined,
   FileImageOutlined,
   FileTextOutlined,
   SmileOutlined,
+  RetweetOutlined,
 } from "@ant-design/icons";
 import { Button } from "antd";
 import EmojiPicker from "emoji-picker-react";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useState } from "react";
+import React from "react";
 import MessageStatus from "./MessageStatus";
 import { socket } from "@/socket";
 import { updateReaction } from "@/redux/slices/chat/messagesSlice";
@@ -19,15 +19,10 @@ import SmallReplyCard from "./SmallReplyCard";
 import type { IMessage } from "@/constants/Interfaces/Types/Chat.interface";
 import type { AppDispatch, RootState } from "@/redux/store";
 
-export type MessageViewModel = IMessage & {
-  replyingTo?: { _id: string; text: string };
-  emoji?: string;
-};
-
 type UserProfile = NonNullable<RootState["user"]["profile"]>;
 
 type MessageProps = {
-  msg: MessageViewModel;
+  msg: IMessage;
   setSelectReplyId: React.Dispatch<React.SetStateAction<string | null>>;
   selectReplyId: string | null;
   profile: UserProfile;
@@ -37,10 +32,7 @@ type MessageProps = {
   toggleReactionPicker: (e: React.MouseEvent, messageId: string) => void;
   reactionPickerMessageId: string | null;
   dispatch: AppDispatch;
-  onReply?: (msg: MessageViewModel) => void;
-  onDelete?: (msgId: string) => void;
-  onForward?: (msgId: string) => void;
-  onCopy?: (msgId: string) => void;
+  onReply?: (msg: IMessage) => void;
 };
 
 export default function Message({
@@ -56,34 +48,7 @@ export default function Message({
   dispatch,
 
   onReply = () => undefined,
-  onDelete = () => undefined,
-  onForward = () => undefined,
-  onCopy = () => undefined,
 }: MessageProps) {
-  const [dropdownVisible, setDropdownVisible] = useState(false);
-
-  const handleDropdownClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDropdownVisible(!dropdownVisible);
-  };
-
-  const handleActionClick = (action: string) => {
-    setDropdownVisible(false);
-    switch (action) {
-      case "reply":
-        onReply(msg);
-        break;
-      case "delete":
-        onDelete(msg._id);
-        break;
-      case "forward":
-        onForward(msg._id);
-        break;
-      case "copy":
-        onCopy(msg._id);
-        break;
-    }
-  };
 
   return (
     <div
@@ -98,7 +63,6 @@ export default function Message({
       onMouseEnter={() => setHoveredMessageId(msg._id)}
       onMouseLeave={() => {
         setHoveredMessageId(null);
-        setDropdownVisible(false);
       }}
     >
       {/* Message column */}
@@ -175,28 +139,13 @@ export default function Message({
                   <Button
                     type="text"
                     size="small"
-                    icon={<DownOutlined />}
-                    onClick={handleDropdownClick}
+                    icon={<RetweetOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onReply(msg);
+                    }}
                     className="!bg-gray-100 shadow-sm border border-gray-200 hover:bg-gray-50"
                   />
-                  {dropdownVisible && (
-                    <div
-                      className="absolute right-0 mt-2 w-28 bg-white shadow-md border border-gray-200 rounded-md z-50"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {["Reply", "Delete", "Forward", "Copy"].map((action) => (
-                        <div
-                          key={action}
-                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                          onClick={() =>
-                            handleActionClick(action.toLowerCase())
-                          }
-                        >
-                          {action}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </motion.div>
               </AnimatePresence>
             )}

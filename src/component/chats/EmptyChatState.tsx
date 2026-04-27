@@ -5,7 +5,11 @@ import {
   TeamOutlined,
   SendOutlined,
 } from "@ant-design/icons";
-const EmptyChatState = () => {
+const EmptyChatState = ({
+  onCompanyChats,
+}: {
+  onCompanyChats?: () => void;
+}) => {
   return (
     <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
       <div className="text-center max-w-md">
@@ -34,6 +38,15 @@ const EmptyChatState = () => {
           recruiters, companies, and opportunities.
         </p>
 
+        {/* <div className="flex justify-center mb-6">
+          <Button
+            type="primary"
+            size="middle"
+          >
+            Company Chats
+          </Button>
+        </div> */}
+
         {/* Feature Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
@@ -47,7 +60,13 @@ const EmptyChatState = () => {
             <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center mb-3 mx-auto">
               <TeamOutlined className="text-green-500 text-lg" />
             </div>
-            <p className="text-xs text-gray-600 font-medium">Company Chats</p>
+            <button
+              className="text-xs text-gray-600 font-medium"
+              onClick={onCompanyChats}
+              disabled={!onCompanyChats}
+            >
+              Company Chats
+            </button>
           </div>
 
           <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">

@@ -30,7 +30,9 @@ export interface IMessage {
   sender: string;
   text: string;
   status: MessageStatus;
+  emoji?: string; //only at front end for type safety
   reaction: string | null;
+  replyingTo?: { _id: string; text: string } | null;
   createdAt: string;
   updatedAt: string;
   __v?: number;

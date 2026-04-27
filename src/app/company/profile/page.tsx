@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Avatar,
   Card,
@@ -15,24 +15,36 @@ import {
   Input,
   Select,
   Button,
+  message,
+  Upload,
+  Spin,
+  Tooltip,
 } from "antd";
 import {
   EditOutlined,
   GlobalOutlined,
   LinkedinFilled,
+  UploadOutlined,
+  MailOutlined,
+  EnvironmentOutlined,
+  CalendarOutlined,
+  FileOutlined,
 } from "@ant-design/icons";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/redux/store";
-import IconWrapper from "@/icons/IconWrapper";
-import { updateCompanyProfileApi } from "@/app/api/company/profile.api";
+import {
+  updateCompanyProfileApi,
+  getCompanyProfileApi,
+} from "@/app/api/company/profile.api";
 import { setProfile } from "@/redux/slices/userSlice";
 import {
   CompleteCompanyProfile,
   CompanyResponse,
 } from "@/constants/Interfaces/Types/Profile.interface";
+import { uploadCompanyKnowledgeBasePdfApi } from "@/app/api/company/knowledgeBase.api";
 import toast from "react-hot-toast";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 // Tech stack options
@@ -54,35 +66,111 @@ export default function CompanyProfile() {
   const [form] = Form.useForm();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [kbUploading, setKbUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { profile } = useSelector((state: RootState) => state.user);
 
   type CompanyProfile = CompanyResponse & { userType: "company" };
   const companyProfile =
     profile?.userType === "company" ? (profile as CompanyProfile) : null;
 
-  if (!companyProfile) return null;
+  // Load profile data only once on component mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await getCompanyProfileApi();
+        if (res?.data?.company) {
+          const companyData = {
+            ...res.data.company,
+            userType: "company" as const,
+          };
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          dispatch(setProfile(companyData as unknown as any));
+        }
+      } catch (error) {
+        console.error("Failed to fetch company profile:", error);
+        message.error("Failed to load company profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!companyProfile) {
+      fetchProfile();
+    } else {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!companyProfile && loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spin size="large" tip="Loading profile..." />
+      </div>
+    );
+  }
+
+  if (!companyProfile && !loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Text type="secondary">No profile found</Text>
+        </div>
+      </div>
+    );
+  }
+
+  const handleKbUpload = async (file: File) => {
+    setKbUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await uploadCompanyKnowledgeBasePdfApi(fd);
+      const pdfUrl = res?.data?.pdfUrl;
+      if (pdfUrl) {
+        dispatch(
+          setProfile({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ...(companyProfile as unknown as any),
+            knowledgeBasePdfUrl: pdfUrl,
+          }),
+        );
+      }
+      message.success("Knowledge base uploaded. Indexing will start shortly.");
+    } catch (e) {
+      console.error(e);
+      message.error("Failed to upload knowledge base PDF.");
+    } finally {
+      setKbUploading(false);
+    }
+  };
 
   const handleEditClick = () => {
+    if (!companyProfile) return;
+
     form.setFieldsValue({
-      companyName: companyProfile.companyName || "",
-      city: companyProfile.city || "",
-      country: companyProfile.country || "",
-      foundedYear: companyProfile.foundedYear || "",
-      ntnNumber: companyProfile.ntnNumber || "",
-      contactEmail: companyProfile.contactEmail || "",
-      description: companyProfile.description || "",
-      techStack: companyProfile.techStack || [],
-      website: companyProfile.website || "",
-      linkedInUrl: companyProfile.linkedInUrl || "",
-      hiringStatus: companyProfile.hiringStatus || "not_hiring",
+      companyName: companyProfile?.companyName || "",
+      city: companyProfile?.city || "",
+      country: companyProfile?.country || "",
+      foundedYear: Number(companyProfile?.foundedYear) || "",
+      ntnNumber: companyProfile?.ntnNumber || "",
+      contactEmail: companyProfile?.contactEmail || "",
+      description: companyProfile?.description || "",
+      techStack: companyProfile?.techStack || [],
+      website: companyProfile?.website || "",
+      linkedInUrl: companyProfile?.linkedInUrl || "",
+      hiringStatus: companyProfile?.hiringStatus || "not_hiring",
     });
     setIsEditModalOpen(true);
   };
 
   const handleEditSave = async (values: Partial<CompleteCompanyProfile>) => {
+    if (!companyProfile) return;
     setSaveLoading(true);
     try {
-      const updatedProfile: CompanyProfile = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedProfile: any = {
         ...companyProfile,
         ...values,
       };
@@ -91,9 +179,7 @@ export default function CompanyProfile() {
       dispatch(setProfile(updatedProfile));
 
       // Update backend
-      await updateCompanyProfileApi(
-        updatedProfile as CompleteCompanyProfile
-      );
+      await updateCompanyProfileApi(updatedProfile as CompleteCompanyProfile);
 
       toast.success("Company profile updated successfully!");
       setIsEditModalOpen(false);
@@ -234,14 +320,293 @@ export default function CompanyProfile() {
   );
 
   return (
-    <div style={{ minHeight: "100vh" }} className="fixed mx-auto w-full">
-      <Row gutter={[24, 24]} className="flex justify-center items-center">
-        {/* Left Sidebar */}
-        <Col xs={24} md={24} lg={9}>
-          {/* <Affix offsetTop={80}>{SidebarCard}</Affix> */}
-          <div className="fixed">{SidebarCard}</div>
-        </Col>
-      </Row>
+    <div className="bg-gray-50  p-2">
+      <div className="max-w-6xl mx-auto">
+        <Row gutter={[24, 24]}>
+          {/* Profile Sidebar */}
+          <Col xs={24} lg={8}>
+            <div className="sticky top-6">
+              <Card
+                className="rounded-2xl shadow-md border-0"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #ffffff 0%, #f5f9ff 100%)",
+                }}
+              >
+                <Space
+                  direction="vertical"
+                  style={{ width: "100%" }}
+                  size="large"
+                >
+                  {/* Header */}
+                  <div className="flex justify-between items-start">
+                    <div className="flex gap-2 items-center">
+                      <Avatar
+                        size={80}
+                        src={companyProfile?.logoUrl}
+                        style={{
+                          backgroundColor: "#1890FF",
+                          border: "3px solid #e6f7ff",
+                        }}
+                      >
+                        {companyProfile?.companyName?.charAt(0) || "C"}
+                      </Avatar>
+                      {/* Company Info */}
+                      <div>
+                        <Typography.Title level={4} className="!mb-1">
+                          {companyProfile?.companyName}
+                        </Typography.Title>
+                        <Tag
+                          color={
+                            companyProfile?.hiringStatus === "actively_hiring"
+                              ? "success"
+                              : "default"
+                          }
+                          className="!rounded-full"
+                        >
+                          {companyProfile?.hiringStatus === "actively_hiring"
+                            ? "✓ Actively Hiring"
+                            : "Not Hiring"}
+                        </Tag>
+                      </div>
+                    </div>
+                    <div>
+                      {" "}
+                      <Tooltip title="Edit Profile">
+                        <Button
+                          type="text"
+                          icon={<EditOutlined />}
+                          size="large"
+                          onClick={handleEditClick}
+                          className="!text-blue-600 hover:!bg-blue-50"
+                        />
+                      </Tooltip>
+                    </div>
+                  </div>
+
+                  <Divider className="!my-4" />
+
+                  {/* Info Items */}
+                  <Row gutter={[16, 16]}>
+                    {/* Location */}
+                    <Col xs={24}>
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50">
+                        <EnvironmentOutlined className="text-blue-600 text-lg" />
+                        <div>
+                          <Typography.Text
+                            type="secondary"
+                            className="text-xs block"
+                          >
+                            Location
+                          </Typography.Text>
+                          <Typography.Text strong>
+                            {companyProfile?.city && companyProfile?.country
+                              ? `${companyProfile.city}, ${companyProfile.country}`
+                              : "Not specified"}
+                          </Typography.Text>
+                        </div>
+                      </div>
+                    </Col>
+
+                    {/* Founded */}
+                    {companyProfile?.foundedYear && (
+                      <Col xs={24}>
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-50">
+                          <CalendarOutlined className="text-purple-600 text-lg" />
+                          <div>
+                            <Typography.Text
+                              type="secondary"
+                              className="text-xs block"
+                            >
+                              Founded
+                            </Typography.Text>
+                            <Typography.Text strong>
+                              {companyProfile.foundedYear}
+                            </Typography.Text>
+                          </div>
+                        </div>
+                      </Col>
+                    )}
+
+                    {/* Email */}
+                    <Col xs={24}>
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-cyan-50">
+                        <MailOutlined className="text-cyan-600 text-lg" />
+                        <div className="min-w-0">
+                          <Typography.Text
+                            type="secondary"
+                            className="text-xs block"
+                          >
+                            Contact Email
+                          </Typography.Text>
+                          <Typography.Text strong ellipsis>
+                            {companyProfile?.contactEmail || "No email"}
+                          </Typography.Text>
+                        </div>
+                      </div>
+                    </Col>
+                  </Row>
+
+                  <Divider className="!my-4" />
+
+                  {/* Knowledge Base */}
+                  <div>
+                    <Typography.Text
+                      strong
+                      className="flex items-center gap-2 mb-2"
+                    >
+                      <FileOutlined className="text-blue-600" />
+                      Knowledge Base
+                    </Typography.Text>
+                    <Typography.Paragraph
+                      type="secondary"
+                      className="text-sm mb-3"
+                    >
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {(companyProfile as unknown as any)?.knowledgeBasePdfUrl
+                        ? "✓ PDF uploaded"
+                        : "Upload PDF for AI"}
+                    </Typography.Paragraph>
+                    <Upload
+                      accept="application/pdf"
+                      showUploadList={false}
+                      beforeUpload={(file) => {
+                        handleKbUpload(file as unknown as File);
+                        return false;
+                      }}
+                    >
+                      <Button
+                        icon={<UploadOutlined />}
+                        loading={kbUploading}
+                        disabled={kbUploading}
+                        block
+                        className="!border-blue-500 !text-blue-600"
+                      >
+                        {kbUploading ? "Uploading..." : "Upload PDF"}
+                      </Button>
+                    </Upload>
+                  </div>
+                </Space>
+              </Card>
+            </div>
+          </Col>
+
+          {/* Details Section */}
+          <Col xs={24} lg={16}>
+            <Space direction="vertical" style={{ width: "100%" }} size="large">
+              {/* About */}
+              <Card className="rounded-2xl shadow-md border-0">
+                <Space
+                  direction="vertical"
+                  style={{ width: "100%" }}
+                  size="middle"
+                >
+                  <Typography.Title level={5} className="!mb-0">
+                    About Company
+                  </Typography.Title>
+                  <Typography.Paragraph className="!mb-0">
+                    {companyProfile?.description || (
+                      <span className="text-gray-400">
+                        No description added
+                      </span>
+                    )}
+                  </Typography.Paragraph>
+                </Space>
+              </Card>
+
+              {/* Tech Stack */}
+              <Card className="rounded-2xl shadow-md border-0">
+                <Space
+                  direction="vertical"
+                  style={{ width: "100%" }}
+                  size="middle"
+                >
+                  <Typography.Title level={5} className="!mb-0">
+                    Tech Stack
+                  </Typography.Title>
+                  <div className="flex flex-wrap gap-2">
+                    {companyProfile?.techStack &&
+                    companyProfile.techStack.length > 0 ? (
+                      companyProfile.techStack.map(
+                        (tech: string, i: number) => (
+                          <Tag
+                            key={i}
+                            color="blue"
+                            className="!rounded-lg border-0 font-medium"
+                          >
+                            {tech}
+                          </Tag>
+                        ),
+                      )
+                    ) : (
+                      <Typography.Text type="secondary">
+                        No tech stack added
+                      </Typography.Text>
+                    )}
+                  </div>
+                </Space>
+              </Card>
+
+              {/* Additional Info */}
+              <Row gutter={[16, 16]}>
+                {companyProfile?.ntnNumber && (
+                  <Col xs={24} sm={12}>
+                    <Card className="rounded-2xl shadow-md border-0 h-full">
+                      <Typography.Text type="secondary" className="text-sm">
+                        NTN Number
+                      </Typography.Text>
+                      <Typography.Title level={5} className="!mt-2 !mb-0">
+                        {companyProfile.ntnNumber}
+                      </Typography.Title>
+                    </Card>
+                  </Col>
+                )}
+
+                {(companyProfile?.website || companyProfile?.linkedInUrl) && (
+                  <Col xs={24} sm={12}>
+                    <Card className="rounded-2xl shadow-md border-0 h-full">
+                      <Space direction="vertical" style={{ width: "100%" }}>
+                        <Typography.Text type="secondary" className="text-sm">
+                          Quick Links
+                        </Typography.Text>
+                        <Space>
+                          {companyProfile?.website && (
+                            <Button
+                              type="text"
+                              icon={<GlobalOutlined />}
+                              onClick={() =>
+                                window.open(companyProfile.website, "_blank")
+                              }
+                              className="!text-blue-600"
+                            >
+                              Website
+                            </Button>
+                          )}
+                          {companyProfile?.linkedInUrl && (
+                            <Button
+                              type="text"
+                              icon={<LinkedinFilled />}
+                              onClick={() =>
+                                window.open(
+                                  companyProfile.linkedInUrl,
+                                  "_blank",
+                                )
+                              }
+                              className="!text-[#0A66C2]"
+                            >
+                              LinkedIn
+                            </Button>
+                          )}
+                        </Space>
+                      </Space>
+                    </Card>
+                  </Col>
+                )}
+              </Row>
+            </Space>
+          </Col>
+        </Row>
+      </div>
 
       {/* Edit Profile Modal */}
       <Modal

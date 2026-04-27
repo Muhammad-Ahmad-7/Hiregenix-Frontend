@@ -6,7 +6,7 @@ interface chatBotQueryApiBody {
 export const chatBotQueryApi = async (body: chatBotQueryApiBody) => {
   console.log("body", body);
   return safeApiCall<{ answer: string }>({
-    apiCall: () => api.post("chatbot/company-chat", body),
+    apiCall: () => api.post("/chatbot/company-chat", body),
     showToaster: true,
   });
 };
