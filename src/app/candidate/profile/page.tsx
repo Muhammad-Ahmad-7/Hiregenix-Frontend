@@ -15,7 +15,6 @@ import {
   Affix,
   Grid,
   Upload,
-  message,
   Empty,
   Modal,
   Form,
@@ -349,7 +348,7 @@ export default function ProfileDashboard() {
     setIsEditModalLoading(true);
     try {
       const values = await sectionForm.validateFields();
-      if (!resumeData) { message.error("Resume data not loaded"); return; }
+      if (!resumeData) { toast.error("Resume data not loaded"); return; }
       const updated = { ...resumeData };
 
       if (sectionModal.type === "experience") {
@@ -614,6 +613,7 @@ export default function ProfileDashboard() {
       icon={<PlusOutlined />}
       onClick={() => openAddSection(type)}
       size="small"
+      disabled={!resumeData}
     >
       Add
     </Button>
@@ -830,7 +830,7 @@ export default function ProfileDashboard() {
                 </Timeline>
               ) : (
                 <Empty description="No experience data available">
-                  <Button type="primary" icon={<PlusOutlined />} onClick={() => openAddSection("experience")}>Add Experience</Button>
+                  <Button disabled={!resumeData} type="primary" icon={<PlusOutlined />} onClick={() => openAddSection("experience")}>Add Experience</Button>
                 </Empty>
               )}
             </Card>
@@ -866,7 +866,7 @@ export default function ProfileDashboard() {
                 </Timeline>
               ) : (
                 <Empty description="No education data available">
-                  <Button type="primary" icon={<PlusOutlined />} onClick={() => openAddSection("education")}>Add Education</Button>
+                  <Button disabled={!resumeData} type="primary" icon={<PlusOutlined />} onClick={() => openAddSection("education")}>Add Education</Button>
                 </Empty>
               )}
             </Card>
@@ -911,7 +911,7 @@ export default function ProfileDashboard() {
                 </Space>
               ) : (
                 <Empty description="No projects available">
-                  <Button type="primary" icon={<PlusOutlined />} onClick={() => openAddSection("project")}>Add Project</Button>
+                  <Button disabled={!resumeData} type="primary" icon={<PlusOutlined />} onClick={() => openAddSection("project")}>Add Project</Button>
                 </Empty>
               )}
             </Card>
@@ -941,7 +941,7 @@ export default function ProfileDashboard() {
                 </Space>
               ) : (
                 <Empty description="No certifications available">
-                  <Button type="primary" icon={<PlusOutlined />} onClick={() => openAddSection("certification")}>Add Certification</Button>
+                  <Button disabled={!resumeData} type="primary" icon={<PlusOutlined />} onClick={() => openAddSection("certification")}>Add Certification</Button>
                 </Empty>
               )}
             </Card>

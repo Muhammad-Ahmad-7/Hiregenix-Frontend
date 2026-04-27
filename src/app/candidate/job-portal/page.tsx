@@ -26,8 +26,8 @@ import {
   CloseOutlined,
   HeartOutlined,
   HeartFilled,
-  ShareAltOutlined,
-  WarningOutlined,
+  // ShareAltOutlined,
+  // WarningOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 
@@ -277,13 +277,13 @@ export default function JobDashboard() {
       case "save":
         handleSaveJob(jobId);
         break;
-      case "share":
-        navigator.clipboard.writeText(window.location.href);
-        toast.success("Job link copied to clipboard");
-        break;
-      case "report":
-        toast.success("Report functionality coming soon");
-        break;
+      // case "share":
+      //   navigator.clipboard.writeText(window.location.href);
+      //   toast.success("Job link copied to clipboard");
+      //   break;
+      // case "report":
+      //   toast.success("Report functionality coming soon");
+      //   break;
       case "view_profile": {
         const companyId =
           selectedJob?.companyId?._id || selectedJob?.company?._id;
@@ -310,14 +310,14 @@ export default function JobDashboard() {
           <HeartOutlined />
         ),
       },
-      { label: "Share", key: "share", icon: <ShareAltOutlined /> },
+      // { label: "Share", key: "share", icon: <ShareAltOutlined /> },
       { type: "divider" as const },
-      {
-        label: "Report",
-        key: "report",
-        icon: <WarningOutlined />,
-        danger: true,
-      },
+      // {
+      //   label: "Report",
+      //   key: "report",
+      //   icon: <WarningOutlined />,
+      //   danger: true,
+      // },
       { label: "View Profile", key: "view_profile", icon: <UserOutlined /> },
     ];
   };
@@ -705,11 +705,10 @@ export default function JobDashboard() {
 
               <Col xs={12}>
                 <UiButton
-                  className={`w-full ${
-                    activeTab === "saved"
-                      ? "!text-blue-600 !bg-blue-50"
-                      : "!text-gray-400"
-                  }`}
+                  className={`w-full ${activeTab === "saved"
+                    ? "!text-blue-600 !bg-blue-50"
+                    : "!text-gray-400"
+                    }`}
                   onClick={() => setActiveTab("saved")}
                 >
                   Saved ({savedJobsList.length})
@@ -717,11 +716,10 @@ export default function JobDashboard() {
               </Col>
               <Col xs={12}>
                 <UiButton
-                  className={`w-full ${
-                    activeTab === "recommended"
-                      ? "!text-blue-600 !bg-blue-50"
-                      : "!text-gray-400"
-                  }`}
+                  className={`w-full ${activeTab === "recommended"
+                    ? "!text-blue-600 !bg-blue-50"
+                    : "!text-gray-400"
+                    }`}
                   onClick={() => setActiveTab("recommended")}
                 >
                   Recommended
@@ -729,11 +727,10 @@ export default function JobDashboard() {
               </Col>
               <Col xs={24}>
                 <UiButton
-                  className={`w-full ${
-                    activeTab === "all"
-                      ? "!text-blue-600 !bg-blue-50"
-                      : "!text-gray-400"
-                  }`}
+                  className={`w-full ${activeTab === "all"
+                    ? "!text-blue-600 !bg-blue-50"
+                    : "!text-gray-400"
+                    }`}
                   onClick={() => setActiveTab("all")}
                 >
                   All Jobs ({filteredJobList.length})
@@ -751,11 +748,10 @@ export default function JobDashboard() {
                   dataSource={filteredJobList}
                   renderItem={(item) => (
                     <List.Item
-                      className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${
-                        selectedJob?._id === item._id
-                          ? "bg-blue-50 border-l-4 border-l-blue-500"
-                          : "border-l-4 border-l-transparent"
-                      }`}
+                      className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${selectedJob?._id === item._id
+                        ? "bg-blue-50 border-l-4 border-l-blue-500"
+                        : "border-l-4 border-l-transparent"
+                        }`}
                       onClick={() => {
                         setSelectedJob(item);
                         setIsDetailOpen(true);
@@ -882,11 +878,10 @@ export default function JobDashboard() {
                       const job = savedJob.jobId;
                       return (
                         <List.Item
-                          className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${
-                            selectedJob?._id === job._id
-                              ? "bg-blue-50 border-l-4 border-l-blue-500"
-                              : "border-l-4 border-l-transparent"
-                          }`}
+                          className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${selectedJob?._id === job._id
+                            ? "bg-blue-50 border-l-4 border-l-blue-500"
+                            : "border-l-4 border-l-transparent"
+                            }`}
                           onClick={() => {
                             const fullJob = convertToJobInterface(job);
                             fullJob.isSaved = true;
@@ -1008,11 +1003,10 @@ export default function JobDashboard() {
                       const fullJob = jobList.find((j) => j._id === item.jobId);
                       return (
                         <List.Item
-                          className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${
-                            selectedJob?._id === item.jobId
-                              ? "bg-blue-50 border-l-4 border-l-blue-500"
-                              : "border-l-4 border-l-transparent"
-                          }`}
+                          className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${selectedJob?._id === item.jobId
+                            ? "bg-blue-50 border-l-4 border-l-blue-500"
+                            : "border-l-4 border-l-transparent"
+                            }`}
                           onClick={() => {
                             if (fullJob) {
                               setSelectedJob(fullJob);
@@ -1081,16 +1075,16 @@ export default function JobDashboard() {
                                     Posted:{" "}
                                     {fullJob
                                       ? new Date(
-                                          fullJob.createdAt,
-                                        ).toLocaleDateString()
+                                        fullJob.createdAt,
+                                      ).toLocaleDateString()
                                       : "N/A"}
                                   </span>
                                   <span>
                                     Deadline:{" "}
                                     {fullJob
                                       ? new Date(
-                                          fullJob.deadline,
-                                        ).toLocaleDateString()
+                                        fullJob.deadline,
+                                      ).toLocaleDateString()
                                       : "N/A"}
                                   </span>
                                 </div>
@@ -1224,19 +1218,17 @@ export default function JobDashboard() {
 
       {/* Backdrop */}
       <div
-        className={`lg:hidden fixed inset-0 z-40 bg-black transition-opacity duration-300 ${
-          isDetailOpen
-            ? "opacity-50 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        }`}
+        className={`lg:hidden fixed inset-0 z-40 bg-black transition-opacity duration-300 ${isDetailOpen
+          ? "opacity-50 pointer-events-auto"
+          : "opacity-0 pointer-events-none"
+          }`}
         onClick={() => setIsDetailOpen(false)}
       />
 
       {/* Slide-up sheet */}
       <div
-        className={`lg:hidden fixed bottom-0 left-0 mx-auto right-0 z-50 flex flex-col bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 w-[90%] max-[400px]:w-[99%] ease-out ${
-          isDetailOpen ? "translate-y-0" : "translate-y-full"
-        }`}
+        className={`lg:hidden fixed bottom-0 left-0 mx-auto right-0 z-50 flex flex-col bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 w-[90%] max-[400px]:w-[99%] ease-out ${isDetailOpen ? "translate-y-0" : "translate-y-full"
+          }`}
         style={{ height: "90vh" }}
       >
         {/* Handle bar + close button */}
