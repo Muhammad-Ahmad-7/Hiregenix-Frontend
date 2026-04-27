@@ -55,13 +55,13 @@
 //       if (response?.data?.url) {
 //         setLogoUrl(response.data.url);
 //         form.setFieldValue("logoUrl", response.data.url);
-//         message.success("Logo uploaded successfully!");
+//         toast.success("Logo uploaded successfully!");
 //       } else {
-//         message.error("Upload failed: Invalid response from server");
+//         toast.error("Upload failed: Invalid response from server");
 //       }
 //     } catch (err: unknown) {
 //       const error = err as AxiosError<{ message?: string }>;
-//       message.error(
+//       toast.error(
 //         error?.response?.data?.message ||
 //           error?.message ||
 //           "Failed to upload logo. Please try again."
@@ -79,13 +79,13 @@
 //         file.type === "image/png" ||
 //         file.type === "image/svg+xml";
 //       if (!isImage) {
-//         message.error("You can only upload JPEG, PNG, or SVG files!");
+//         toast.error("You can only upload JPEG, PNG, or SVG files!");
 //         return false;
 //       }
 
 //       const isLt5M = file.size / 1024 / 1024 < 5;
 //       if (!isLt5M) {
-//         message.error("Logo must be smaller than 5MB!");
+//         toast.error("Logo must be smaller than 5MB!");
 //         return false;
 //       }
 
@@ -97,7 +97,7 @@
 
 //   const onFinish = (values: any) => {
 //     if (!logoUrl) {
-//       message.error("Please upload your company logo");
+//       toast.error("Please upload your company logo");
 //       return;
 //     }
 
@@ -226,7 +226,7 @@
 // }
 "use client";
 
-import { Col, Form, Row, Typography, Upload, message, Avatar } from "antd";
+import { Col, Form, Row, Typography, Upload, Avatar } from "antd";
 import React, { useState } from "react";
 import PlusIcon from "@/icons/PlusIcon";
 import { LabelInput, LabelSelect } from "@/component/common";
@@ -234,6 +234,7 @@ import UiButton from "@/component/common/CustomButton";
 import { uploadFileApi } from "@/app/api/auth.api";
 import { LoadingOutlined } from "@ant-design/icons";
 import { AxiosError } from "axios";
+import toast from "react-hot-toast";
 
 const { Text } = Typography;
 
@@ -290,16 +291,16 @@ export default function CompanyStep1Form({
       if (response?.data?.url) {
         setLogoUrl(response.data.url);
         form.setFieldValue("logoUrl", response.data.url);
-        message.success("Logo uploaded successfully!");
+        toast.success("Logo uploaded successfully!");
       } else {
-        message.error("Upload failed: Invalid response from server");
+        toast.error("Upload failed: Invalid response from server");
       }
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
-      message.error(
+      toast.error(
         error?.response?.data?.message ||
-          error?.message ||
-          "Failed to upload logo. Please try again."
+        error?.message ||
+        "Failed to upload logo. Please try again."
       );
       console.error("Upload error:", error);
     } finally {
@@ -314,13 +315,13 @@ export default function CompanyStep1Form({
         file.type === "image/png" ||
         file.type === "image/svg+xml";
       if (!isImage) {
-        message.error("You can only upload JPEG, PNG, or SVG files!");
+        toast.error("You can only upload JPEG, PNG, or SVG files!");
         return false;
       }
 
       const isLt5M = file.size / 1024 / 1024 < 5;
       if (!isLt5M) {
-        message.error("Logo must be smaller than 5MB!");
+        toast.error("Logo must be smaller than 5MB!");
         return false;
       }
 
@@ -332,7 +333,7 @@ export default function CompanyStep1Form({
 
   const onFinish = (values: CompanyStep1FormValues) => {
     if (!logoUrl) {
-      message.error("Please upload your company logo");
+      toast.error("Please upload your company logo");
       return;
     }
 

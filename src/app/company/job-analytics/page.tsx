@@ -8,7 +8,6 @@ import {
   Button,
   Dropdown,
   Card,
-  Spin,
   message,
   Modal,
   Form,
@@ -18,7 +17,7 @@ import {
   DatePicker,
 } from "antd";
 
-import { PlusOutlined, SearchOutlined, MoreOutlined } from "@ant-design/icons";
+import { PlusOutlined, SearchOutlined, MoreOutlined, ExclamationCircleOutlined, EditOutlined, EyeOutlined } from "@ant-design/icons";
 
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -41,7 +40,8 @@ import dayjs, { Dayjs } from "dayjs";
 import UiButton from "@/component/common/CustomButton";
 import type { ColumnsType } from "antd/es/table";
 import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
-import { ExperienceLevel, WorkMode } from "@/constants/enums";
+import TableSkeleton from "@/component/Skeletons/TableSkeleton";
+import toast from "react-hot-toast";
 
 const { TextArea } = Input;
 
@@ -59,6 +59,7 @@ interface EditJobFormValues {
   salaryMax: number;
   currency: string;
   deadline: Dayjs;
+  status: "open" | "closed";
 }
 
 interface JobWithKey extends JobResponse {
@@ -77,7 +78,15 @@ const MyJobsTable: React.FC = () => {
   // Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [editingJob, setEditingJob] = useState<JobResponse | null>(null);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
   const [form] = Form.useForm<EditJobFormValues>();
+
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingJob, setViewingJob] = useState<JobResponse | null>(null);
+
+  const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
 
   // -----------------------
   // Fetch Jobs
@@ -138,6 +147,22 @@ const MyJobsTable: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
+  const handleDeleteConfirm = async () => {
+    if (!deleteJobId) return;
+    try {
+      setIsDeleting(true);
+      await deleteJobApi(deleteJobId);
+      toast.success("Job deleted");
+      if (activeTab === "open") fetchOpenJobs();
+      else fetchClosedJobs();
+    } catch {
+      toast.error("Delete failed");
+    } finally {
+      setIsDeleting(false);
+      setDeleteJobId(null);
+    }
+  };
+
   // -----------------------
   // Open Edit Modal
   // -----------------------
@@ -168,26 +193,23 @@ const MyJobsTable: React.FC = () => {
   // -----------------------
   const handleSaveJob = async (values: EditJobFormValues): Promise<void> => {
     if (!editingJob) return;
+    setIsEditing(true);
+
+    // This checks if the selected date is strictly earlier than today
+    if (values.deadline.isBefore(dayjs(), "day")) {
+      toast.error("Deadline cannot be in the past!");
+      setIsEditing(false);
+      return;
+    }
+
+    if (dayjs(values.deadline).toISOString() < dayjs(editingJob.deadline).toISOString()) {
+      toast.error("You cannot move the deadline backwards!");
+      setIsEditing(false);
+      return;
+    }
 
     const payload = {
-      title: values.title,
-      role: values.role,
-      description: values.description,
-      experienceLevel: values.experienceLevel as ExperienceLevel,
-      workMode: values.workMode as WorkMode,
-      requiredSkills: values.requiredSkills,
-      requirements: values.requirements,
-      location: {
-        city: values.city,
-        country: values.country,
-      },
-      salaryRange: {
-        min: values.salaryMin,
-        max: values.salaryMax,
-        currency: values.currency,
-      },
       deadline: values.deadline.toISOString(),
-      status: editingJob.status,
     };
 
     try {
@@ -196,14 +218,16 @@ const MyJobsTable: React.FC = () => {
         body: payload,
       });
 
-      message.success("Job updated successfully!");
+      toast.success("Job deadline updated successfully!");
 
       if (activeTab === "open") fetchOpenJobs();
       else fetchClosedJobs();
 
       setIsEditModalOpen(false);
     } catch {
-      message.error("Failed to update job");
+      toast.error("Failed to update job");
+    } finally {
+      setIsEditing(false);
     }
   };
 
@@ -215,24 +239,49 @@ const MyJobsTable: React.FC = () => {
       job.title.toLowerCase().includes(search.toLowerCase())
     ) || [];
 
+  const openViewModal = (job: JobResponse) => {
+    setViewingJob(job);
+    setIsViewModalOpen(true);
+  };
+
   // -----------------------
   // Table Columns
   // -----------------------
   const columns: ColumnsType<JobWithKey> = [
-    { title: "Title", dataIndex: "title" as const },
-    { title: "Role", dataIndex: "role" as const },
+    {
+      title: "Title",
+      dataIndex: "title" as const,
+      responsive: ["xs", "sm", "md", "lg"],
+    },
+
+    {
+      title: "Role",
+      dataIndex: "role" as const,
+      responsive: ["sm", "md", "lg"],
+    },
 
     {
       title: "Location",
+      responsive: ["md", "lg"],
       render: (_: unknown, record: JobResponse) =>
         `${record.location.city}, ${record.location.country}`,
     },
 
-    { title: "Work Mode", dataIndex: "workMode" as const },
-    { title: "Experience", dataIndex: "experienceLevel" as const },
+    {
+      title: "Work Mode",
+      dataIndex: "workMode" as const,
+      responsive: ["md", "lg"],
+    },
+
+    {
+      title: "Experience",
+      dataIndex: "experienceLevel" as const,
+      responsive: ["lg"], // only desktop
+    },
 
     {
       title: "Salary",
+      responsive: ["lg"],
       render: (_: unknown, record: JobResponse) => {
         if (!record.salaryRange) return "—";
         const s = record.salaryRange;
@@ -243,6 +292,7 @@ const MyJobsTable: React.FC = () => {
     {
       title: "Deadline",
       dataIndex: "deadline" as const,
+      responsive: ["sm", "md", "lg"],
       render: (date: string) => dayjs(date).format("DD MMM YYYY"),
     },
 
@@ -250,34 +300,31 @@ const MyJobsTable: React.FC = () => {
       title: "",
       key: "actions",
       align: "center" as const,
+      fixed: "right", // 🔥 important for usability
+      responsive: ["xs", "sm", "md", "lg"],
       render: (_: unknown, record: JobResponse) => (
         <Dropdown
           trigger={["click"]}
           menu={{
             items: [
-              { key: "1", label: "View Details" },
-
+              {
+                key: "1",
+                label: "View Details",
+                icon: <EyeOutlined />,
+                onClick: () => openViewModal(record),
+              },
               {
                 key: "2",
-                label: "Edit Job",
+                label: "Edit Job Deadline",
+                icon: <EditOutlined />,
                 onClick: () => openEditModal(record),
               },
-
               {
                 key: "3",
                 label: "Delete Job",
                 danger: true,
-                onClick: () =>
-                  deleteJobApi(record._id)
-                    .then(() => {
-                      message.success("Job deleted");
-                      if (activeTab === "open") {
-                        fetchOpenJobs();
-                      } else {
-                        fetchClosedJobs();
-                      }
-                    })
-                    .catch(() => message.error("Delete failed")),
+                icon: <ExclamationCircleOutlined />,
+                onClick: () => setDeleteJobId(record._id),
               },
             ],
           }}
@@ -287,6 +334,36 @@ const MyJobsTable: React.FC = () => {
       ),
     },
   ];
+
+
+  const deleteModal = (
+    <Modal
+      title="Delete Job"
+      open={!!deleteJobId}
+      onCancel={() => { if (!isDeleting) setDeleteJobId(null); }}
+      closable={!isDeleting}
+      maskClosable={!isDeleting}
+      footer={[
+        <Button key="cancel" onClick={() => setDeleteJobId(null)} disabled={isDeleting}>
+          Cancel
+        </Button>,
+        <Button key="confirm" danger type="primary" loading={isDeleting} onClick={handleDeleteConfirm}>
+          Yes, Delete
+        </Button>,
+      ]}
+      width={420}
+    >
+      <div className="flex items-start gap-4 py-4">
+        <ExclamationCircleOutlined className="text-red-500 text-2xl mt-0.5 shrink-0" />
+        <div className="flex flex-col gap-1">
+          <p className="text-gray-800 font-semibold text-base m-0">Are you sure?</p>
+          <p className="text-gray-500 text-sm m-0">
+            This job will be permanently deleted. This action cannot be undone.
+          </p>
+        </div>
+      </div>
+    </Modal>
+  );
 
   // -----------------------
   // Load More
@@ -306,37 +383,53 @@ const MyJobsTable: React.FC = () => {
   // -----------------------
   const editModal = (
     <Modal
-      title="Edit Job"
+      title="Edit Job Deadline"
       open={isEditModalOpen}
       onCancel={() => setIsEditModalOpen(false)}
       footer={null}
       width={700}
     >
       <Form form={form} layout="vertical" onFinish={handleSaveJob}>
-        <Form.Item name="title" label="Job Title" rules={[{ required: true }]}>
-          <Input placeholder="Enter job title" />
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item name="title" label="Job Title" rules={[{ required: true }]}>
+              <Input placeholder="Enter job title" disabled />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="deadline" label="Deadline" rules={[{ required: true }]}>
+              <DatePicker style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item name="role" label="Role" rules={[{ required: true }]}>
+              <Input placeholder="Enter job role" disabled />
+            </Form.Item>
+          </Col>
+          <Col span={6}>
+            <Form.Item name="city" label="City" rules={[{ required: true }]}>
+              <Input placeholder="City" disabled />
+            </Form.Item>
+          </Col>
+          <Col span={6}>
+            <Form.Item name="salaryMin" label="Min Salary" rules={[{ required: true }]}>
+              <Input type="number" placeholder="Min" disabled />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Form.Item name="description" label="Description" rules={[{ required: true }]}>
+          <TextArea rows={4} placeholder="Job description" disabled />
         </Form.Item>
 
-        <Form.Item name="role" label="Role" rules={[{ required: true }]}>
-          <Input placeholder="Enter job role" />
-        </Form.Item>
-
-        <Form.Item
-          name="description"
-          label="Description"
-          rules={[{ required: true }]}
-        >
-          <TextArea rows={4} placeholder="Job description" />
-        </Form.Item>
 
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item
-              name="experienceLevel"
-              label="Experience Level"
-              rules={[{ required: true }]}
-            >
+            <Form.Item name="experienceLevel" label="Experience Level" rules={[{ required: true }]}>
               <Select
+                disabled
                 options={[
                   { label: "Junior", value: "junior" },
                   { label: "Mid", value: "mid" },
@@ -345,14 +438,10 @@ const MyJobsTable: React.FC = () => {
               />
             </Form.Item>
           </Col>
-
           <Col span={12}>
-            <Form.Item
-              name="workMode"
-              label="Work Mode"
-              rules={[{ required: true }]}
-            >
+            <Form.Item name="workMode" label="Work Mode" rules={[{ required: true }]}>
               <Select
+                disabled
                 options={[
                   { label: "Remote", value: "remote" },
                   { label: "Hybrid", value: "hybrid" },
@@ -363,81 +452,24 @@ const MyJobsTable: React.FC = () => {
           </Col>
         </Row>
 
-        <Form.Item name="requiredSkills" label="Required Skills">
-          <Select mode="tags" placeholder="Add skills" />
-        </Form.Item>
-
-        <Form.Item name="requirements" label="Requirements">
-          <Select mode="tags" placeholder="Add requirements" />
-        </Form.Item>
-
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item name="city" label="City" rules={[{ required: true }]}>
-              <Input placeholder="City" />
+            <Form.Item name="requiredSkills" label="Required Skills">
+              <Select disabled mode="tags" placeholder="Add skills" />
             </Form.Item>
           </Col>
-
           <Col span={12}>
-            <Form.Item
-              name="country"
-              label="Country"
-              rules={[{ required: true }]}
-            >
-              <Input placeholder="Country" />
+            <Form.Item name="requirements" label="Requirements">
+              <Select disabled mode="tags" placeholder="Add requirements" />
             </Form.Item>
           </Col>
         </Row>
 
-        <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item
-              name="salaryMin"
-              label="Min Salary"
-              rules={[{ required: true }]}
-            >
-              <Input type="number" placeholder="Min" />
-            </Form.Item>
-          </Col>
-
-          <Col span={8}>
-            <Form.Item
-              name="salaryMax"
-              label="Max Salary"
-              rules={[{ required: true }]}
-            >
-              <Input type="number" placeholder="Max" />
-            </Form.Item>
-          </Col>
-
-          <Col span={8}>
-            <Form.Item
-              name="currency"
-              label="Currency"
-              rules={[{ required: true }]}
-            >
-              <Input placeholder="PKR / USD" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Form.Item
-          name="deadline"
-          label="Deadline"
-          rules={[{ required: true }]}
-        >
-          <DatePicker style={{ width: "100%" }} />
-        </Form.Item>
-
-        <div style={{ textAlign: "right" }}>
-          <Button
-            onClick={() => setIsEditModalOpen(false)}
-            style={{ marginRight: 8 }}
-          >
+        <div style={{ textAlign: "right", marginTop: 8 }}>
+          <Button onClick={() => setIsEditModalOpen(false)} style={{ marginRight: 8 }}>
             Cancel
           </Button>
-
-          <Button type="primary" htmlType="submit">
+          <Button type="primary" htmlType="submit" loading={isEditing}>
             Save Changes
           </Button>
         </div>
@@ -445,9 +477,84 @@ const MyJobsTable: React.FC = () => {
     </Modal>
   );
 
+  const viewModal = (
+    <Modal
+      title="Job Details"
+      open={isViewModalOpen}
+      onCancel={() => setIsViewModalOpen(false)}
+      footer={null}
+      width={800}
+    >
+      {viewingJob && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">{viewingJob.title}</h2>
+
+          <p><b>Role:</b> {viewingJob.role}</p>
+
+          <p>
+            <b>Location:</b>{" "}
+            {viewingJob.location.city}, {viewingJob.location.country}
+          </p>
+
+          <p><b>Work Mode:</b> {viewingJob.workMode}</p>
+          <p><b>Experience:</b> {viewingJob.experienceLevel}</p>
+
+          <p>
+            <b>Salary:</b>{" "}
+            {viewingJob.salaryRange
+              ? `${viewingJob.salaryRange.min} - ${viewingJob.salaryRange.max} ${viewingJob.salaryRange.currency}`
+              : "—"}
+          </p>
+
+          <p>
+            <b>Deadline:</b>{" "}
+            {dayjs(viewingJob.deadline).format("DD MMM YYYY")}
+          </p>
+
+          <div>
+            <b>Description:</b>
+            <p className="text-gray-600 mt-1">{viewingJob.description}</p>
+          </div>
+
+          <div>
+            <b>Interview Guideline:</b>
+            <p className="text-gray-600 mt-1">
+              {viewingJob.interviewGuideline}
+            </p>
+          </div>
+
+          <div>
+            <b>Skills:</b>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {viewingJob.requiredSkills?.map((skill) => (
+                <span
+                  key={skill}
+                  className="px-2 py-1 bg-gray-100 rounded-md text-sm"
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <b>Requirements:</b>
+            <ul className="list-disc pl-5 text-gray-600">
+              {viewingJob.requirements?.map((req, i) => (
+                <li key={i}>{req}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+
   return (
     <>
       {editModal}
+      {viewModal}
+      {deleteModal}
 
       <Card className="rounded-2xl shadow-sm p-6">
         {/* Tabs */}
@@ -461,7 +568,7 @@ const MyJobsTable: React.FC = () => {
         />
 
         {/* Search + Add */}
-        <div className="flex justify-between mb-4">
+        <div className="flex justify-between mb-4 flex-wrap gap-2">
           <Input
             placeholder="Search jobs..."
             prefix={<SearchOutlined />}
@@ -482,24 +589,30 @@ const MyJobsTable: React.FC = () => {
         {/* Table */}
         {loading ? (
           <div className="flex justify-center py-10">
-            <Spin size="large" />
+            <TableSkeleton />
           </div>
         ) : (
           <>
             <Table
               columns={columns}
               dataSource={filteredJobs.map((job) => ({ ...job, key: job._id }))}
-              pagination={false}
+              pagination={{
+                pageSize: 10,
+                responsive: true,
+                showSizeChanger: false,
+              }}
+              className="rounded-lg overflow-hidden"
+              scroll={{ x: "max-content" }} // better than fixed 1200
               bordered
-              className="rounded-lg"
+              size="middle"
             />
 
             {openMeta &&
               closedMeta &&
               (activeTab === "open" ? openMeta : closedMeta)?.page <
-                (activeTab === "open"
-                  ? openMeta?.totalPages
-                  : closedMeta?.totalPages) && (
+              (activeTab === "open"
+                ? openMeta?.totalPages
+                : closedMeta?.totalPages) && (
                 <div className="flex justify-center mt-4">
                   <Button onClick={loadMoreJobs} type="dashed">
                     Load More

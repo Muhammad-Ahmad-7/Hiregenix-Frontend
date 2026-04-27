@@ -1,18 +1,31 @@
 "use client";
 
 import React, { useState } from "react";
-import { Col, Form, Row, Typography, Spin, message, Button, Tooltip } from "antd";
-import { LabelInput, LabelSelect, LabelDatePicker } from "../../../common";
+import {
+  Col,
+  Form,
+  Row,
+  Typography,
+  Spin,
+  Button,
+  Tooltip,
+  Input,
+  Select,
+  DatePicker,
+  InputNumber,
+} from "antd";
 import UiButton from "../../../common/CustomButton";
 import { createJobApi } from "@/app/api/job/jobs.api";
 import { Dayjs } from "dayjs";
-import dayjs from "dayjs";
-import { JobPosting } from "@/constants/Interfaces/Types/Jobs.interface";
-import { ExperienceLevel, JobStatus, WorkMode } from "@/constants/enums";
+import { JobPostingCompany } from "@/constants/Interfaces/Types/Jobs.interface";
+import { ExperienceLevel, WorkMode } from "@/constants/enums";
 import { generateJobDataUsingAIApi } from "@/app/api/company/jobs.api";
 import { SparklesIcon } from "lucide-react";
+import toast from "react-hot-toast";
+import { pakistanCities, requirementsOptions, skillsOptions } from "@/constants/job";
 
 const { Title } = Typography;
+const { TextArea } = Input;
 
 interface CreateJobFormValues {
   title: string;
@@ -24,48 +37,36 @@ interface CreateJobFormValues {
   requirements: string[];
   workMode: string;
   city: string;
-  country: string;
   minSalary: number;
   maxSalary: number;
-  currency: string;
   deadline: Dayjs;
-  status: string;
+  status: "open" | "closed";
 }
-
-// Normalize helpers
-const normalizeExperienceLevel = (val: string): string => {
-  const map: Record<string, string> = {
-    entry: "entry", junior: "entry",
-    mid: "mid", "mid-level": "mid", intermediate: "mid",
-    senior: "senior", lead: "senior", principal: "senior",
-  };
-  return map[val?.toLowerCase()] ?? "mid";
-};
-
-const normalizeWorkMode = (val: string): string => {
-  const map: Record<string, string> = {
-    remote: "remote",
-    hybrid: "remote",       // closest available option
-    onsite: "full-time", "on-site": "full-time",
-    "full-time": "full-time", fulltime: "full-time",
-    "part-time": "part-time", parttime: "part-time",
-  };
-  return map[val?.toLowerCase()] ?? "remote";
-};
-
-const normalizeStatus = (val: string): string => {
-  const map: Record<string, string> = {
-    open: "open", active: "open",
-    closed: "closed", inactive: "closed",
-  };
-  return map[val?.toLowerCase()] ?? "open";
-};
 
 export default function CreateJob() {
   const [form] = Form.useForm<CreateJobFormValues>();
   const jobTitle = Form.useWatch("title", form);
+  const role = Form.useWatch("role", form);
+  const workMode = Form.useWatch("workMode", form);
+  const experienceLevel = Form.useWatch("experienceLevel", form);
+  const skills = Form.useWatch("skills", form);
+
   const [loading, setLoading] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState({
+    description: false,
+    requirements: false,
+    interviewGuideline: false,
+  });
+
+  const isAnyAiLoading =
+    aiLoading.description || aiLoading.requirements || aiLoading.interviewGuideline;
+
+  const canAutoFill =
+    !!jobTitle?.trim() &&
+    !!role?.trim() &&
+    !!workMode?.trim() &&
+    !!experienceLevel?.trim() &&
+    !!skills?.length;
 
   const workModes = [
     { label: "Remote", value: "remote" },
@@ -79,45 +80,8 @@ export default function CreateJob() {
     { label: "Senior", value: "senior" },
   ];
 
-  const statuses = [
-    { label: "Open", value: "open" },
-    { label: "Closed", value: "closed" },
-  ];
-
-  const skillsOptions = [
-    { label: "JavaScript", value: "JavaScript" },
-    { label: "TypeScript", value: "TypeScript" },
-    { label: "React", value: "React" },
-    { label: "Node.js", value: "Node.js" },
-    { label: "Python", value: "Python" },
-    { label: "Java", value: "Java" },
-    { label: "Appium", value: "Appium" },
-    { label: "Postman", value: "Postman" },
-    { label: "JIRA", value: "JIRA" },
-    { label: "TestRail", value: "TestRail" },
-    { label: "SQL", value: "SQL" },
-    { label: "MongoDB", value: "MongoDB" },
-    { label: "AWS", value: "AWS" },
-    { label: "Docker", value: "Docker" },
-    { label: "Git", value: "Git" },
-  ];
-
-  const requirementsOptions = [
-    { label: "Bachelor's degree in Computer Science or related field", value: "Bachelor's degree in Computer Science or related field" },
-    { label: "1-3 years of experience", value: "1-3 years of experience" },
-    { label: "3-5 years of experience", value: "3-5 years of experience" },
-    { label: "5+ years of experience", value: "5+ years of experience" },
-    { label: "Strong problem-solving skills", value: "Strong problem-solving skills" },
-    { label: "Excellent communication skills", value: "Excellent communication skills" },
-    { label: "Ability to work in a team environment", value: "Ability to work in a team environment" },
-    { label: "Experience with Agile methodologies", value: "Experience with Agile methodologies" },
-    { label: "Knowledge of mobile testing", value: "Knowledge of mobile testing" },
-    { label: "Experience with bug tracking tools", value: "Experience with bug tracking tools" },
-    { label: "Self-motivated and detail-oriented", value: "Self-motivated and detail-oriented" },
-  ];
-
   const onFinish = async (values: CreateJobFormValues) => {
-    const jobData: JobPosting = {
+    const jobData: JobPostingCompany = {
       title: values.title,
       role: values.role,
       interviewGuideline: values.interviewGuideline,
@@ -126,10 +90,14 @@ export default function CreateJob() {
       requiredSkills: values.skills || [],
       requirements: values.requirements || [],
       workMode: values.workMode as WorkMode,
-      location: { city: values.city, country: values.country },
-      salaryRange: { min: Number(values.minSalary), max: Number(values.maxSalary), currency: values.currency },
-      deadline: values.deadline?.toDate?.().toISOString() || undefined,
-      status: values.status as JobStatus,
+      location: { city: values.city, country: "Pakistan" }, // Country is hardcoded for now
+      salaryRange: {
+        min: Number(values.minSalary),
+        max: Number(values.maxSalary),
+        currency: "PKR", // Currency is hardcoded for now
+      },
+      deadline: values.deadline?.toDate?.().toISOString() || "",
+      status: "open", // Defaulting to open, can be changed later if needed
     };
 
     try {
@@ -137,162 +105,307 @@ export default function CreateJob() {
       const res = await createJobApi(jobData);
       if (!res) return;
       if (res.status === "Success") {
-        message.success("✅ Job created successfully!");
+        toast.success("Job created successfully!");
         form.resetFields();
       } else {
-        message.error("❌ Failed to create job. Try again.");
+        toast.error("Failed to create job. Try again.");
       }
     } catch (error) {
-      console.error("❌ API Error:", error);
-      message.error("Something went wrong while creating the job.");
+      console.error("API Error:", error);
+      toast.error("Something went wrong while creating the job.");
     } finally {
       setLoading(false);
     }
   };
 
-  const generateJobData = async () => {
+  const generateJobData = async (
+    type: "description" | "requirements" | "interviewGuideline"
+  ) => {
+    setAiLoading((prev) => ({ ...prev, [type]: true }));
     try {
-      setAiLoading(true);
-      const res = await generateJobDataUsingAIApi(form.getFieldValue("title") || "Software Engineer");
+      const res = await generateJobDataUsingAIApi({
+        jobTitle: form.getFieldValue("title") || "Software Engineer",
+        jobRole: form.getFieldValue("role") || "Software Engineer",
+        experienceLevel: form.getFieldValue("experienceLevel") || "mid",
+        workMode: form.getFieldValue("workMode") || "full-time",
+        skills: form.getFieldValue("skills") || [],
+        type,
+      });
+
       if (!res || res.status !== "Success") {
-        console.log("FAILED")
-        message.error("❌ Failed to generate job data. Please try again.");
+        toast.error("Failed to generate job data. Please try again.");
         return;
       }
 
       const d = res.data?.jobData;
       if (!d) {
-        message.error("❌ No data returned from AI. Please try again.");
+        toast.error("No data returned from AI. Please try again.");
         return;
       }
 
-      form.setFieldsValue({
-        title: d.jobTitle,
-        role: d.jobRole,
-        description: d.jobDescription,
-        interviewGuideline: d.interviewGuideline,
-        experienceLevel: normalizeExperienceLevel(d.experienceLevel),
-        status: normalizeStatus(d.status),
-        workMode: normalizeWorkMode(d.workMode),
-        city: d.city,
-        country: d.country,
-        minSalary: d.minSalary,
-        maxSalary: d.maxSalary,
-        currency: d.currency,
-        skills: d.skills || [],
-        requirements: d.requirements || [],
-        deadline: d.applicationDeadline ? dayjs(d.applicationDeadline) : undefined,
-      });
+      if (type === "description") {
+        form.setFieldValue("description", d.jobDescription || "");
+      } else if (type === "interviewGuideline") {
+        form.setFieldValue("interviewGuideline", d.interviewGuideline || "");
+      } else if (type === "requirements") {
+        form.setFieldValue("requirements", d.requirements || []);
+      }
 
-      message.success("✨ Form filled with AI-generated job data!");
+      toast.success("✨ Field filled with AI-generated data!");
     } catch (error) {
       console.error("Error generating job data using AI:", error);
-      message.error("Something went wrong while generating job data.");
+      toast.error("Something went wrong while generating job data.");
     } finally {
-      setAiLoading(false);
+      // Always reset — this was a bug source in the original code
+      setAiLoading((prev) => ({ ...prev, [type]: false }));
     }
   };
 
+  const AutoFillButton = ({
+    type,
+  }: {
+    type: "description" | "requirements" | "interviewGuideline";
+  }) => (
+    <Tooltip title={!canAutoFill ? "Complete required fields first" : "Auto-fill using AI"}>
+      <Button
+        onClick={() => generateJobData(type)}
+        loading={aiLoading[type]}
+        disabled={loading || !canAutoFill}
+        icon={!aiLoading[type] && <SparklesIcon size={15} />}
+        className="!flex !items-center !gap-1 !border-purple-400 !text-purple-600 hover:!bg-purple-50"
+      >
+        {aiLoading[type] ? "Generating..." : "Auto-fill"}
+      </Button>
+    </Tooltip>
+  );
+
   return (
-    <Col xs={24} md={16} className="p-4 lg:px-16 lg:py-8">
+    <Col xs={24} md={20} lg={16} className="p-4 lg:px-16 lg:py-8 mx-auto">
       <div className="flex items-center justify-between !mb-6">
-        <Title level={2} className="!mb-0">Create New Job</Title>
-        <Tooltip title={!jobTitle?.trim() ? "Enter a job title first to generate with AI" : "Auto-fill form using AI"}>
-          <Button
-            onClick={generateJobData}
-            loading={aiLoading}
-            disabled={loading || !jobTitle?.trim()}
-            icon={!aiLoading && <SparklesIcon size={15} />}
-            className="!flex !items-center !gap-1 !border-purple-400 !text-purple-600 hover:!bg-purple-50"
-          >
-            {aiLoading ? "Generating..." : "Generate with AI"}
-          </Button>
-        </Tooltip>
+        <Title level={2} className="!mb-0">
+          Create New Job
+        </Title>
       </div>
 
-      {aiLoading && (
-        <div className="flex items-center gap-3 mb-5 px-4 py-3 bg-purple-50 border border-purple-200 rounded-xl text-purple-700 text-sm">
-          <Spin size="small" />
-          <span>AI is generating job data, please wait...</span>
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onFinish}
+        autoComplete="off"
+        requiredMark="optional"
+      >
+        {/* Row 1: Title & Role - Stacks on mobile (24), side-by-side on tablet+ (12) */}
+        <Row gutter={[16, 0]}>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="title"
+              label="Job Title"
+              rules={[{ required: true, message: "Job title is required" }]}
+            >
+              <Input placeholder="e.g. Mobile App Tester" disabled={loading} />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="role"
+              label="Job Role"
+              rules={[{ required: true, message: "Job role is required" }]}
+            >
+              <Input placeholder="e.g. QA Engineer" disabled={loading} />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {/* Row 2: Experience Level & Status */}
+        <Row gutter={[16, 0]}>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="experienceLevel"
+              label="Experience Level"
+              rules={[{ required: true, message: "Experience level is required" }]}
+            >
+              <Select
+                placeholder="Select experience level"
+                options={experienceLevels}
+                disabled={loading}
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="workMode"
+              label="Work Mode"
+              rules={[{ required: true, message: "Work mode is required" }]}
+            >
+              <Select
+                placeholder="Select work mode"
+                options={workModes}
+                disabled={loading}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {/* Row 3: City & Deadline */}
+        <Row gutter={[16, 0]}>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="deadline"
+              label="Application Deadline"
+              rules={[{ required: true, message: "Deadline is required" }]}
+            >
+              <DatePicker
+                style={{ width: "100%" }}
+                placeholder="Select deadline"
+                disabled={loading}
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="city"
+              label="City"
+              rules={[{ required: true, message: "City is required" }]}
+            >
+              <Select
+                showSearch
+                placeholder="Select city"
+                options={pakistanCities}
+                disabled={loading}
+                filterOption={(input, option) =>
+                  option ? option.label.toLowerCase().includes(input.toLowerCase()) : false
+                }
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {/* Row 4: City & Country */}
+        <Row gutter={[16, 0]}>
+        </Row>
+
+        {/* Row 5: Salary - Stacks on mobile, 3 columns on tablet/desktop */}
+        <Row gutter={[16, 0]}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="minSalary"
+              label="Min Salary"
+              rules={[{ required: true, message: "Min salary is required" }]}
+            >
+              <InputNumber
+                placeholder="80000"
+                style={{ width: "100%" }}
+                min={0}
+                disabled={loading}
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="maxSalary"
+              label="Max Salary"
+              rules={[{ required: true, message: "Max salary is required" }]}
+            >
+              <InputNumber
+                placeholder="130000"
+                style={{ width: "100%" }}
+                min={0}
+                disabled={loading}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {/* Skills, Description, etc. (Full width) */}
+        <Row>
+          <Col span={24}>
+            <Form.Item
+              name="skills"
+              label="Skills"
+              rules={[{ required: true, message: "At least one skill is required" }]}
+            >
+              <Select
+                mode="tags"
+                style={{ width: "100%" }}
+                placeholder="Type or select skills"
+                options={skillsOptions}
+                disabled={loading}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {/* AI Assisted Sections */}
+        <div className="space-y-6">
+          <div>
+            <div className="mb-2 flex justify-end">
+              <AutoFillButton type="description" />
+            </div>
+            <Form.Item
+              name="description"
+              label="Job Description"
+              rules={[{ required: true, message: "Job description is required" }]}
+            >
+              <TextArea
+                rows={5}
+                placeholder="Describe the role..."
+                disabled={loading || aiLoading.description}
+              />
+            </Form.Item>
+          </div>
+
+          <div>
+            <div className="mb-2 flex justify-end">
+              <AutoFillButton type="interviewGuideline" />
+            </div>
+            <Form.Item
+              name="interviewGuideline"
+              label="Interview Guideline"
+              rules={[{ required: true, message: "Interview guideline is required" }]}
+            >
+              <TextArea
+                rows={5}
+                placeholder="Explain what the interviewer should focus on..."
+                disabled={loading || aiLoading.interviewGuideline}
+              />
+            </Form.Item>
+          </div>
+
+          <div>
+            <div className="mb-2 flex justify-end">
+              <AutoFillButton type="requirements" />
+            </div>
+            <Form.Item
+              name="requirements"
+              label="Requirements"
+              rules={[{ required: true, message: "At least one requirement is required" }]}
+            >
+              <Select
+                mode="tags"
+                style={{ width: "100%" }}
+                placeholder="Type or select requirements"
+                options={requirementsOptions}
+                disabled={loading || aiLoading.requirements}
+              />
+            </Form.Item>
+          </div>
         </div>
-      )}
 
-      <Form form={form} layout="vertical" onFinish={onFinish} disabled={loading || aiLoading} autoComplete="off">
-        <Row gutter={16}>
-          <Col span={12}>
-            <LabelInput name="title" label="Job Title" placeholder="e.g. Mobile App Tester" required />
-          </Col>
-          <Col span={12}>
-            <LabelInput name="role" label="Job Role" placeholder="e.g. QA Engineer" required />
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <LabelSelect name="experienceLevel" label="Experience Level" placeholder="Select experience level" required options={experienceLevels} />
-          </Col>
-          <Col span={12}>
-            <LabelSelect name="status" label="Status" placeholder="Select job status" required options={statuses} />
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <LabelSelect name="workMode" label="Work Mode" placeholder="Select work mode" required options={workModes} />
-          </Col>
-          <Col span={12}>
-            <LabelDatePicker name="deadline" label="Application Deadline" placeholder="Select deadline" required />
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <LabelInput name="city" label="City" placeholder="City" required />
-          </Col>
-          <Col span={12}>
-            <LabelInput name="country" label="Country" placeholder="Country" required />
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={8}>
-            <LabelInput name="minSalary" label="Min Salary" placeholder="80000" required type="number" />
-          </Col>
-          <Col span={8}>
-            <LabelInput name="maxSalary" label="Max Salary" placeholder="130000" required type="number" />
-          </Col>
-          <Col span={8}>
-            <LabelInput name="currency" label="Currency" placeholder="PKR" required />
-          </Col>
-        </Row>
-
-        <LabelInput name="description" label="Job Description" placeholder="Describe the role..." required />
-
-        <LabelInput name="interviewGuideline" label="Interview Guideline" placeholder="Explain what the interviewer should focus on..." required />
-
-        <Row gutter={16}>
-          <Col span={24}>
-            <LabelSelect label={<span>Skills <span style={{ color: "rgba(0,0,0,.45)" }}>(up to 5)</span></span>} maxCount={5} name="skills" mode="tags" style={{ width: "100%" }} placeholder="Type or select skills" options={skillsOptions} required />
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={24}>
-            <LabelSelect label="Requirements" name="requirements" mode="tags" style={{ width: "100%" }} placeholder="Type or select requirements" options={requirementsOptions} required />
-          </Col>
-        </Row>
-
-        <div className="mt-6 flex justify-start">
-          <UiButton htmlType="submit" type="primary" block size="large" loading={loading} className="!rounded-xl !w-40">
+        {/* Submit Section */}
+        <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
+          <UiButton
+            htmlType="submit"
+            type="primary"
+            size="large"
+            loading={loading}
+            disabled={loading || isAnyAiLoading}
+            className="!rounded-xl !w-full sm:!w-40"
+          >
             {loading ? "Creating..." : "Create Job"}
           </UiButton>
-        </div>
 
-        {loading && (
-          <div className="flex justify-center items-center mt-6">
-            <Spin />
-          </div>
-        )}
+          {loading && <Spin className="ml-4" />}
+        </div>
       </Form>
     </Col>
   );

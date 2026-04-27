@@ -1,7 +1,6 @@
 // auth.api.ts
 
 import {
-  JobPosting,
   JobPostingAI,
   JobResponse,
 } from "@/constants/Interfaces/Types/Jobs.interface";
@@ -48,7 +47,7 @@ export const updateJobApi = async ({
   body,
 }: {
   jobId: string;
-  body: JobPosting;
+  body: { deadline: string };
 }) => {
   console.log("first");
   return safeApiCall<{ updatedJob: JobResponse }>({
@@ -74,8 +73,56 @@ export const completeCompanyProfileApi = async (
 };
 
 
-export const generateJobDataUsingAIApi = async (jobTitle: string) => {
+export const generateJobDataUsingAIApi = async ({ jobTitle, jobRole, experienceLevel, workMode, skills, type }: {
+  jobTitle: string;
+  jobRole: string;
+  experienceLevel: string;
+  workMode: string;
+  skills: string[];
+  type: "requirements" | "interviewGuideline" | "description";
+}) => {
   return safeApiCall<{ jobData: JobPostingAI }>({
-    apiCall: () => api.get(`/job/generate-job-ai/${jobTitle}`),
+    apiCall: () => api.post(`/job/generate-job-ai`, {
+      jobTitle,
+      jobRole,
+      experienceLevel,
+      workMode,
+      skills,
+      type
+    }),
   });
 };
+
+
+export const generateJobDescriptionUsingAI = async ({ jobTitle, jobRole, experienceLevel, workMode, skills }: {
+  jobTitle: string;
+  jobRole: string;
+  experienceLevel: string;
+  workMode: string;
+  skills: string[];
+}) => {
+  return safeApiCall<{ jobData: { description: string } }>({
+    apiCall: () => api.post(`/job/generate-job-ai/`, {
+      jobTitle,
+      jobRole,
+      experienceLevel,
+      workMode,
+      skills
+    }),
+  });
+};
+
+
+export const sendHiringEmailApi = async (interviewId: string, emailQuery: string) => {
+  return safeApiCall<{ taskId: string }>({
+    apiCall: () => api.post(`/interview/send-hiring-email`, { interviewId, emailQuery }),
+    showToaster: true,
+  });
+}
+
+export const sendRejectionEmailApi = async (interviewId: string) => {
+  return safeApiCall<{ taskId: string }>({
+    apiCall: () => api.post(`/interview/send-rejection-email`, { interviewId }),
+    showToaster: true,
+  });
+}

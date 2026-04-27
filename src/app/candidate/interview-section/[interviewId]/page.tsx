@@ -1,8 +1,8 @@
 'use client';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { AudioOutlined, StopOutlined } from '@ant-design/icons';
-import { Button, Typography, Progress } from 'antd';
-import { useParams } from 'next/navigation';
+import { Button, Typography, Progress, Modal, Result, Input } from 'antd';
+import { redirect, useParams, usePathname, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 import {
@@ -53,6 +53,10 @@ const LiveInterviewPage = () => {
         isUploading: false,
     });
 
+    const [answerReceivedArray, setAnswerReceivedArray] = useState<number[]>([]); // New state to track received answers
+
+    const [showInterviewEndModal, setShowInterviewEndModal] = useState(false); // State to control interview end modal visibility
+
     // ── Refs ──────────────────────────────────────────────────────────────────
     const videoRef = useRef<HTMLVideoElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -66,6 +70,9 @@ const LiveInterviewPage = () => {
 
     const { aiMetrics } = useInterviewAI(videoRef);
     const { interviewId } = useParams();
+
+    const [showEndInterviewModal, setShowEndInterviewModal] = useState(false);
+    const [confirmEndText, setConfirmEndText] = useState("");
 
     // ── Camera (interview phase — initialised only after verification) ─────────
     useEffect(() => {
@@ -155,10 +162,13 @@ const LiveInterviewPage = () => {
                     currentQuestion: prev.interviewQuestions[nextIndex],
                 };
             }
-            toast.success('Interview completed!');
             return prev;
         });
-    }, [stopWaitTimer]);
+        if (answerReceivedArray.length === interviewState.interviewQuestions.length - 1) {
+            // toast.success('You have completed all questions! Thank you for your time.');
+            setShowInterviewEndModal(true);
+        }
+    }, [stopWaitTimer, answerReceivedArray, interviewState.interviewQuestions]);
 
     const handleSkipQuestion = useCallback(async () => {
         if (isSkippingRef.current) return;
@@ -294,7 +304,10 @@ const LiveInterviewPage = () => {
             file,
         }).then((res) => {
             const status = res?.status === 'Success' ? 'success' : 'error';
-            toast[status](res?.message || (status === 'success' ? 'Answer submitted successfully' : 'Failed to submit answer'));
+            // toast[status](res?.message || (status === 'success' ? 'Answer submitted successfully' : 'Failed to submit answer'));
+            if (status === 'success') {
+                setAnswerReceivedArray((prev) => [...prev, interviewState.currentQuestionIndex]);
+            }
         }).catch((err) => {
             console.error('Submission error:', err);
             toast.error('Failed to submit answer');
@@ -319,6 +332,45 @@ const LiveInterviewPage = () => {
         return () => { if (recordTimerRef.current) clearInterval(recordTimerRef.current); };
     }, [interviewState.isRecording, handleStopRecording, interviewState.timeLeft]);
 
+
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        // 1. Handle Refresh/Tab Close (The code you already have)
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            e.preventDefault();
+            e.returnValue = "";
+        };
+
+        // 2. Handle Browser Back/Forward
+        // We push a "dummy" state to the history stack. 
+        // When the user hits 'Back', they hit this dummy state instead of leaving.
+        const handlePopState = () => {
+            const confirmLeave = window.confirm(
+                "Wait! Your interview progress will be lost if you leave. Are you sure?"
+            );
+
+            if (!confirmLeave) {
+                // If they want to stay, push the state again to keep the "trap" active
+                window.history.pushState(null, "", window.location.pathname);
+            } else {
+                // If they want to leave, we let them go (this is tricky in Next.js)
+                window.history.back();
+            }
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        // Initialize the history trap
+        window.history.pushState(null, "", window.location.pathname);
+        window.addEventListener("popstate", handlePopState);
+
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+            window.removeEventListener("popstate", handlePopState);
+        };
+    }, [pathname, searchParams]); // Re-run if the route changes
     const formatTime = (s: number) =>
         `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
@@ -398,7 +450,7 @@ const LiveInterviewPage = () => {
                     )}
 
                     {/* Record / Stop button */}
-                    <div className="mt-8">
+                    <div className="mt-8 flex flex-row gap-2 max-lg:flex-wrap">
                         {!interviewState.isRecording ? (
                             <Button
                                 type="primary"
@@ -427,8 +479,115 @@ const LiveInterviewPage = () => {
                                 Stop & Submit Answer
                             </Button>
                         )}
+
+                        <Button
+                            danger
+                            size="large"
+                            block
+                            className="h-12 rounded-xl font-semibold mt-4"
+                            onClick={() => setShowEndInterviewModal(true)}
+                        >
+                            End Interview
+                        </Button>
                     </div>
                 </div>
+
+                {/* Interview end modal */}
+                {showInterviewEndModal && (
+                    <Modal
+                        open={showInterviewEndModal}
+                        onCancel={() => {
+                            console.log("Modal closed by user");
+                            setShowInterviewEndModal(false);
+                        }}
+                        footer={null} // Removing default footer for a cleaner look
+                        centered
+                        width={600}
+                    >
+                        <div style={{ padding: '20px 0' }}>
+                            <Result
+                                status="success"
+                                title={<span style={{ fontWeight: 700, fontSize: '24px' }}>Interview Completed!</span>}
+                                subTitle={
+                                    <div style={{ fontSize: '16px', color: '#595959' }}>
+                                        <p>Thank you for completing your interview. We truly appreciate your time, presence, and patience throughout this process.</p>
+                                        <p><strong>What&apos;s next?</strong> Our team is now reviewing your responses. You will receive an email notification once your evaluation is finalized.</p>
+                                    </div>
+                                }
+                                extra={[
+                                    <Button
+                                        type="primary"
+                                        key="close"
+                                        size="large"
+                                        shape="round"
+                                        style={{ padding: '0 40px', height: '45px', fontWeight: 600 }}
+                                        onClick={() => {
+                                            console.log("Close button clicked");
+                                            setShowInterviewEndModal(false);
+                                            redirect('/candidate/interview-section/'); // Redirect to dashboard or another page after closing modal
+                                        }}
+                                    >
+                                        Got it, thanks!
+                                    </Button>
+                                ]}
+                            />
+                        </div>
+                    </Modal>
+                )}
+
+                <Modal
+                    open={showEndInterviewModal}
+                    title="End Interview?"
+                    onCancel={() => setShowEndInterviewModal(false)}
+                    footer={null}
+                    centered
+                >
+                    <div className="space-y-3 text-gray-700">
+
+                        <p className="text-red-600 font-semibold">
+                            ⚠️ This action is irreversible
+                        </p>
+
+                        <ul className="list-disc pl-5 space-y-2 text-sm">
+                            <li>You will NOT be able to continue this interview again</li>
+                            <li>Your current progress will be permanently lost</li>
+                            <li>Any unanswered questions will be marked as incomplete</li>
+                            <li>Final Interview AI evaluation will not be generated.</li>
+                        </ul>
+
+                        <p className="text-sm text-gray-600">
+                            Type <b>END</b> to confirm you want to stop the interview.
+                        </p>
+
+                        <Input
+                            value={confirmEndText}
+                            onChange={(e) => setConfirmEndText(e.target.value)}
+                            placeholder="Type END"
+                        />
+
+                        <div className="flex gap-2 mt-4">
+                            <Button
+                                onClick={() => setShowEndInterviewModal(false)}
+                                block
+                            >
+                                Cancel
+                            </Button>
+
+                            <Button
+                                danger
+                                block
+                                disabled={confirmEndText !== "END"}
+                                onClick={() => {
+                                    // finalize interview end logic here
+                                    setShowEndInterviewModal(false);
+                                    redirect("/candidate/interview-section");
+                                }}
+                            >
+                                Permanently End Interview
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
             </div>
         </div>
     );

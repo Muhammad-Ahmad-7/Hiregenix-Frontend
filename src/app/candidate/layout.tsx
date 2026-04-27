@@ -60,7 +60,7 @@ type DashboardLayoutProps = {
   children: ReactNode;
 };
 
-const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+const CandidateLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -280,4 +280,4 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   );
 };
 
-export default AdminLayout;
+export default CandidateLayout;

@@ -27,13 +27,18 @@ export default function VerifyEmailClient() {
       try {
         const res = await verifyEmailApi(token);
 
+        console.log("Verification response:", res);
+
         if (res?.status === "Success" && res.data?.accessToken) {
           storeToken(res.data.accessToken);
           setStatus("success");
 
-          setTimeout(() => {
-            router.push("/profile-completion/candidate");
-          }, 1500);
+          if (res.data.role === "candidate") {
+            router.push("/candidate/profile");
+          } else if (res.data.role === "company"
+          ) {
+            router.push("/company/profile");
+          }
         } else {
           setStatus("error");
         }

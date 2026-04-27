@@ -1,12 +1,12 @@
 // auth.api.ts
 
 import {
-  JobPosting,
+  JobPostingCompany,
   JobResponse,
 } from "@/constants/Interfaces/Types/Jobs.interface";
 import api, { safeApiCall } from "../base.api";
 
-export const createJobApi = async (body: JobPosting) => {
+export const createJobApi = async (body: JobPostingCompany) => {
   console.log("body", body);
   return safeApiCall<{ job: JobResponse }>({
     apiCall: () => api.post("/job/create-job", body),

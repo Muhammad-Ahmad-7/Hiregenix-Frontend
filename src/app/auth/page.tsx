@@ -12,13 +12,13 @@
 import React from "react";
 
 import sign_in from "../../../public/main.png";
-import LoginScreen from "@/component/pages/login/Login";
 import SignInWrapper from "@/component/pages/login/SignInWrapper";
+import Left1 from "@/component/pages/login/Left1";
 const Home = () => (
   <SignInWrapper img={sign_in}>
-    {/* <Left1 /> */}
+    <Left1 />
     {/* <CompanyProfilePage /> */}
-    <LoginScreen />
+    {/* <LoginScreen /> */}
     {/* <LoginScreen /> */}
     {/* <Left3 /> */}
   </SignInWrapper>
