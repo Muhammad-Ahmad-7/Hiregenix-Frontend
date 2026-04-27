@@ -28,7 +28,7 @@ export default function LoginScreen({ role }: { role: "company" | "candidate" })
     role: "candidate" | "company";
   }) => {
     if (isProfileCompleted) {
-      router.replace(`${role}/dashboard`);
+      router.replace(`/${role}/dashboard`);
     } else {
       router.replace(`/profile-completion/${role}`);
     }
@@ -158,7 +158,7 @@ export default function LoginScreen({ role }: { role: "company" | "candidate" })
           />
 
           <div className="flex justify-end">
-            <UiButton type="link" className="!p-0">
+            <UiButton type="link" className="!p-0" onClick={() => router.push('/auth/forget-password')}>
               Forgot Password?
             </UiButton>
           </div>

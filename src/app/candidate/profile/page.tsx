@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Avatar,
   Card,
@@ -194,34 +194,36 @@ export default function ProfileDashboard() {
     };
   };
 
-  useEffect(() => {
-    const fetchResumeData = async (): Promise<void> => {
-      try {
-        setLoading(true);
-        const response = await getResumeDataApi();
-        const apiResume = response?.data?.resume;
-        if (!apiResume) { setResumeData(null); setResumeUrl(null); return; }
-        const mapped = mapApiResumeToState(apiResume);
-        setResumeData(mapped);
-        setResumeUrl(mapped.fileUrl);
-        if (mapped.parsedData) {
-          setUserProfile((prev) => ({
-            ...prev,
-            fullName: mapped.parsedData.name || prev.fullName,
-            githubUrl: mapped.parsedData.github || prev.githubUrl,
-            linkedinUrl: mapped.parsedData.linkedin || prev.linkedinUrl,
-            portfolioUrl: mapped.parsedData.portfolio || prev.portfolioUrl,
-          }));
-        }
-      } catch (error) {
-        toast.error("Failed to load resume data");
-        console.error(error);
-      } finally {
-        setLoading(false);
+  const fetchResumeData = useCallback(async (): Promise<void> => {
+    try {
+      setLoading(true);
+      const response = await getResumeDataApi();
+      const apiResume = response?.data?.resume;
+      if (!apiResume) { setResumeData(null); setResumeUrl(null); return; }
+      const mapped = mapApiResumeToState(apiResume);
+      setResumeData(mapped);
+      setResumeUrl(mapped.fileUrl);
+      if (mapped.parsedData) {
+        setUserProfile((prev) => ({
+          ...prev,
+          fullName: mapped.parsedData.name || prev.fullName,
+          githubUrl: mapped.parsedData.github || prev.githubUrl,
+          linkedinUrl: mapped.parsedData.linkedin || prev.linkedinUrl,
+          portfolioUrl: mapped.parsedData.portfolio || prev.portfolioUrl,
+        }));
       }
-    };
-    fetchResumeData();
+    } catch (error) {
+      toast.error("Failed to load resume data");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+
+    fetchResumeData();
+  }, [fetchResumeData]);
 
   const handleResumeUpload = async (file: File): Promise<void> => {
     setUploading(true);

@@ -49,3 +49,17 @@ export async function googleAuth(code: string, role: string) {
     showToaster: true,
   });
 }
+
+export async function forgetPassword(email: string) {
+  return safeApiCall<null>({
+    apiCall: () => api.post("/auth/forget-password", { email }),
+    showToaster: true,
+  });
+}
+
+export async function resetPassword({ otp, email, newPassword }: { otp: string, email: string, newPassword: string }) {
+  return safeApiCall<null>({
+    apiCall: () => api.post("/auth/reset-password", { otp, email, newPassword }),
+    showToaster: true,
+  });
+}
