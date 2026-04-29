@@ -32,11 +32,12 @@ const LabelSelect: React.FC<LabelSelectProps> = ({
       style={{ width: "100%", ...(rest.style ?? {}) }}
       showSearch
       optionFilterProp="label"
-      // filterSort={(optionA, optionB) =>
-      //   (optionA?.label ?? "")
-      //     .toLowerCase()
-      //     .localeCompare((optionB?.label ?? "").toLowerCase())
-      // }
+      defaultValue={"Pakistan"}
+    // filterSort={(optionA, optionB) =>
+    //   (optionA?.label ?? "")
+    //     .toLowerCase()
+    //     .localeCompare((optionB?.label ?? "").toLowerCase())
+    // }
     />
   );
 

@@ -42,6 +42,7 @@ import type { ColumnsType } from "antd/es/table";
 import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
 import TableSkeleton from "@/component/Skeletons/TableSkeleton";
 import toast from "react-hot-toast";
+import { pakistanCities } from "@/constants/job";
 
 const { TextArea } = Input;
 
@@ -60,6 +61,7 @@ interface EditJobFormValues {
   currency: string;
   deadline: Dayjs;
   status: "open" | "closed";
+  interviewGuideline: string;
 }
 
 interface JobWithKey extends JobResponse {
@@ -152,7 +154,6 @@ const MyJobsTable: React.FC = () => {
     try {
       setIsDeleting(true);
       await deleteJobApi(deleteJobId);
-      toast.success("Job deleted");
       if (activeTab === "open") fetchOpenJobs();
       else fetchClosedJobs();
     } catch {
@@ -183,6 +184,7 @@ const MyJobsTable: React.FC = () => {
       salaryMax: job.salaryRange?.max,
       currency: job.salaryRange?.currency,
       deadline: dayjs(job.deadline),
+      interviewGuideline: job.interviewGuideline,
     });
 
     setIsEditModalOpen(true);
@@ -210,6 +212,23 @@ const MyJobsTable: React.FC = () => {
 
     const payload = {
       deadline: values.deadline.toISOString(),
+      salaryRange: {
+        min: Number(values.salaryMin),
+        max: Number(values.salaryMax),
+        currency: values.currency,
+      },
+      location: {
+        city: values.city,
+        country: values.country,
+      },
+      experienceLevel: values.experienceLevel,
+      workMode: values.workMode,
+      requiredSkills: values.requiredSkills,
+      requirements: values.requirements,
+      description: values.description,
+      role: values.role,
+      title: values.title,
+      interviewGuideline: values.interviewGuideline,
     };
 
     try {
@@ -218,7 +237,7 @@ const MyJobsTable: React.FC = () => {
         body: payload,
       });
 
-      toast.success("Job deadline updated successfully!");
+      toast.success("Job updated successfully!");
 
       if (activeTab === "open") fetchOpenJobs();
       else fetchClosedJobs();
@@ -264,7 +283,7 @@ const MyJobsTable: React.FC = () => {
       title: "Location",
       responsive: ["md", "lg"],
       render: (_: unknown, record: JobResponse) =>
-        `${record.location.city}, ${record.location.country}`,
+        `${record.location.city}`,
     },
 
     {
@@ -297,7 +316,7 @@ const MyJobsTable: React.FC = () => {
     },
 
     {
-      title: "",
+      title: "Action",
       key: "actions",
       align: "center" as const,
       fixed: "right", // 🔥 important for usability
@@ -315,14 +334,16 @@ const MyJobsTable: React.FC = () => {
               },
               {
                 key: "2",
-                label: "Edit Job Deadline",
+                label: `Edit ${record.totalInterviews === 0 ? "Job" : "Deadline"}`,
                 icon: <EditOutlined />,
+                disabled: record.status === "closed",
                 onClick: () => openEditModal(record),
               },
               {
                 key: "3",
                 label: "Delete Job",
                 danger: true,
+                disabled: record.totalInterviews > 0, // disable if interviews are scheduled
                 icon: <ExclamationCircleOutlined />,
                 onClick: () => setDeleteJobId(record._id),
               },
@@ -383,17 +404,31 @@ const MyJobsTable: React.FC = () => {
   // -----------------------
   const editModal = (
     <Modal
-      title="Edit Job Deadline"
+      title={`Edit ${editingJob?.totalInterviews === 0 ? "Job" : "Deadline"}`} // if no interviews, allow editing entire job. otherwise only deadline 
       open={isEditModalOpen}
       onCancel={() => setIsEditModalOpen(false)}
       footer={null}
       width={700}
     >
+
       <Form form={form} layout="vertical" onFinish={handleSaveJob}>
+        <Row gutter={16}>
+          {
+            editingJob?.totalInterviews !== 0 && (
+              <Col span={24}>
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                  <p className="text-yellow-800 text-sm m-0">
+                    This job has {editingJob?.totalInterviews} interview{editingJob?.totalInterviews !== 1 ? "s" : ""} scheduled. You can only update the deadline.
+                  </p>
+                </div>
+              </Col>
+            )
+          }
+        </Row>
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item name="title" label="Job Title" rules={[{ required: true }]}>
-              <Input placeholder="Enter job title" disabled />
+              <Input placeholder="Enter job title" disabled={editingJob?.totalInterviews !== 0} />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -405,23 +440,35 @@ const MyJobsTable: React.FC = () => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item name="role" label="Role" rules={[{ required: true }]}>
-              <Input placeholder="Enter job role" disabled />
+              <Input placeholder="Enter job role" disabled={editingJob?.totalInterviews !== 0} />
             </Form.Item>
           </Col>
-          <Col span={6}>
+          <Col span={12}>
             <Form.Item name="city" label="City" rules={[{ required: true }]}>
-              <Input placeholder="City" disabled />
+              <Select
+                disabled={editingJob?.totalInterviews !== 0}
+                options={pakistanCities}
+                placeholder="Select city"
+              />
             </Form.Item>
           </Col>
-          <Col span={6}>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}>
             <Form.Item name="salaryMin" label="Min Salary" rules={[{ required: true }]}>
-              <Input type="number" placeholder="Min" disabled />
+              <Input type="number" placeholder="Min" disabled={editingJob?.totalInterviews !== 0} />
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item name="salaryMax" label="Max Salary" rules={[{ required: true }]}>
+              <Input type="number" placeholder="Max" disabled={editingJob?.totalInterviews !== 0} />
             </Form.Item>
           </Col>
         </Row>
 
         <Form.Item name="description" label="Description" rules={[{ required: true }]}>
-          <TextArea rows={4} placeholder="Job description" disabled />
+          <TextArea rows={4} placeholder="Job description" disabled={editingJob?.totalInterviews !== 0} />
         </Form.Item>
 
 
@@ -429,9 +476,9 @@ const MyJobsTable: React.FC = () => {
           <Col span={12}>
             <Form.Item name="experienceLevel" label="Experience Level" rules={[{ required: true }]}>
               <Select
-                disabled
+                disabled={editingJob?.totalInterviews !== 0}
                 options={[
-                  { label: "Junior", value: "junior" },
+                  { label: "Entry", value: "entry" },
                   { label: "Mid", value: "mid" },
                   { label: "Senior", value: "senior" },
                 ]}
@@ -441,11 +488,11 @@ const MyJobsTable: React.FC = () => {
           <Col span={12}>
             <Form.Item name="workMode" label="Work Mode" rules={[{ required: true }]}>
               <Select
-                disabled
+                disabled={editingJob?.totalInterviews !== 0}
                 options={[
                   { label: "Remote", value: "remote" },
-                  { label: "Hybrid", value: "hybrid" },
-                  { label: "Onsite", value: "onsite" },
+                  { label: "Full-time", value: "full-time" },
+                  { label: "Part-time", value: "part-time" },
                 ]}
               />
             </Form.Item>
@@ -455,12 +502,21 @@ const MyJobsTable: React.FC = () => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item name="requiredSkills" label="Required Skills">
-              <Select disabled mode="tags" placeholder="Add skills" />
+              <Select disabled={editingJob?.totalInterviews !== 0} mode="tags" placeholder="Add skills" />
             </Form.Item>
           </Col>
+
           <Col span={12}>
+            <Form.Item name="interviewGuideline" label="Interview Guideline">
+              <TextArea rows={4} placeholder="Interview guideline" disabled={editingJob?.totalInterviews !== 0} />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row>
+          <Col span={24}>
             <Form.Item name="requirements" label="Requirements">
-              <Select disabled mode="tags" placeholder="Add requirements" />
+              <Select disabled={editingJob?.totalInterviews !== 0} mode="tags" placeholder="Add requirements" />
             </Form.Item>
           </Col>
         </Row>
@@ -502,7 +558,7 @@ const MyJobsTable: React.FC = () => {
           <p>
             <b>Salary:</b>{" "}
             {viewingJob.salaryRange
-              ? `${viewingJob.salaryRange.min} - ${viewingJob.salaryRange.max} ${viewingJob.salaryRange.currency}`
+              ? `${viewingJob.salaryRange.min} - ${viewingJob.salaryRange.max} PKR`
               : "—"}
           </p>
 

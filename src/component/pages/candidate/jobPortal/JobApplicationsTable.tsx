@@ -29,7 +29,9 @@ const TAB_STATUS_MAP: Record<string, string | undefined> = {
   all: undefined,
   scheduled: "scheduled",
   completed: "completed",
-  rejected: "cancelled",
+  rejected: "rejected",
+  hired: "hired",
+  ended: "ended",
 };
 
 const JobApplicationsTable = () => {
@@ -286,7 +288,9 @@ const JobApplicationsTable = () => {
     { key: "all", label: "All jobs" },
     { key: "scheduled", label: "Scheduled" },
     { key: "completed", label: "Completed" },
+    { key: "hired", label: "Hired" },
     { key: "rejected", label: "Rejected" },
+    { key: "ended", label: "Ended" },
   ];
 
   const tableData = getTableData();

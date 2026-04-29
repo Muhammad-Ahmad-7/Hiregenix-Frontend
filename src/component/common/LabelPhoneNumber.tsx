@@ -32,7 +32,7 @@ const LabelPhoneNumber: React.FC<LabelPhoneNumberProps> = ({
       fullLabel={fullLabel}
       itemProps={itemProps}
     >
-      <PhoneInput enableSearch {...rest} />
+      <PhoneInput onlyCountries={["pk"]} enableSearch {...rest} />
     </LabelWrapper>
   );
 };

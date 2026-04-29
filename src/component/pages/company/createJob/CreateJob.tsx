@@ -166,7 +166,7 @@ export default function CreateJob() {
   }: {
     type: "description" | "requirements" | "interviewGuideline";
   }) => (
-    <Tooltip title={!canAutoFill ? "Complete required fields first" : "Auto-fill using AI"}>
+    <Tooltip title={!canAutoFill ? "Complete the above fields first" : "Auto-fill using AI"}>
       <Button
         onClick={() => generateJobData(type)}
         loading={aiLoading[type]}
@@ -199,7 +199,11 @@ export default function CreateJob() {
           <Col xs={24} sm={12}>
             <Form.Item
               name="title"
-              label="Job Title"
+              label={
+                <span>
+                  Job Title <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Job title is required" }]}
             >
               <Input placeholder="e.g. Mobile App Tester" disabled={loading} />
@@ -208,7 +212,11 @@ export default function CreateJob() {
           <Col xs={24} sm={12}>
             <Form.Item
               name="role"
-              label="Job Role"
+              label={
+                <span>
+                  Job Role <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Job role is required" }]}
             >
               <Input placeholder="e.g. QA Engineer" disabled={loading} />
@@ -221,7 +229,11 @@ export default function CreateJob() {
           <Col xs={24} sm={12}>
             <Form.Item
               name="experienceLevel"
-              label="Experience Level"
+              label={
+                <span>
+                  Experience Level <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Experience level is required" }]}
             >
               <Select
@@ -234,7 +246,11 @@ export default function CreateJob() {
           <Col xs={24} sm={12}>
             <Form.Item
               name="workMode"
-              label="Work Mode"
+              label={
+                <span>
+                  Work Mode <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Work mode is required" }]}
             >
               <Select
@@ -251,7 +267,11 @@ export default function CreateJob() {
           <Col xs={24} sm={12}>
             <Form.Item
               name="deadline"
-              label="Application Deadline"
+              label={
+                <span>
+                  Application Deadline <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Deadline is required" }]}
             >
               <DatePicker
@@ -264,7 +284,11 @@ export default function CreateJob() {
           <Col xs={24} sm={12}>
             <Form.Item
               name="city"
-              label="City"
+              label={
+                <span>
+                  City <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "City is required" }]}
             >
               <Select
@@ -280,16 +304,16 @@ export default function CreateJob() {
           </Col>
         </Row>
 
-        {/* Row 4: City & Country */}
-        <Row gutter={[16, 0]}>
-        </Row>
-
         {/* Row 5: Salary - Stacks on mobile, 3 columns on tablet/desktop */}
         <Row gutter={[16, 0]}>
           <Col xs={24} md={12}>
             <Form.Item
               name="minSalary"
-              label="Min Salary"
+              label={
+                <span>
+                  Min Salary (PKR) <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Min salary is required" }]}
             >
               <InputNumber
@@ -303,7 +327,11 @@ export default function CreateJob() {
           <Col xs={24} md={12}>
             <Form.Item
               name="maxSalary"
-              label="Max Salary"
+              label={
+                <span>
+                  Max Salary (PKR) <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Max salary is required" }]}
             >
               <InputNumber
@@ -321,7 +349,11 @@ export default function CreateJob() {
           <Col span={24}>
             <Form.Item
               name="skills"
-              label="Skills"
+              label={
+                <span>
+                  Required Skills <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "At least one skill is required" }]}
             >
               <Select
@@ -343,7 +375,11 @@ export default function CreateJob() {
             </div>
             <Form.Item
               name="description"
-              label="Job Description"
+              label={
+                <span>
+                  Job Description <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Job description is required" }]}
             >
               <TextArea
@@ -360,7 +396,11 @@ export default function CreateJob() {
             </div>
             <Form.Item
               name="interviewGuideline"
-              label="Interview Guideline"
+              label={
+                <span>
+                  Interview Guideline <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Interview guideline is required" }]}
             >
               <TextArea
@@ -377,7 +417,11 @@ export default function CreateJob() {
             </div>
             <Form.Item
               name="requirements"
-              label="Requirements"
+              label={
+                <span>
+                  Requirements <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "At least one requirement is required" }]}
             >
               <Select

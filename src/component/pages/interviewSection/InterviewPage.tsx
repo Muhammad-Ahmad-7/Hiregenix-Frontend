@@ -134,7 +134,7 @@ export default function InterviewsPage() {
   const [newDate, setNewDate] = useState<Date | null>(null); // store ISO string
   const [loadingButton, setLoadingButton] = useState(false);
   const [selectedJob, setSelectedJob] = useState<ScheduledInterview | null>(null);
-  const [dateFilter, setDateFilter] = useState<"week" | "month" | null>(null);
+  // const [dateFilter, setDateFilter] = useState<"week" | "month" | null>(null);
 
   const [guidelineModalOpen, setGuidelineModalOpen] = useState(false);
   const [selectedInterviewId, setSelectedInterviewId] = useState<string | null>(null);
@@ -252,7 +252,7 @@ export default function InterviewsPage() {
       try {
         setLoading(true);
         // Replace with your actual API call
-        const res = await getAllInterviewsApi({ page: 1, limit: 50, status: "scheduled", withInLastOneWeek: dateFilter === "week", withInLastOneMonth: dateFilter === "month" });
+        const res = await getAllInterviewsApi({ page: 1, limit: 50, status: "scheduled" });
         if (!res || !res.data) {
           setAllInterviews([]);
           setAllInterviewsMeta(null);
@@ -273,7 +273,7 @@ export default function InterviewsPage() {
       }
     };
     fetchAllInterviews();
-  }, [dateFilter]);
+  }, []);
 
   // Filter only scheduled interviews
   const scheduledInterviews = allInterviews.filter(
@@ -451,25 +451,25 @@ export default function InterviewsPage() {
         />
 
         <div className="flex flex-wrap gap-2 mb-4">
-          <Button
+          {/* <Button
             type={dateFilter === "week" ? "primary" : "default"}
             onClick={() => setDateFilter("week")}
           >
             Last 7 Days
-          </Button>
+          </Button> */}
 
-          <Button
+          {/* <Button
             type={dateFilter === "month" ? "primary" : "default"}
             onClick={() => setDateFilter("month")}
           >
             Last 1 Month
-          </Button>
+          </Button> */}
 
-          <Button
+          {/* <Button
             onClick={() => setDateFilter(null)}
           >
             Reset
-          </Button>
+          </Button> */}
         </div>
 
         {/* Table */}

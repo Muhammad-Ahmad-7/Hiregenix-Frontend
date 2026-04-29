@@ -40,6 +40,7 @@ export interface JobResponse {
   requirements: string[];
   interviewGuideline: string;
   __v: number;
+  totalInterviews: number
 }
 
 export interface JobPosting {
@@ -126,13 +127,14 @@ export interface AppliedJob {
   _id: string;
   candidateId: string;
   companyId: string;
-  jobId: { title: string };
+  jobId: { title: string, role: string, workMode: WorkMode, deadline: string };
   type: "live" | "recorded";
   scheduledDate: string; // ISO Date
   status: "scheduled" | "completed" | "cancelled";
   createdAt: string;
   updatedAt: string;
   aiResult: AiResult;
+
   __v: number;
 }
 export interface ScheduledInterview {

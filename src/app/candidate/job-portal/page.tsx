@@ -639,28 +639,13 @@ export default function JobDashboard() {
           {/* Filters — never scrolls */}
           <div className="flex-shrink-0 p-4">
             <Row gutter={[8, 8]}>
-              <Col xs={24} md={18}>
+              <Col xs={24} md={24}>
                 <Search
                   placeholder="Search jobs, companies, roles..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   prefix={<SearchOutlined />}
                   allowClear
-                />
-              </Col>
-              <Col xs={24} md={6}>
-                <Select
-                  placeholder="Country"
-                  allowClear
-                  style={{ width: "100%" }}
-                  value={countryFilter}
-                  onChange={setCountryFilter}
-                  options={[
-                    { label: "USA", value: "USA" },
-                    { label: "UK", value: "UK" },
-                    { label: "Germany", value: "Germany" },
-                    { label: "Japan", value: "Japan" },
-                  ]}
                 />
               </Col>
             </Row>

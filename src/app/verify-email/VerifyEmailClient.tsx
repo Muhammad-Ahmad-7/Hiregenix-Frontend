@@ -34,10 +34,10 @@ export default function VerifyEmailClient() {
           setStatus("success");
 
           if (res.data.role === "candidate") {
-            router.push("/candidate/profile");
+            router.push("/profile-completion/candidate");
           } else if (res.data.role === "company"
           ) {
-            router.push("/company/profile");
+            router.push("/profile-completion/company");
           }
         } else {
           setStatus("error");

@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import {
     createInterviewQuestionResultApi,
     createInterviewQuestionResultForSkipQuestionApi,
+    endInterviewApi,
     getInterviewByIdApi,
 } from '@/app/api/candidate/interview.api';
 import { useInterviewAI } from '@/hooks/useInterviewAI';
@@ -73,6 +74,7 @@ const LiveInterviewPage = () => {
 
     const [showEndInterviewModal, setShowEndInterviewModal] = useState(false);
     const [confirmEndText, setConfirmEndText] = useState("");
+    const [endingInterview, setEndingInterview] = useState(false);
 
     // ── Camera (interview phase — initialised only after verification) ─────────
     useEffect(() => {
@@ -385,7 +387,19 @@ const LiveInterviewPage = () => {
             />
         );
     }
-
+    const handleEndInterview = async () => {
+        setEndingInterview(true);
+        const res = await endInterviewApi(typeof interviewId === 'string' ? interviewId : interviewId?.[0] || '')
+        if (!res || res.status === 'Failed') {
+            toast.error(res?.message || 'Failed to end interview.');
+            setEndingInterview(false);
+            return;
+        }
+        setEndingInterview(false);
+        toast.success('Interview ended successfully.');
+        setShowEndInterviewModal(false);
+        redirect('/candidate/interview-section/'); // Redirect to dashboard or another page after ending interview
+    }
     // ── RENDER: Interview ─────────────────────────────────────────────────────
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
@@ -576,12 +590,9 @@ const LiveInterviewPage = () => {
                             <Button
                                 danger
                                 block
+                                loading={endingInterview}
                                 disabled={confirmEndText !== "END"}
-                                onClick={() => {
-                                    // finalize interview end logic here
-                                    setShowEndInterviewModal(false);
-                                    redirect("/candidate/interview-section");
-                                }}
+                                onClick={handleEndInterview}
                             >
                                 Permanently End Interview
                             </Button>

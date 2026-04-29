@@ -16,6 +16,7 @@ import { AxiosError } from "axios";
 import type { UploadProps } from "antd";
 import { Dayjs } from "dayjs";
 import toast from "react-hot-toast";
+import { pakistanCities } from "@/constants/job";
 
 const { Text } = Typography;
 
@@ -74,19 +75,7 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
   ];
 
   const countryOptions = [
-    { label: "USA", value: "USA" },
-    { label: "UK", value: "UK" },
     { label: "Pakistan", value: "Pakistan" },
-    { label: "India", value: "India" },
-    { label: "Canada", value: "Canada" },
-  ];
-
-  const cityOptions = [
-    { label: "Lahore", value: "Lahore" },
-    { label: "Karachi", value: "Karachi" },
-    { label: "Islamabad", value: "Islamabad" },
-    { label: "New York", value: "New York" },
-    { label: "London", value: "London" },
   ];
 
   const handleImageUpload = async (file: File): Promise<void> => {
@@ -210,7 +199,6 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
             <LabelSelect
               name="country"
               label="Country"
-              placeholder="Country"
               required
               options={countryOptions}
               itemProps={{
@@ -225,7 +213,7 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
               placeholder="City"
               name="city"
               required
-              options={cityOptions}
+              options={pakistanCities}
             />
           </Col>
         </Row>

@@ -208,3 +208,10 @@ export const verifyCandidateIdentityApi = async (file: File) => {
     },
   });
 };
+
+export const endInterviewApi = async (interviewId: string) => {
+  return safeApiCall<null>({
+    apiCall: () => api.post(`${BASE_API}/end-interview`, { interviewId }),
+    showToaster: true,
+  });
+}
