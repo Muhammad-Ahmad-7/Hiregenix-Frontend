@@ -315,6 +315,8 @@ const LiveInterviewPage = () => {
             toast.error('Failed to submit answer');
         });
 
+        // console.log("State", interviewState);
+
         suspicionRef.current = 0;
         setInterviewState((prev) => ({ ...prev, isUploading: false }));
 
@@ -472,14 +474,12 @@ const LiveInterviewPage = () => {
                                 block
                                 icon={<AudioOutlined />}
                                 onClick={handleStartRecording}
-                                disabled={interviewState.isSpeaking || interviewState.isUploading}
+                                disabled={interviewState.isSpeaking}
                                 className="h-14 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
                             >
                                 {interviewState.isSpeaking
                                     ? 'Please wait…'
-                                    : interviewState.isUploading
-                                        ? 'Uploading…'
-                                        : 'Start Recording Answer'}
+                                    : 'Start Recording Answer'}
                             </Button>
                         ) : (
                             <Button
