@@ -146,7 +146,7 @@ export default function Dashboard() {
         display: "flex",
         flexDirection: "column",
         gap: "12px",
-        background: "#f9fafb",
+        background: "var(--surface-2)",
       }}
     >
       {/* Stats Row */}
@@ -233,6 +233,7 @@ export default function Dashboard() {
               pagination={false}
               size="small"
               loading={loading}
+              scroll={{ x: "max-content" }}
             />
           </Card>
         </Col>
@@ -283,7 +284,7 @@ export default function Dashboard() {
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "10px 12px",
-                      background: "#e4f5e7",
+                      background: "var(--success-bg)",
                       borderRadius: 8,
                       gap: 10,
                     }}
@@ -294,14 +295,14 @@ export default function Dashboard() {
                           width: 8,
                           height: 8,
                           borderRadius: "50%",
-                          background: "#52c41a",
+                          background: "var(--success-dot)",
                           flexShrink: 0,
                         }}
                       />
                       <div style={{ minWidth: 0 }}>
                         <p
                           className="font-semibold text-sm m-0 truncate"
-                          style={{ color: "#1a1a1a" }}
+                          style={{ color: "var(--text-primary)" }}
                         >
                           {interview.jobId?.title}
                         </p>

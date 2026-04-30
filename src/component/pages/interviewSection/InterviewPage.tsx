@@ -378,19 +378,21 @@ export default function InterviewsPage() {
   ];
 
   return (
-    <div className="w-full bg-gray-50 min-h-screen">
+    <div className="w-full bg-gray-50 min-h-screen flex flex-col gap-6">
       {/* Interviews Today Section */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold   text-gray-900 ">
-          Interviews Today -
-        </h2>
-        <p className="text-sm text-gray-600 ">
-          {new Date().toLocaleDateString("en-US", {
-            weekday: "long",
-            day: "numeric",
-            year: "numeric",
-          })}
-        </p>
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Interviews Today
+          </h2>
+          <p className="text-sm text-gray-600">
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </p>
+        </div>
 
         {todayInterviewsLoading ? (
           <CardSkeleton />
@@ -413,7 +415,7 @@ export default function InterviewsPage() {
             ))}
           </Row>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+          <div className="bg-gray-50 rounded-lg p-6 text-center">
             <p className="text-gray-500 text-lg">
               No interviews scheduled for today
             </p>
@@ -426,9 +428,11 @@ export default function InterviewsPage() {
 
       {/* Interviews Analytics Section */}
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          All Interviews Analytics
-        </h2>
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">
+            All Interviews Analytics
+          </h2>
+        </div>
 
         {/* Search */}
         <div className="mb-4">

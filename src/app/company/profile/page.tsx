@@ -329,8 +329,7 @@ export default function CompanyProfile() {
               <Card
                 className="rounded-2xl shadow-md border-0"
                 style={{
-                  background:
-                    "linear-gradient(135deg, #ffffff 0%, #f5f9ff 100%)",
+                  background: "var(--profile-card-gradient)",
                 }}
               >
                 <Space

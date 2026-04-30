@@ -3,6 +3,57 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --surface: #ffffff;
+
+
+  --surface-2: #f8fafc;
+  --border: #e5e7eb;
+  --text-primary: #111827;
+  --text-muted: #6b7280;
+  --text-subtle: #9ca3af;
+  --accent: #3b82f6;
+  --success-bg: #e4f5e7;
+  --success-dot: #52c41a;
+  --profile-card-gradient: linear-gradient(135deg, #ffffff 0%, #f5f9ff 100%);
+  --status-scheduled-bg: #e6f7ff;
+  --status-scheduled-text: #096dd9;
+  --status-completed-bg: #f3e6ff;
+  --status-completed-text: #391085;
+  --status-rejected-bg: #fff1f0;
+  --status-rejected-text: #a8071a;
+  --status-hired-bg: #f6ffed;
+  --status-hired-text: #237804;
+  --status-ended-bg: #fffbe6;
+  --status-ended-text: #ad8b00;
+  --status-default-bg: #f0f0f0;
+  scrollbar-width: thin;
+}
+
+[data-theme="dark"] {
+  --background: #0b1220;
+  --foreground: #e5e7eb;
+  --surface: #0f172a;
+  --surface-2: #111827;
+  --border: #1f2937;
+  --text-primary: #e5e7eb;
+  --text-muted: #cbd5e1;
+  --text-subtle: #94a3b8;
+  --accent: #60a5fa;
+  --success-bg: #12311f;
+  --success-dot: #22c55e;
+  --profile-card-gradient: linear-gradient(135deg, #0f172a 0%, #0b1220 100%);
+  --status-scheduled-bg: #0b2447;
+  --status-scheduled-text: #7dd3fc;
+  --status-completed-bg: #2b1b49;
+  --status-completed-text: #c4b5fd;
+  --status-rejected-bg: #3b0f12;
+  --status-rejected-text: #fca5a5;
+  --status-hired-bg: #12311f;
+  --status-hired-text: #86efac;
+  --status-ended-bg: #3b2f14;
+  --status-ended-text: #facc15;
+  --status-default-bg: #1f2937;
+  --status-default-text: #cbd5e1;
 }
 
 /* Hide scrollbar (Chrome, Safari, Edge) */
@@ -26,4 +77,177 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Job portal sidebar scrollbar in dark mode */
+[data-theme="dark"] .job-portal-scroll {
+  scrollbar-color: #334155 #0f172a;
+  scrollbar-width: thin;
+}
+
+/* Stats cards base styling */
+.stats-card {
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+/* Stats cards separation in dark mode */
+[data-theme="dark"] .stats-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Dark mode overrides for common utility classes used in dashboards */
+[data-theme="dark"] .bg-white {
+  background-color: var(--surface);
+}
+
+[data-theme="dark"] .bg-gray-50 {
+  background-color: #0f172a;
+}
+
+[data-theme="dark"] .bg-gray-100 {
+  background-color: #111827;
+}
+
+[data-theme="dark"] .bg-gray-200 {
+  background-color: #1f2937;
+}
+
+[data-theme="dark"] .bg-slate-50 {
+  background-color: #0f172a;
+}
+
+[data-theme="dark"] .bg-white\/80 {
+  background-color: rgb(15 23 42 / 0.8);
+}
+
+[data-theme="dark"] .bg-blue-100 {
+  background-color: #1e3a8a;
+}
+
+[data-theme="dark"] .bg-blue-50,
+[data-theme="dark"] .\!bg-blue-50 {
+  background-color: #0b2447 !important;
+}
+
+[data-theme="dark"] .hover\:bg-blue-50\/30:hover {
+  background-color: rgba(30, 58, 138, 0.25);
+}
+
+[data-theme="dark"] .bg-purple-50 {
+  background-color: #2b1b49;
+}
+
+[data-theme="dark"] .text-blue-700 {
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .text-blue-600,
+[data-theme="dark"] .\!text-blue-600 {
+  color: #7dd3fc !important;
+}
+
+[data-theme="dark"] .text-blue-500 {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .text-purple-600 {
+  color: #c4b5fd;
+}
+
+[data-theme="dark"] .text-purple-700 {
+  color: #a78bfa;
+}
+
+[data-theme="dark"] .text-black,
+[data-theme="dark"] .text-gray-900,
+[data-theme="dark"] .text-gray-800 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .text-gray-700,
+[data-theme="dark"] .text-gray-600 {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .text-gray-500,
+[data-theme="dark"] .text-gray-400,
+[data-theme="dark"] .text-gray-300 {
+  color: var(--text-subtle);
+}
+
+[data-theme="dark"] .text-slate-800 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .text-slate-400 {
+  color: var(--text-subtle);
+}
+
+[data-theme="dark"] .border-gray-50,
+[data-theme="dark"] .border-gray-100,
+[data-theme="dark"] .border-gray-200,
+[data-theme="dark"] .border-gray-300 {
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .border-slate-200 {
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .divide-gray-100> :not([hidden])~ :not([hidden]) {
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .ring-gray-200 {
+  --tw-ring-color: var(--border);
+}
+
+[data-theme="dark"] .placeholder\:text-gray-400::placeholder {
+  color: var(--text-subtle);
+}
+
+/* Ant Design skeletons in dark mode */
+[data-theme="dark"] .ant-skeleton .ant-skeleton-title,
+[data-theme="dark"] .ant-skeleton .ant-skeleton-paragraph>li,
+[data-theme="dark"] .ant-skeleton-avatar,
+[data-theme="dark"] .ant-skeleton-button,
+[data-theme="dark"] .ant-skeleton-input {
+  background: #1f2937;
+}
+
+/* Candidate chat scrollbars in dark mode */
+[data-theme="dark"] .chat-list-scroll,
+[data-theme="dark"] .chat-messages-scroll {
+  scrollbar-color: #334155 #0f172a;
+  scrollbar-width: thin;
+}
+
+[data-theme="dark"] .chat-list-scroll::-webkit-scrollbar,
+[data-theme="dark"] .chat-messages-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-theme="dark"] .chat-list-scroll::-webkit-scrollbar-track,
+[data-theme="dark"] .chat-messages-scroll::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .chat-list-scroll::-webkit-scrollbar-thumb,
+[data-theme="dark"] .chat-messages-scroll::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 999px;
+  border: 2px solid #0f172a;
+}
+
+[data-theme="dark"] .chat-list-scroll::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .chat-messages-scroll::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Empty chat state in dark mode */
+[data-theme="dark"] .chat-empty-state {
+  background: radial-gradient(circle at top, #111827 0%, #0b1220 60%);
 }

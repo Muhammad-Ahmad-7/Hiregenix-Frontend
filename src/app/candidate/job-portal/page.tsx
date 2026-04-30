@@ -52,6 +52,26 @@ import toast from "react-hot-toast";
 const { Title, Paragraph } = Typography;
 const { Search } = Input;
 
+const renderJobListSkeleton = () => (
+  <div className="px-6 py-5 space-y-5">
+    {Array.from({ length: 6 }).map((_, index) => (
+      <div key={index} className="flex w-full items-start gap-4">
+        <div className="h-16 w-16 rounded-lg bg-gray-200 animate-pulse" />
+        <div className="flex-1 min-w-0 space-y-3">
+          <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse" />
+          <div className="h-3 w-1/2 bg-gray-200 rounded animate-pulse" />
+          <div className="flex flex-wrap gap-2">
+            <div className="h-5 w-20 rounded-full bg-gray-200 animate-pulse" />
+            <div className="h-5 w-24 rounded-full bg-gray-200 animate-pulse" />
+            <div className="h-5 w-28 rounded-full bg-gray-200 animate-pulse" />
+          </div>
+          <div className="h-3 w-1/3 bg-gray-200 rounded animate-pulse" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 // ─── Shared job detail content ───────────────────────────────────────────────
 function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
   return (
@@ -725,123 +745,124 @@ export default function JobDashboard() {
           </div>
 
           {/* Job list — scrolls independently */}
-          <div ref={listRef} className="flex-1 overflow-y-auto">
+          <div ref={listRef} className="flex-1 overflow-y-auto job-portal-scroll">
             {activeTab === "all" ? (
               <>
-                <List
-                  itemLayout="horizontal"
-                  dataSource={filteredJobList}
-                  renderItem={(item) => (
-                    <List.Item
-                      className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${selectedJob?._id === item._id
-                        ? "bg-blue-50 border-l-4 border-l-blue-500"
-                        : "border-l-4 border-l-transparent"
-                        }`}
-                      onClick={() => {
-                        setSelectedJob(item);
-                        setIsDetailOpen(true);
-                      }}
-                    >
-                      <div className="flex w-full items-start gap-4 p-1">
-                        {/* Left: Company Logo */}
-                        <div className="relative flex-shrink-0">
-                          <Avatar
-                            src={item.company?.logoUrl}
-                            shape="square"
-                            size={64}
-                            className="rounded-lg border border-gray-100 shadow-sm"
-                          />
-                          {item.isSaved && (
-                            <div className="absolute -bottom-1 -right-1 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full shadow-sm text-amber-600">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                                className="w-3.5 h-3.5"
-                              >
-                                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.924-2.438 7.11-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Middle: Main Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <h3 className="text-lg font-bold text-gray-900 truncate pr-4">
-                              {item.title}
-                            </h3>
-                            {item.isApplied && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>
-                                Applied
-                              </span>
+                {loading ? (
+                  renderJobListSkeleton()
+                ) : (
+                  <List
+                    itemLayout="horizontal"
+                    dataSource={filteredJobList}
+                    renderItem={(item) => (
+                      <List.Item
+                        className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${selectedJob?._id === item._id
+                          ? "bg-blue-50 border-l-4 border-l-blue-500"
+                          : "border-l-4 border-l-transparent"
+                          }`}
+                        onClick={() => {
+                          setSelectedJob(item);
+                          setIsDetailOpen(true);
+                        }}
+                      >
+                        <div className="flex w-full items-start gap-4 p-1">
+                          {/* Left: Company Logo */}
+                          <div className="relative flex-shrink-0">
+                            <Avatar
+                              src={item.company?.logoUrl}
+                              shape="square"
+                              size={64}
+                              className="rounded-lg border border-gray-100 shadow-sm"
+                            />
+                            {item.isSaved && (
+                              <div className="absolute -bottom-1 -right-1 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full shadow-sm text-amber-600">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
+                                  className="w-3.5 h-3.5"
+                                >
+                                  <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.924-2.438 7.11-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                                </svg>
+                              </div>
                             )}
                           </div>
 
-                          <div className="flex items-center text-gray-600 mb-3 italic">
-                            <span className="font-medium text-blue-600 not-italic">
-                              {item.company?.companyName}
-                            </span>
-                            <span className="mx-2 text-gray-300">•</span>
-                            <span className="text-sm">
-                              {item.location?.city}, {item.location?.country}
-                            </span>
-                          </div>
+                          {/* Middle: Main Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <h3 className="text-lg font-bold text-gray-900 truncate pr-4">
+                                {item.title}
+                              </h3>
+                              {item.isApplied && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>
+                                  Applied
+                                </span>
+                              )}
+                            </div>
 
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            <Tag className="m-0 border-none bg-blue-50 text-blue-700 font-medium px-2 rounded">
-                              {item.workMode}
-                            </Tag>
-                            <Tag className="m-0 border-none bg-purple-50 text-purple-700 font-medium px-2 rounded capitalize">
-                              {item.experienceLevel}
-                            </Tag>
-                            <Tag className="m-0 border-none bg-orange-50 text-orange-700 font-medium px-2 rounded">
-                              {item.salaryRange?.currency}{" "}
-                              {item.salaryRange?.min.toLocaleString()} -{" "}
-                              {item.salaryRange?.max.toLocaleString()}
-                            </Tag>
-                          </div>
-
-                          {/* Quick Stats/Summary Footer */}
-                          <div className="flex items-center justify-between text-xs text-gray-400 mt-4">
-                            <div className="flex gap-4">
-                              <span>
-                                Posted:{" "}
-                                {new Date(item.createdAt).toLocaleDateString()}
+                            <div className="flex items-center text-gray-600 mb-3 italic">
+                              <span className="font-medium text-blue-600 not-italic">
+                                {item.company?.companyName}
                               </span>
-                              <span>
-                                Deadline:{" "}
-                                {new Date(item.deadline).toLocaleDateString()}
+                              <span className="mx-2 text-gray-300">•</span>
+                              <span className="text-sm">
+                                {item.location?.city}, {item.location?.country}
                               </span>
                             </div>
-                            <div className="font-medium text-blue-500">
-                              View Details →
+
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              <Tag className="m-0 border-none bg-blue-50 text-blue-700 font-medium px-2 rounded">
+                                {item.workMode}
+                              </Tag>
+                              <Tag className="m-0 border-none bg-purple-50 text-purple-700 font-medium px-2 rounded capitalize">
+                                {item.experienceLevel}
+                              </Tag>
+                              <Tag className="m-0 border-none bg-orange-50 text-orange-700 font-medium px-2 rounded">
+                                {item.salaryRange?.currency}{" "}
+                                {item.salaryRange?.min.toLocaleString()} -{" "}
+                                {item.salaryRange?.max.toLocaleString()}
+                              </Tag>
+                            </div>
+
+                            {/* Quick Stats/Summary Footer */}
+                            <div className="flex items-center justify-between text-xs text-gray-400 mt-4">
+                              <div className="flex gap-4">
+                                <span>
+                                  Posted:{" "}
+                                  {new Date(item.createdAt).toLocaleDateString()}
+                                </span>
+                                <span>
+                                  Deadline:{" "}
+                                  {new Date(item.deadline).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <div className="font-medium text-blue-500">
+                                View Details →
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </List.Item>
-                  )}
-                />
-                {loading && (
-                  <div className="p-5 text-center">
-                    <Spin />
-                  </div>
+                      </List.Item>
+                    )}
+                  />
                 )}
-                <div ref={observerTarget} className="h-8" />
-                {!hasMore && jobList.length > 0 && (
-                  <div className="p-5 text-center text-gray-400">
-                    No more jobs
-                  </div>
+                {!loading && (
+                  <>
+                    <div ref={observerTarget} className="h-8" />
+                    {!hasMore && jobList.length > 0 && (
+                      <div className="p-5 text-center text-gray-400">
+                        No more jobs
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             ) : activeTab === "saved" ? (
               <>
                 {loading ? (
-                  <div className="p-5 text-center">
-                    <Spin />
-                  </div>
+                  renderJobListSkeleton()
                 ) : filteredSavedJobsList.length === 0 ? (
                   <div className="py-10 px-5 text-center">
                     <div className="text-gray-400 text-lg mb-2">
@@ -964,9 +985,7 @@ export default function JobDashboard() {
             ) : (
               <>
                 {loading ? (
-                  <div className="p-5 text-center">
-                    <Spin />
-                  </div>
+                  renderJobListSkeleton()
                 ) : filteredRecommendedJobList.length === 0 ? (
                   <div className="py-10 px-5 text-center">
                     <div className="text-gray-400 text-lg mb-2">

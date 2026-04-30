@@ -209,7 +209,7 @@ export default function Dashboard() {
         display: "flex",
         flexDirection: "column",
         gap: "12px",
-        background: "#f9fafb",
+        background: "var(--surface-2)",
         boxSizing: "border-box",
       }}
     >

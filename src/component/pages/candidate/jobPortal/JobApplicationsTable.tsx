@@ -191,13 +191,38 @@ const JobApplicationsTable = () => {
       string,
       { color: string; background: string; border?: string; text?: string }
     > = {
-      scheduled: { color: "#096dd9", background: "#e6f7ff", text: "Scheduled" }, // blue
-      completed: { color: "#391085", background: "#f3e6ff", text: "Completed" }, // purple
-      cancelled: { color: "#a8071a", background: "#fff1f0", text: "Rejected" }, // red
-      pending: { color: "#ad8b00", background: "#fffbe6", text: "Pending" }, // yellow
+      scheduled: {
+        color: "var(--status-scheduled-text)",
+        background: "var(--status-scheduled-bg)",
+        text: "Scheduled",
+      },
+      completed: {
+        color: "var(--status-completed-text)",
+        background: "var(--status-completed-bg)",
+        text: "Completed",
+      },
+      rejected: {
+        color: "var(--status-rejected-text)",
+        background: "var(--status-rejected-bg)",
+        text: "Rejected",
+      },
+      hired: {
+        color: "var(--status-hired-text)",
+        background: "var(--status-hired-bg)",
+        text: "Hired",
+      },
+      ended: {
+        color: "var(--status-ended-text)",
+        background: "var(--status-ended-bg)",
+        text: "Ended",
+      },
     };
 
-    const config = statusConfig[status] || { color: "#666", background: "#f0f0f0", text: status };
+    const config = statusConfig[status] || {
+      color: "var(--status-default-text)",
+      background: "var(--status-default-bg)",
+      text: status,
+    };
 
     return (
       <Tag

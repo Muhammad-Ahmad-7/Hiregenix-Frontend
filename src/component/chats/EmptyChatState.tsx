@@ -11,7 +11,7 @@ const EmptyChatState = ({
   onCompanyChats?: () => void;
 }) => {
   return (
-    <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+    <div className="chat-empty-state flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
       <div className="text-center max-w-md">
         {/* Animated Icon Container */}
         <div className="relative mb-8 inline-block">

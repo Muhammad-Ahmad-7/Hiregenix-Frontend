@@ -50,7 +50,7 @@ export default function StatsCard({
       md={12} // Two per row on medium screens
       lg={12} // Two per row on large screens
     >
-      <div className="h-30 p-4 bg-white rounded-xl">
+      <div className="stats-card h-30 p-4 bg-white rounded-xl">
         <div className="flex flex-col justify-between w-full h-full">
           {/* Top Section */}
           <TopIconAndNavigation
@@ -62,7 +62,7 @@ export default function StatsCard({
 
           {/* Bottom Section */}
           <div>
-            <div className="text-sm text-[#8C8C8C]">{title}</div>
+            <div className="text-sm text-gray-500">{title}</div>
             <div className="flex items-center gap-3 flex-wrap">
               <div className="text-4xl font-semibold text-black">{number}</div>
 
