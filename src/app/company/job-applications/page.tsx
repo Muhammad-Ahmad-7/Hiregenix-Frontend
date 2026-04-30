@@ -133,7 +133,7 @@ export default function ApplicationsPage() {
         setInterviewsData(
           (res.data.interviews as unknown as InterviewRecord[]) || []
         );
-
+console.log("y:",res.data.interviews)
         // Set pagination meta from res.meta
         setMetaData(
           res?.meta || {

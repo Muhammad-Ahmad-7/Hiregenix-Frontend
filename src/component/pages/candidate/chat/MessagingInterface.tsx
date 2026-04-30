@@ -524,7 +524,7 @@ const MessagingInterface = () => {
   };
 
   const handleReply = (msg: IMessage) => setReplyingTo(msg);
-
+const clearReplyTo=()=>setReplyingTo(null);
   const sendDocumentMessage = (fileUrl: string) => {
     if (!profile) return;
     socket.emit("sendMessage", {
@@ -918,7 +918,7 @@ const MessagingInterface = () => {
                     const showDateDivider = currentDateKey !== previousDateKey;
 
                     return (
-                      <React.Fragment key={msg._id}>
+                      <div key={msg._id}>
                         {showDateDivider && (
                           <div
                             ref={(el) => {
@@ -936,6 +936,7 @@ const MessagingInterface = () => {
                         <Message
                           selectReplyId={selectReplyId}
                           setSelectReplyId={setSelectReplyId}
+                          setReplyingTo={clearReplyTo}
                           onReply={handleReply}
                           msg={msg}
                           profile={profile}
@@ -946,7 +947,7 @@ const MessagingInterface = () => {
                           reactionPickerMessageId={reactionPickerMessageId}
                           dispatch={dispatch}
                         />
-                      </React.Fragment>
+                      </div>
                     );
                   })}
 
@@ -959,6 +960,7 @@ const MessagingInterface = () => {
             <InputBox
               setSelectReplyId={setSelectReplyId}
               replyingTo={replyingTo}
+              setReplyingTo={clearReplyTo}
               selectedChat={selectedChat}
               sendDocumentMessage={sendDocumentMessage}
               messageText={messageText}
