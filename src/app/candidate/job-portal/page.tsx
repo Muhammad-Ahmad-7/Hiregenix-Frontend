@@ -48,6 +48,8 @@ import dayjs, { Dayjs } from "dayjs";
 import { scheduleInterviewApi } from "@/app/api/candidate/interview.api";
 import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
 import toast from "react-hot-toast";
+import { Router } from "next/router";
+import { useRouter } from "next/navigation";
 
 const { Title, Paragraph } = Typography;
 const { Search } = Input;
@@ -288,7 +290,7 @@ export default function JobDashboard() {
       setSavingJobId(null);
     }
   };
-
+const router=useRouter()
   // ---------------------------------------------
   // Handle Dropdown Menu Actions
   // ---------------------------------------------
@@ -308,7 +310,7 @@ export default function JobDashboard() {
         const companyId =
           selectedJob?.companyId?._id || selectedJob?.company?._id;
         if (companyId) {
-          window.open(`http://localhost:3000/auth/view/${companyId}`, "_blank");
+          router.push(`http://localhost:3000/candidate/view-profile/${companyId}`);
         }
         break;
       }

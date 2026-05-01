@@ -18,6 +18,7 @@ import type { IMessage } from "@/constants/Interfaces/Types/Chat.interface";
 import SmallReplyCard from "./SmallReplyCard";
 
 export default function InputBox({
+  setReplyingTo,
   replyingTo,
   setSelectReplyId,
   messageText,
@@ -28,6 +29,7 @@ export default function InputBox({
   showEmoji,
   sendDocumentMessage,
 }: {
+  setReplyingTo:()=>void;
   replyingTo: IMessage | null;
   messageText: string;
   setSelectReplyId: Dispatch<SetStateAction<string | null>>;
@@ -76,6 +78,7 @@ export default function InputBox({
           //   className="mb-2"
           // >
           <SmallReplyCard
+          setReplyingTo={setReplyingTo}
             messageId={replyingTo._id}
             setSelectReplyId={setSelectReplyId}
             text={replyingTo.text}

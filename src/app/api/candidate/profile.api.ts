@@ -51,6 +51,13 @@ export const getResumeDataApi = async () => {
     showToaster: true,
   });
 };
+// 
+export const getResumeDataByIdApi = async (id:string) => {
+  return safeApiCall<{ resume: CandidateResume }>({
+    apiCall: () => api.get(`/candidate/get-resume-parsed-data/${id}`),
+    showToaster: true,
+  });
+};
 
 export const addResumeData = async ({ type, data }: { type: string, data: ExperienceType | Projects | Certifications | Education }) => {
   return safeApiCall<{ resume: ResumeAddDataResponse }>({

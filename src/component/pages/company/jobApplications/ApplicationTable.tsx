@@ -17,6 +17,8 @@ import {
 import {
   MoreOutlined,
   UserOutlined,
+  MessageOutlined,
+  ProfileOutlined,
   EyeFilled,
   MailOutlined,
   ExclamationCircleOutlined,
@@ -26,6 +28,9 @@ import toast from "react-hot-toast";
 import TextArea from "antd/es/input/TextArea";
 import { sendHiringEmailApi, sendRejectionEmailApi } from "@/app/api/company/jobs.api";
 import TableSkeleton from "@/component/Skeletons/TableSkeleton";
+import { useRouter } from "next/navigation";
+import { getCandidateProfileWithIdApi } from "@/app/api/general/general.api";
+import { createChatApi } from "@/app/api/chat/chats.api";
 
 const { Title } = Typography;
 
@@ -210,6 +215,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
 
 
   const handleRejectionClick = (record: InterviewRecord) => {
+    console.log("z:",record)
     setRejectionRecord(record);
     setIsRejectionModalOpen(true);
   };
@@ -253,6 +259,38 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
     if (isRejecting) return; // prevent close while loading
     setIsRejectionModalOpen(false);
     setRejectionRecord(null);
+  };
+
+  const handleChat = async (record: InterviewRecord) => {
+    try {
+      const candidateProfileId =
+        (record as any)?.candidate?._id ?? record?.candidateId?._id;
+
+      if (!candidateProfileId) {
+        toast.error("Invalid candidate");
+        return;
+      }
+
+      const candidateRes = await getCandidateProfileWithIdApi(candidateProfileId);
+      const participantUserId = candidateRes?.data?.candidate?.userId?._id;
+
+      if (!participantUserId) {
+        toast.error("Candidate user not found");
+        return;
+      }
+
+      const chatRes = await createChatApi(participantUserId);
+      const chatId = chatRes?.data?.chat?._id;
+
+      if (chatId) {
+        router.push(`/company/chat?participantId=${participantUserId}&chatId=${chatId}`);
+      } else {
+        router.push(`/company/chat?participantId=${participantUserId}`);
+      }
+    } catch (error) {
+      console.error("Failed to open chat:", error);
+      toast.error("Failed to open chat");
+    }
   };
 
 
@@ -385,6 +423,18 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
             items: [
               { key: "sendHiringEmail", label: "Send Hiring Email", icon: <MailOutlined />, onClick: () => handleHiringEmail(record) },
               { key: "sendRejectionEmail", label: "Send Rejection Email", icon: <MailOutlined />, onClick: () => handleRejectionClick(record) },
+              {
+                key: "viewProfile",
+                label: "View Profile",
+                icon: <ProfileOutlined />,
+                onClick: () => {
+                  const id =
+                    (record as any)?.candidate?._id ?? record?.candidateId?._id;
+                  if (!id) return toast.error("Invalid candidate");
+              
+                  router.push(`/company/view-profile/${id}`);
+                }
+              },              { key: "chat", label: "Chat", icon: <MessageOutlined />, onClick: () => handleChat(record) },
 
             ],
           }}
@@ -438,7 +488,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
 
     return filtered;
   };
-
+const router=useRouter()
   // Sort data
   const getSortedData = (filteredData: InterviewRecord[]) => {
     const sorted = [...filteredData];
