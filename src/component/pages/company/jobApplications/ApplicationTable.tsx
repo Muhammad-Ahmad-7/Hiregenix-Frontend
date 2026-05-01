@@ -29,6 +29,8 @@ import TextArea from "antd/es/input/TextArea";
 import { sendHiringEmailApi, sendRejectionEmailApi } from "@/app/api/company/jobs.api";
 import TableSkeleton from "@/component/Skeletons/TableSkeleton";
 import { useRouter } from "next/navigation";
+import { getCandidateProfileWithIdApi } from "@/app/api/general/general.api";
+import { createChatApi } from "@/app/api/chat/chats.api";
 
 const { Title } = Typography;
 
@@ -259,6 +261,38 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
     setRejectionRecord(null);
   };
 
+  const handleChat = async (record: InterviewRecord) => {
+    try {
+      const candidateProfileId =
+        (record as any)?.candidate?._id ?? record?.candidateId?._id;
+
+      if (!candidateProfileId) {
+        toast.error("Invalid candidate");
+        return;
+      }
+
+      const candidateRes = await getCandidateProfileWithIdApi(candidateProfileId);
+      const participantUserId = candidateRes?.data?.candidate?.userId?._id;
+
+      if (!participantUserId) {
+        toast.error("Candidate user not found");
+        return;
+      }
+
+      const chatRes = await createChatApi(participantUserId);
+      const chatId = chatRes?.data?.chat?._id;
+
+      if (chatId) {
+        router.push(`/company/chat?participantId=${participantUserId}&chatId=${chatId}`);
+      } else {
+        router.push(`/company/chat?participantId=${participantUserId}`);
+      }
+    } catch (error) {
+      console.error("Failed to open chat:", error);
+      toast.error("Failed to open chat");
+    }
+  };
+
 
   const columns = [
     {
@@ -394,13 +428,13 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
                 label: "View Profile",
                 icon: <ProfileOutlined />,
                 onClick: () => {
-                  
-                  const id = record?.candidate?._id;
+                  const id =
+                    (record as any)?.candidate?._id ?? record?.candidateId?._id;
                   if (!id) return toast.error("Invalid candidate");
               
                   router.push(`/company/view-profile/${id}`);
                 }
-              },              { key: "chat", label: "Chat", icon: <MessageOutlined />, onClick: () => handleRejectionClick(record) },
+              },              { key: "chat", label: "Chat", icon: <MessageOutlined />, onClick: () => handleChat(record) },
 
             ],
           }}

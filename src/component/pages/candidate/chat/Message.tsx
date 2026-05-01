@@ -26,7 +26,7 @@ type MessageProps = {
   setReplyingTo:()=>void,
   setSelectReplyId: React.Dispatch<React.SetStateAction<string | null>>;
   selectReplyId: string | null;
-  profile: UserProfile;
+  currentUserId: string;
   hoveredMessageId: string | null;
   setHoveredMessageId: React.Dispatch<React.SetStateAction<string | null>>;
   handleReaction: (messageId: string | number, emoji: string) => void;
@@ -43,7 +43,7 @@ export default function Message({
   setSelectReplyId,
   setReplyingTo,
   selectReplyId,
-  profile,
+  currentUserId,
   hoveredMessageId,
   setHoveredMessageId,
   handleReaction,
@@ -64,7 +64,7 @@ export default function Message({
       ? msg.text.slice(0, MAX_CHARS) + "…"
       : msg.text;
 
-  const isSender = msg.sender === profile._id;
+  const isSender = msg.sender === currentUserId;
 
   return (
     <div

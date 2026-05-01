@@ -41,6 +41,10 @@ import {
   getAllCompaniesApi,
   type CompanyListItem,
 } from "@/app/api/company/companies.api";
+import {
+  getAllCandidatesApi,
+  type CandidateListItem,
+} from "@/app/api/candidate/candidates.api";
 import { IChat, IMessage } from "@/constants/Interfaces/Types/Chat.interface";
 import {
   addMessage,
@@ -58,7 +62,7 @@ import Message from "./Message";
 import LoadingMessage from "./LoadingMessage";
 import { isDocumentUrl } from "@/utils/isDocumentUrl";
 import { isImageUrl } from "@/utils/isImageUrl";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const getDateKey = (dateStr: string) =>
   new Date(dateStr).toISOString().split("T")[0];
@@ -73,6 +77,7 @@ const getDateLabel = (isoDate: string) =>
 
 const MessagingInterface = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [selectedChatP, setSelectedChatP] = useState<IChat | null>(null);
   const [messageText, setMessageText] = useState("");
@@ -80,11 +85,14 @@ const MessagingInterface = () => {
   const [page, setPage] = useState(2);
   const [isMessagesLoading, setIsMessagesLoading] = useState(false);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
-  const [companiesModalOpen, setCompaniesModalOpen] = useState(false);
-  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [canLoadOlder, setCanLoadOlder] = useState(false);
+  const [directoryModalOpen, setDirectoryModalOpen] = useState(false);
+  const [directoryLoading, setDirectoryLoading] = useState(false);
   const [companies, setCompanies] = useState<CompanyListItem[] | null>(null);
-  const [companiesSearch, setCompaniesSearch] = useState("");
+  const [candidates, setCandidates] = useState<CandidateListItem[] | null>(null);
+  const [directorySearch, setDirectorySearch] = useState("");
   const { profile } = useSelector((state: RootState) => state.user);
+  const currentUserId = profile?.userId?._id ?? profile?._id ?? null;
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<
     string | null
@@ -100,6 +108,7 @@ const MessagingInterface = () => {
 
   const dateRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const isLoadingOldMessages = useRef(false);
+  const hasHandledDeepLinkRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastScrollTop = useRef(0);
@@ -179,11 +188,15 @@ const MessagingInterface = () => {
 
       // Pagination: load older messages when scrolled to top
       if (container.scrollTop <= 0 && selectedChat) {
+        if (isLoadingOldMessages.current || isLoadingOlder || !canLoadOlder) {
+          return;
+        }
         const scrollHeightBefore = container.scrollHeight;
         isLoadingOldMessages.current = true;
         setIsLoadingOlder(true);
         const requestChatId = selectedChat;
         const requestPage = page;
+        const pageSize = 20;
 
         getAllMessages({
           chatId: selectedChat,
@@ -196,8 +209,12 @@ const MessagingInterface = () => {
             return;
           }
           if (!res?.data) return;
-          dispatch(prependMessages(res.data.messages));
+          const olderMessages = res.data.messages ?? [];
+          dispatch(prependMessages(olderMessages));
           setPage((prev) => prev + 1);
+          if (olderMessages.length < pageSize) {
+            setCanLoadOlder(false);
+          }
 
           requestAnimationFrame(() => {
             const scrollDiff = container.scrollHeight - scrollHeightBefore;
@@ -211,7 +228,7 @@ const MessagingInterface = () => {
 
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [selectedChat, page, dispatch]);
+  }, [selectedChat, page, dispatch, isLoadingOlder, canLoadOlder]);
 
   // Re-calculate sticky date after messages repaint
   useEffect(() => {
@@ -228,7 +245,7 @@ const MessagingInterface = () => {
     socket.on(
       "sendMessage",
       ({ chatId, msg, msgId, sender, isUserOnline, replyingTo }) => {
-        if (sender !== profile?._id) {
+        if (sender !== currentUserId) {
           if (selectedChat !== chatId) {
             socket.emit("updateMessageStatus", {
               messageId: msgId,
@@ -286,7 +303,7 @@ const MessagingInterface = () => {
               updatedAt: new Date().toISOString(),
             },
             selectedId: selectedChat,
-            userId: profile?._id,
+            userId: currentUserId ?? undefined,
             isUserOnline,
           }),
         );
@@ -297,43 +314,56 @@ const MessagingInterface = () => {
       socket.off("sendMessage");
       socket.off("updateReaction");
     };
-  }, [selectedChat, selectedChatP, profile, dispatch, messages]);
+  }, [selectedChat, selectedChatP, currentUserId, dispatch, messages]);
 
   // ── Seen status socket ─────────────────────────────────────────────────────
   useEffect(() => {
-    if (!profile) return;
+    if (!currentUserId) return;
     socket.on("updateAllMessagesStatusToSeen", ({ selectedChat: chatId }) => {
       dispatch(
-        updateAllMessagesStatusToSeen({ chatId, userId: profile.userId._id }),
+        updateAllMessagesStatusToSeen({ chatId, userId: currentUserId }),
       );
       dispatch(updateLastMessageStatus({ status: "seen", chatId }));
     });
-  }, [profile, dispatch]);
+  }, [currentUserId, dispatch]);
 
   const { chats, loading: chatsLoading } = useSelector(
     (state: RootState) => state.chats,
   );
 
-  const filteredCompanies = useMemo(() => {
-    const q = companiesSearch.trim().toLowerCase();
-    if (!companies) return [];
-    if (!q) return companies;
-    return companies.filter((c) => {
-      const name = (c.companyName ?? "").toLowerCase();
-      const email = (c.contactEmail ?? "").toLowerCase();
-      return name.includes(q) || email.includes(q);
+  const profileRole = profile?.userId?.role;
+  const isCandidateUser = profileRole === "candidate";
+  const isCompanyUser = profileRole === "company";
+
+  const filteredDirectory = useMemo(() => {
+    const q = directorySearch.trim().toLowerCase();
+    if (isCandidateUser) {
+      if (!companies) return [];
+      if (!q) return companies;
+      return companies.filter((c) => {
+        const name = (c.companyName ?? "").toLowerCase();
+        const email = (c.contactEmail ?? "").toLowerCase();
+        return name.includes(q) || email.includes(q);
+      });
+    }
+
+    if (!candidates) return [];
+    if (!q) return candidates;
+    return candidates.filter((c) => {
+      const name = (c.fullName ?? "").toLowerCase();
+      return name.includes(q);
     });
-  }, [companies, companiesSearch]);
+  }, [companies, candidates, directorySearch, isCandidateUser]);
 
   // ── Online/offline socket ──────────────────────────────────────────────────
   useEffect(() => {
     socket.on("iAmOnline", (onlineUserId: string) => {
-      if (!profile) return;
+      if (!currentUserId) return;
       const yeschats = chats?.find((c) => c.participant._id === onlineUserId);
       if (yeschats) {
         dispatch(
           updateAllMessagesStatusToDelivered({
-            userId: profile.userId._id,
+            userId: currentUserId,
             chatId: yeschats._id,
           }),
         );
@@ -359,7 +389,7 @@ const MessagingInterface = () => {
       socket.off("iAmOnline");
       socket.off("iAmOffline");
     };
-  }, [chats, profile, dispatch]);
+  }, [chats, currentUserId, dispatch]);
 
   // ── Message status socket ──────────────────────────────────────────────────
   useEffect(() => {
@@ -396,23 +426,40 @@ const MessagingInterface = () => {
 
   // ── Load companies when modal opens ────────────────────────────────────────
   useEffect(() => {
-    if (!companiesModalOpen) return;
-    if (companiesLoading) return;
-    if (companies !== null) return;
+    if (!directoryModalOpen || directoryLoading) return;
 
-    setCompaniesLoading(true);
-    getAllCompaniesApi()
-      .then((res) => {
-        if (!res?.data) return;
-        setCompanies(res.data.companies ?? []);
-      })
-      .catch(console.error)
-      .finally(() => setCompaniesLoading(false));
-  }, [companiesModalOpen, companiesLoading, companies]);
+    if (isCandidateUser && companies === null) {
+      setDirectoryLoading(true);
+      getAllCompaniesApi()
+        .then((res) => {
+          if (!res?.data) return;
+          setCompanies(res.data.companies ?? []);
+        })
+        .catch(console.error)
+        .finally(() => setDirectoryLoading(false));
+      return;
+    }
 
-  const handleStartChatWithCompany = async (company: CompanyListItem) => {
-    // create chat uses the company's USER id, not company profile id
-    const participantUserId = company.userId;
+    if (isCompanyUser && candidates === null) {
+      setDirectoryLoading(true);
+      getAllCandidatesApi()
+        .then((res) => {
+          if (!res?.data) return;
+          setCandidates(res.data.candidates ?? []);
+        })
+        .catch(console.error)
+        .finally(() => setDirectoryLoading(false));
+    }
+  }, [
+    directoryModalOpen,
+    directoryLoading,
+    isCandidateUser,
+    isCompanyUser,
+    companies,
+    candidates,
+  ]);
+
+  const handleStartChatWithUser = async (participantUserId: string) => {
     if (!participantUserId) return;
 
     const res = await createChatApi(participantUserId);
@@ -432,8 +479,31 @@ const MessagingInterface = () => {
     setSelectedChatP(chat);
     setSelectedChat(chat._id);
     setShowChatList(false);
-    setCompaniesModalOpen(false);
+    setDirectoryModalOpen(false);
   };
+
+  // ── Deep-link support: /company/chat?participantId=USER_ID ────────────────
+  useEffect(() => {
+    const participantId = searchParams.get("participantId");
+    if (!participantId || hasHandledDeepLinkRef.current) return;
+    if (!currentUserId) return;
+    if (participantId === currentUserId) return;
+
+    const existing = chats?.find((c) => c.participant._id === participantId);
+    if (existing) {
+      hasHandledDeepLinkRef.current = true;
+      setSelectedChatP(existing);
+      setSelectedChat(existing._id);
+      setShowChatList(false);
+      router.replace("/company/chat");
+      return;
+    }
+
+    hasHandledDeepLinkRef.current = true;
+    handleStartChatWithUser(participantId)
+      .then(() => router.replace("/company/chat"))
+      .catch(console.error);
+  }, [searchParams, currentUserId, chats, router]);
 
   // ── Debug: log all socket events ──────────────────────────────────────────
   useEffect(() => {
@@ -454,10 +524,11 @@ const MessagingInterface = () => {
     setPage(2);
     setIsMessagesLoading(true);
     setIsLoadingOlder(false);
+    setCanLoadOlder(false);
 
     socket.emit("private-chat", {
       selectedChat,
-      userId: profile?._id,
+      userId: currentUserId ?? undefined,
       selectedChatP,
     });
 
@@ -466,12 +537,15 @@ const MessagingInterface = () => {
       .then((res) => {
         if (selectedChat !== requestChatId) return;
         if (!res?.data) return;
-        dispatch(setMessages(res.data.messages));
+        const initialMessages = res.data.messages ?? [];
+        dispatch(setMessages(initialMessages));
+        // Don't paginate for small/new chats
+        setCanLoadOlder(initialMessages.length > 10);
       })
       .finally(() => {
         if (selectedChat === requestChatId) setIsMessagesLoading(false);
       });
-  }, [selectedChat, profile?._id, selectedChatP, dispatch]);
+  }, [selectedChat, currentUserId, selectedChatP, dispatch]);
 
   // ── Reply scroll-to ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -526,22 +600,22 @@ const MessagingInterface = () => {
   const handleReply = (msg: IMessage) => setReplyingTo(msg);
 const clearReplyTo=()=>setReplyingTo(null);
   const sendDocumentMessage = (fileUrl: string) => {
-    if (!profile) return;
+    if (!currentUserId) return;
     socket.emit("sendMessage", {
       chatId: selectedChat,
       msg: fileUrl,
-      sender: profile._id,
+      sender: currentUserId,
       msgId: Date.now().toString(),
       toUser: selectedChatP?.participant._id,
     });
   };
 
   const sendMessage = () => {
-    if (!messageText.trim() || !selectedChat || !profile) return;
+    if (!messageText.trim() || !selectedChat || !currentUserId) return;
     socket.emit("sendMessage", {
       chatId: selectedChat,
       msg: messageText,
-      sender: profile._id,
+      sender: currentUserId,
       msgId: Date.now().toString(),
       toUser: selectedChatP?.participant._id,
       replyingTo: replyingTo?._id,
@@ -571,22 +645,22 @@ const clearReplyTo=()=>setReplyingTo(null);
       onClick={handleOverlayClick}
     >
       <Modal
-        title="Companies"
-        open={companiesModalOpen}
-        onCancel={() => setCompaniesModalOpen(false)}
+        title={isCandidateUser ? "Companies" : "Candidates"}
+        open={directoryModalOpen}
+        onCancel={() => setDirectoryModalOpen(false)}
         footer={null}
         centered
       >
         <div className="mb-3">
           <Input
-            value={companiesSearch}
-            onChange={(e) => setCompaniesSearch(e.target.value)}
-            placeholder="Search company..."
+            value={directorySearch}
+            onChange={(e) => setDirectorySearch(e.target.value)}
+            placeholder={isCandidateUser ? "Search company..." : "Search candidate..."}
             allowClear
           />
         </div>
 
-        {companiesLoading ? (
+        {directoryLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3">
@@ -604,16 +678,26 @@ const clearReplyTo=()=>setReplyingTo(null);
         ) : (
           <div className="max-h-[60vh] overflow-y-auto pr-1">
             <List
-              dataSource={filteredCompanies}
-              locale={{ emptyText: "No companies found." }}
-              renderItem={(company) => (
+              dataSource={filteredDirectory}
+              locale={{
+                emptyText: isCandidateUser
+                  ? "No companies found."
+                  : "No candidates found.",
+              }}
+              renderItem={(item: CompanyListItem | CandidateListItem) => (
                 <List.Item
                   className="!px-0"
                   actions={[
                     <Button
                       key="view"
                       size="small"
-                      onClick={() => router.push(`/auth/view/${company._id}`)}
+                      onClick={() =>
+                        router.push(
+                          isCandidateUser
+                            ? `/candidate/view-profile/${item._id}`
+                            : `/company/view-profile/${item._id}`,
+                        )
+                      }
                     >
                       View Profile
                     </Button>,
@@ -621,7 +705,7 @@ const clearReplyTo=()=>setReplyingTo(null);
                       key="chat"
                       size="small"
                       type="primary"
-                      onClick={() => handleStartChatWithCompany(company)}
+                      onClick={() => handleStartChatWithUser(item.userId)}
                     >
                       Chat
                     </Button>,
@@ -629,18 +713,33 @@ const clearReplyTo=()=>setReplyingTo(null);
                 >
                   <List.Item.Meta
                     avatar={
-                      <Avatar size={40} src={company.logoUrl ?? undefined}>
-                        {(company.companyName || "?").charAt(0)}
+                      <Avatar
+                        size={40}
+                        src={
+                          isCandidateUser
+                            ? (item as CompanyListItem).logoUrl ?? undefined
+                            : (item as CandidateListItem).profilePictureUrl ??
+                            undefined
+                        }
+                      >
+                        {(isCandidateUser
+                          ? (item as CompanyListItem).companyName
+                          : (item as CandidateListItem).fullName || "?"
+                        ).charAt(0)}
                       </Avatar>
                     }
                     title={
                       <div className="font-medium text-gray-900">
-                        {company.companyName}
+                        {isCandidateUser
+                          ? (item as CompanyListItem).companyName
+                          : (item as CandidateListItem).fullName}
                       </div>
                     }
                     description={
                       <div className="text-xs text-gray-500">
-                        {company.contactEmail ?? ""}
+                        {isCandidateUser
+                          ? (item as CompanyListItem).contactEmail ?? ""
+                          : ""}
                       </div>
                     }
                   />
@@ -659,6 +758,13 @@ const clearReplyTo=()=>setReplyingTo(null);
         <div className="p-3 md:p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-2">
             <div className="font-semibold text-gray-900">Chats</div>
+            <Button
+              type="link"
+              className="!px-0"
+              onClick={() => setDirectoryModalOpen(true)}
+            >
+              {isCandidateUser ? "All Companies" : "All Candidates"}
+            </Button>
           </div>
           <div className="flex gap-2">
             <Input
@@ -757,7 +863,7 @@ const clearReplyTo=()=>setReplyingTo(null);
                       </span>
                       <span
                         className={`text-xs ml-2 flex-shrink-0 ${chat.unReadCount > 0 &&
-                          chat.lastMessage.sender !== profile._id
+                          chat.lastMessage?.sender !== currentUserId
                           ? "text-[#1677ff]"
                           : "text-gray-500"
                           }`}
@@ -770,15 +876,15 @@ const clearReplyTo=()=>setReplyingTo(null);
                       style={{
                         fontWeight:
                           chat.unReadCount > 0 &&
-                            chat.lastMessage.sender !== profile._id
+                            chat.lastMessage?.sender !== currentUserId
                             ? "bold"
                             : "normal",
                       }}
                     >
                       <div className="truncate">
-                        {chat.lastMessage.sender === profile._id && (
+                        {chat.lastMessage?.sender === currentUserId && (
                           <MessageStatus
-                            status={chat.lastMessage.status ?? "000"}
+                            status={chat.lastMessage?.status ?? "000"}
                           />
                         )}{" "}
                         {isImageUrl(chat.lastMessage?.text) ? (
@@ -798,7 +904,7 @@ const clearReplyTo=()=>setReplyingTo(null);
                         )}
                       </div>
                       {chat.unReadCount > 0 &&
-                        chat.lastMessage.sender !== profile._id && (
+                        chat.lastMessage?.sender !== currentUserId && (
                           <Badge
                             color="#1677ff"
                             count={
@@ -939,7 +1045,7 @@ const clearReplyTo=()=>setReplyingTo(null);
                           setReplyingTo={clearReplyTo}
                           onReply={handleReply}
                           msg={msg}
-                          profile={profile}
+                          currentUserId={currentUserId ?? ""}
                           hoveredMessageId={hoveredMessageId}
                           setHoveredMessageId={setHoveredMessageId}
                           handleReaction={handleReaction}
@@ -972,8 +1078,9 @@ const clearReplyTo=()=>setReplyingTo(null);
           </>
         ) : (
           <EmptyChatState
-            onCompanyChats={() => {
-              setCompaniesModalOpen(true);
+            directoryLabel={isCandidateUser ? "Company Chats" : "Candidate Chats"}
+            onDirectoryOpen={() => {
+              setDirectoryModalOpen(true);
             }}
           />
         )}

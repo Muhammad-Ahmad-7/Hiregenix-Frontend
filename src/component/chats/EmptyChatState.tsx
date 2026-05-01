@@ -6,9 +6,11 @@ import {
   SendOutlined,
 } from "@ant-design/icons";
 const EmptyChatState = ({
-  onCompanyChats,
+  onDirectoryOpen,
+  directoryLabel = "Company Chats",
 }: {
-  onCompanyChats?: () => void;
+  onDirectoryOpen?: () => void;
+  directoryLabel?: string;
 }) => {
   return (
     <div className="chat-empty-state flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
@@ -62,10 +64,10 @@ const EmptyChatState = ({
             </div>
             <button
               className="text-xs text-gray-600 font-medium"
-              onClick={onCompanyChats}
-              disabled={!onCompanyChats}
+              onClick={onDirectoryOpen}
+              disabled={!onDirectoryOpen}
             >
-              Company Chats
+              {directoryLabel}
             </button>
           </div>
 
