@@ -298,6 +298,7 @@ export default function ProfileDashboard() {
 
   const handleEditSave = async (values: CandidateProfileResponse): Promise<void> => {
     try {
+      setProfileEditing(true);
       const valuesWithUserType: CandidateProfileResponse & { userType: "candidate" } = { ...values, userType: "candidate" };
       dispatch(setProfile(valuesWithUserType));
       await updateProfileApi(values);
@@ -307,7 +308,7 @@ export default function ProfileDashboard() {
     } catch (error) {
       toast.error("Failed to update profile");
       console.error(error);
-    }
+    } finally { setProfileEditing(false); }
   };
 
   // ─── Section CRUD helpers ─────────────────────────────────────────────────
@@ -343,6 +344,7 @@ export default function ProfileDashboard() {
   };
 
   const [isEditModalLoading, setIsEditModalLoading] = useState(false);
+  const [profileEditing, setProfileEditing] = useState(false);
 
   const handleSectionSave = async () => {
     setIsEditModalLoading(true);
@@ -984,7 +986,7 @@ export default function ProfileDashboard() {
           </Form.Item>
           <div style={{ textAlign: "right", marginTop: 16 }}>
             <Button onClick={() => setIsEditModalOpen(false)} style={{ marginRight: 8 }}>Cancel</Button>
-            <Button type="primary" htmlType="submit">Save Changes</Button>
+            <Button loading={profileEditing} type="primary" htmlType="submit">Save Changes</Button>
           </div>
         </Form>
       </Modal>

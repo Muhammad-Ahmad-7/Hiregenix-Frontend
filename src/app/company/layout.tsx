@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Layout, Menu, ConfigProvider, Button, theme as antdTheme } from "antd";
 import {
@@ -18,11 +18,12 @@ import {
 } from "@ant-design/icons";
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
-import { removeToken } from "@/utils/token";
+import { getToken, removeToken } from "@/utils/token";
 import { setProfile } from "@/redux/slices/userSlice";
 import { getCompanyProfileApi } from "../api/company/profile.api";
 import { RootState } from "@/redux/store";
 import { CompanyResponse } from "@/constants/Interfaces/Types/Profile.interface";
+import { setThemeMode } from "@/redux/slices/themeSlice";
 
 const { Header, Content, Sider } = Layout;
 
@@ -72,12 +73,17 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
   const { profile } = useSelector((state: RootState) => state.user);
+  const themeMode = useSelector((state: RootState) => state.theme.mode);
   const router = useRouter();
   const dispatch = useDispatch();
 
   useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      router.replace("/auth");
+      return;
+    }
     if (profile) return;
     getCompanyProfileApi()
       .then((res) => {
@@ -101,18 +107,6 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       .finally(() => { });
   }, [profile, dispatch, router]);
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("themeMode");
-    if (savedTheme === "dark" || savedTheme === "light") {
-      setThemeMode(savedTheme);
-    }
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", themeMode);
-    localStorage.setItem("themeMode", themeMode);
-  }, [themeMode]);
-
   // Detect screen size and auto-collapse sidebar on mobile
   useEffect(() => {
     const handleResize = () => {
@@ -134,20 +128,23 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   }, [pathname]);
 
   const isDark = themeMode === "dark";
-  const uiColors = {
-    sidebarBg: isDark ? "#0f172a" : "#fff",
-    headerBg: isDark ? "#111827" : "#fff",
-    contentBg: isDark ? "#0b1220" : "#f9f9f9",
-    textColor: isDark ? "#e5e7eb" : "#111827",
-    borderColor: isDark ? "#1f2937" : "#f0f0f0",
-    shadow: isDark ? "2px 0 8px rgba(0,0,0,0.45)" : "2px 0 8px rgba(0,0,0,0.1)",
-    menuItemColor: isDark ? "#e5e7eb" : "black",
-    menuItemBg: isDark ? "#0f172a" : "#fff",
-    menuHoverBg: isDark ? "#111827" : "#fff",
-    menuHoverColor: isDark ? "#93c5fd" : "#114046",
-    menuSelectedBg: isDark ? "#1d4ed8" : "#2869eb",
-    menuSelectedColor: "white",
-  };
+  const uiColors = useMemo(
+    () => ({
+      sidebarBg: isDark ? "#0f172a" : "#fff",
+      headerBg: isDark ? "#111827" : "#fff",
+      contentBg: isDark ? "#0b1220" : "#f9f9f9",
+      textColor: isDark ? "#e5e7eb" : "#111827",
+      borderColor: isDark ? "#1f2937" : "#f0f0f0",
+      shadow: isDark ? "2px 0 8px rgba(0,0,0,0.45)" : "2px 0 8px rgba(0,0,0,0.1)",
+      menuItemColor: isDark ? "#e5e7eb" : "black",
+      menuItemBg: isDark ? "#0f172a" : "#fff",
+      menuHoverBg: isDark ? "#111827" : "#fff",
+      menuHoverColor: isDark ? "#93c5fd" : "#114046",
+      menuSelectedBg: isDark ? "#1d4ed8" : "#2869eb",
+      menuSelectedColor: "white",
+    }),
+    [isDark]
+  );
 
   return (
     profile && (
@@ -241,7 +238,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 type="text"
                 icon={isDark ? <BulbOutlined /> : <MoonOutlined />}
                 onClick={() =>
-                  setThemeMode((prev) => (prev === "dark" ? "light" : "dark"))
+                  dispatch(setThemeMode(isDark ? "light" : "dark"))
                 }
                 className={`w-full font-bold text-left ${collapsed && !isMobile
                   ? "flex justify-center"

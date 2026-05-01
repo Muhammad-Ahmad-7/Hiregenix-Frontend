@@ -67,11 +67,11 @@ const VerificationFlow: React.FC<VerificationFlowProps> = ({ onVerificationCompl
     const [phase, setPhase] = useState<VerificationPhase>('complete'); // Start at 'complete' for testing, change to 'intro' for production
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 flex items-center justify-center p-4">
-            <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-orange-300 overflow-hidden">
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-orange-300 ">
                     <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
                             <ShieldCheck className="w-4 h-4 text-white" />

@@ -9,7 +9,6 @@ import {
   Col,
   Dropdown,
   Divider,
-  Spin,
   Select,
   Input,
   Modal,
@@ -32,6 +31,7 @@ import {
 } from "@ant-design/icons";
 
 import UiButton from "@/component/common/CustomButton";
+import JobDetailSkeleton from "@/component/Skeletons/JobDetailSkeleton";
 import IconWrapper from "@/icons/IconWrapper";
 
 import {
@@ -48,7 +48,6 @@ import dayjs, { Dayjs } from "dayjs";
 import { scheduleInterviewApi } from "@/app/api/candidate/interview.api";
 import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
 import toast from "react-hot-toast";
-import { Router } from "next/router";
 import { useRouter } from "next/navigation";
 
 const { Title, Paragraph } = Typography;
@@ -87,8 +86,8 @@ function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
         <div className="my-4 items-center flex">
           <IconWrapper
-            icon={<BuildFilled className="!text-[#1890FF]" />}
-            bgColorIcon="white"
+            icon={<BuildFilled className="job-portal-icon" />}
+            bgColorIcon="var(--surface)"
           />
           <div className="ml-4">
             <div className="text-sm text-gray-400">Posted</div>
@@ -100,8 +99,8 @@ function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
 
         <div className="my-4 items-center flex">
           <IconWrapper
-            icon={<NotificationFilled className="!text-[#1890FF]" />}
-            bgColorIcon="white"
+            icon={<NotificationFilled className="job-portal-icon" />}
+            bgColorIcon="var(--surface)"
           />
           <div className="ml-4">
             <div className="text-sm text-gray-400">Deadline</div>
@@ -115,8 +114,8 @@ function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
 
         <div className="my-4 items-center flex">
           <IconWrapper
-            icon={<CalendarFilled className="!text-[#1890FF]" />}
-            bgColorIcon="white"
+            icon={<CalendarFilled className="job-portal-icon" />}
+            bgColorIcon="var(--surface)"
           />
           <div className="ml-4">
             <div className="text-sm text-gray-400">Work Mode</div>
@@ -126,8 +125,8 @@ function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
 
         <div className="my-4 items-center flex">
           <IconWrapper
-            icon={<EnvironmentOutlined className="!text-[#1890FF]" />}
-            bgColorIcon="white"
+            icon={<EnvironmentOutlined className="job-portal-icon" />}
+            bgColorIcon="var(--surface)"
           />
           <div className="ml-4">
             <div className="text-sm text-gray-400">Location</div>
@@ -139,8 +138,8 @@ function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
 
         <div className="my-4 items-center flex">
           <IconWrapper
-            icon={<LaptopOutlined className="!text-[#1890FF]" />}
-            bgColorIcon="white"
+            icon={<LaptopOutlined className="job-portal-icon" />}
+            bgColorIcon="var(--surface)"
           />
           <div className="ml-4">
             <div className="text-sm text-gray-400">Experience</div>
@@ -290,7 +289,7 @@ export default function JobDashboard() {
       setSavingJobId(null);
     }
   };
-const router=useRouter()
+  const router = useRouter()
   // ---------------------------------------------
   // Handle Dropdown Menu Actions
   // ---------------------------------------------
@@ -653,11 +652,11 @@ const router=useRouter()
   // JSX UI
   // ---------------------------------------------
   return (
-    <div className="bg-gray-50 h-[calc(100vh-100px)] overflow-hidden relative">
+    <div className="h-[calc(100vh-100px)] overflow-hidden relative">
       {/* ── Two-column layout ───────────────────────────────────────────── */}
       <div className="flex gap-4 h-full">
         {/* ── LEFT: Sidebar ─────────────────────────────────────────────── */}
-        <div className="flex flex-col bg-white rounded-2xl overflow-hidden w-full lg:w-[420px] lg:flex-shrink-0 h-full">
+        <div className="flex flex-col card bg-white overflow-hidden w-full lg:w-[420px] lg:flex-shrink-0 h-full">
           {/* Filters — never scrolls */}
           <div className="flex-shrink-0 p-4">
             <Row gutter={[8, 8]}>
@@ -1112,7 +1111,7 @@ const router=useRouter()
         {/* end sidebar */}
 
         {/* ── RIGHT: Detail panel — desktop only ────────────────────────── */}
-        <div className="hidden lg:flex flex-col flex-1 h-full bg-white rounded-2xl shadow-md overflow-hidden">
+        <div className="hidden card lg:flex flex-col flex-1 h-full bg-white rounded-2xl shadow-md overflow-hidden job-portal-scroll">
           {selectedJob ? (
             <>
               {/* Header — stays put */}
@@ -1208,9 +1207,7 @@ const router=useRouter()
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <Spin size="large" />
-            </div>
+            <JobDetailSkeleton />
           )}
         </div>
         {/* end desktop detail panel */}
@@ -1233,7 +1230,7 @@ const router=useRouter()
 
       {/* Slide-up sheet */}
       <div
-        className={`lg:hidden fixed bottom-0 left-0 mx-auto right-0 z-50 flex flex-col bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 w-[90%] max-[400px]:w-[99%] ease-out ${isDetailOpen ? "translate-y-0" : "translate-y-full"
+        className={`lg:hidden job-portal-scroll fixed bottom-0 left-0 mx-auto right-0 z-50 flex flex-col bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 w-[90%] max-[400px]:w-[99%] ease-out ${isDetailOpen ? "translate-y-0" : "translate-y-full"
           }`}
         style={{ height: "90vh" }}
       >
@@ -1249,7 +1246,7 @@ const router=useRouter()
           </button>
         </div>
 
-        {selectedJob && (
+        {selectedJob ? (
           <>
             {/* Sheet header — stays put */}
             <div className="flex-shrink-0 px-5 pb-3 border-b border-gray-100">
@@ -1342,6 +1339,8 @@ const router=useRouter()
               <JobDetailContent selectedJob={selectedJob} />
             </div>
           </>
+        ) : (
+          <JobDetailSkeleton className="flex-1" />
         )}
       </div>
       {/* end mobile drawer */}

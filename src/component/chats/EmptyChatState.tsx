@@ -1,14 +1,17 @@
 import React from "react";
 import { MessageOutlined } from "@ant-design/icons";
+import { Button } from "antd";
 const EmptyChatState = ({
+  userType,
   onDirectoryOpen,
   directoryLabel = "Company Chats",
 }: {
+  userType?: "candidate" | "company";
   onDirectoryOpen?: () => void;
   directoryLabel?: string;
 }) => {
   return (
-    <div className="chat-empty-state flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+    <div className="card flex-1 flex items-center justify-center p-4">
       <div className="text-center max-w-md">
         {/* Animated Icon Container */}
         <div className="relative mb-8 inline-block">
@@ -36,18 +39,18 @@ const EmptyChatState = ({
         </p>
 
         <div className="mb-6">
-          <button
+          <Button
             className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onDirectoryOpen}
             disabled={!onDirectoryOpen}
           >
             {directoryLabel}
-          </button>
+          </Button>
         </div>
 
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-left">
           <p className="text-xs text-blue-700 leading-relaxed">
-            Use the button above to open the list, then choose a person to chat.
+            Use the button above to open the list, then choose a {userType === "candidate" ? "company" : "candidate"} to chat.
             Your conversations will appear in the left sidebar.
           </p>
         </div>

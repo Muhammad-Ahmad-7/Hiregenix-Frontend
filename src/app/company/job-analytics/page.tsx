@@ -416,8 +416,8 @@ const MyJobsTable: React.FC = () => {
           {
             editingJob?.totalInterviews !== 0 && (
               <Col span={24}>
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                  <p className="text-yellow-800 text-sm m-0">
+                <div className="bg-blue-50 p-4 mb-4">
+                  <p className=" text-sm m-0">
                     This job has {editingJob?.totalInterviews} interview{editingJob?.totalInterviews !== 1 ? "s" : ""} scheduled. You can only update the deadline.
                   </p>
                 </div>

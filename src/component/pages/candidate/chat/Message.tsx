@@ -17,13 +17,12 @@ import { isImageUrl } from "@/utils/isImageUrl";
 import { isDocumentUrl } from "@/utils/isDocumentUrl";
 import SmallReplyCard from "./SmallReplyCard";
 import type { IMessage } from "@/constants/Interfaces/Types/Chat.interface";
-import type { AppDispatch, RootState } from "@/redux/store";
+import type { AppDispatch } from "@/redux/store";
 
-type UserProfile = NonNullable<RootState["user"]["profile"]>;
 
 type MessageProps = {
   msg: IMessage;
-  setReplyingTo:()=>void,
+  setReplyingTo: () => void,
   setSelectReplyId: React.Dispatch<React.SetStateAction<string | null>>;
   selectReplyId: string | null;
   currentUserId: string;
@@ -41,7 +40,6 @@ const MAX_CHARS = 300; // characters before "See more" kicks in
 export default function Message({
   msg,
   setSelectReplyId,
-  setReplyingTo,
   selectReplyId,
   currentUserId,
   hoveredMessageId,
@@ -124,10 +122,9 @@ export default function Message({
           <div
             className={`
               overflow-hidden-cmt
-              relative px-2.5 py-1.5 pt-1 md:px-4 md:py-2.5 shadow-sm ${
-                isSender
-                  ? "bg-[#005C4B] text-white rounded-lg"
-                  : "bg-white border border-gray-200 rounded-lg"
+              relative px-2.5 py-1.5 pt-1 md:px-4 md:py-2.5 shadow-sm ${isSender
+                ? "bg-[#005C4B] text-white rounded-lg"
+                : "bg-white border border-gray-200 rounded-lg"
               }`}
           >
             {msg.replyingTo && (
@@ -188,9 +185,8 @@ export default function Message({
               ) : (
                 <div>
                   <p
-                    className={`text-xs md:text-sm whitespace-pre-line break-words ${
-                      isSender ? "text-white" : "text-gray-800"
-                    }`}
+                    className={`text-xs md:text-sm whitespace-pre-line break-words ${isSender ? "text-white" : "text-gray-800"
+                      }`}
                   >
                     {displayedText}
                   </p>
@@ -199,11 +195,10 @@ export default function Message({
                   {isLongMessage && (
                     <button
                       onClick={() => setExpanded((prev) => !prev)}
-                      className={`mt-1 text-[11px] font-medium underline underline-offset-2 cursor-pointer bg-transparent border-none p-0 ${
-                        isSender
+                      className={`mt-1 text-[11px] font-medium underline underline-offset-2 cursor-pointer bg-transparent border-none p-0 ${isSender
                           ? "text-gray-300 hover:text-white"
                           : "text-[#005C4B] hover:text-[#004236]"
-                      }`}
+                        }`}
                     >
                       {expanded ? "See less" : "See more"}
                     </button>
@@ -235,9 +230,8 @@ export default function Message({
         {/* Reaction badge */}
         {msg.reaction && (
           <div
-            className={`-mt-1 z-100 ${
-              isSender ? "self-end mr-1" : "self-start ml-1"
-            } bg-white rounded-full px-1.5 py-0.5 shadow-md border border-gray-200 text-xs cursor-pointer select-none`}
+            className={`-mt-1 z-100 ${isSender ? "self-end mr-1" : "self-start ml-1"
+              } bg-white rounded-full px-1.5 py-0.5 shadow-md border border-gray-200 text-xs cursor-pointer select-none`}
             onClick={(e) => {
               e.stopPropagation();
               dispatch(

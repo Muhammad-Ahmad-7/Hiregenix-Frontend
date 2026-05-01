@@ -104,16 +104,16 @@ function formatTime(date: Date): string {
 }
 
 const TAG_COLORS = [
-  "blue","geekblue","purple","cyan","green","lime","orange","gold","magenta",
+  "blue", "geekblue", "purple", "cyan", "green", "lime", "orange", "gold", "magenta",
 ] as const;
 
 const HIRING_CONFIG: Record<
   HiringStatus,
   { label: string; tagColor: string }
 > = {
-  [HiringStatus.Active]:    { label: "Actively Hiring", tagColor: "success" },
-  [HiringStatus.Paused]:    { label: "Hiring Paused",   tagColor: "warning" },
-  [HiringStatus.NotHiring]: { label: "Not Hiring",      tagColor: "default" },
+  [HiringStatus.Active]: { label: "Actively Hiring", tagColor: "success" },
+  [HiringStatus.Paused]: { label: "Hiring Paused", tagColor: "warning" },
+  [HiringStatus.NotHiring]: { label: "Not Hiring", tagColor: "default" },
 };
 
 const QUICK_CHIPS = [
@@ -133,14 +133,14 @@ export default function CompanyProfilePage() {
 
   const [company, setCompany] = useState<CompanyResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // chat state
-  const [messages, setMessages]   = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
-  const [isTyping, setIsTyping]   = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [showChips, setShowChips] = useState(true);
-  const [chatOpen, setChatOpen]   = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -268,26 +268,15 @@ export default function CompanyProfilePage() {
 
       {/* ── Brand Bar ── */}
       <div
-        className="mb-5 px-4 py-2.5 rounded-2xl flex items-center justify-between"
-        style={{
-          background: "white",
-          border: "1px solid #e6f0ff",
-          boxShadow: "0 1px 4px rgba(22,119,255,0.06)",
-        }}
+        className="mb-5  py-2.5 rounded-2xl flex items-center justify-between"
+
       >
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm"
-            style={{ background: "linear-gradient(135deg,#1677ff,#0958d9)" }}
-          >
-            <ThunderboltFilled className="text-white" style={{ fontSize: 13 }} />
-          </div>
-          <span className="text-base font-bold" style={{ color: "#0958d9" }}>
+        <div className="flex items-center justify-center gap-2.5">
+          <span className="text-xl font-bold" style={{ color: "#0958d9" }}>
             Hiregenix
           </span>
           <Tag
             className="!rounded-full !text-[10px] !font-semibold hidden sm:inline-flex"
-            style={{ background: "#e6f4ff", color: "#1677ff", border: "1px solid #bae0ff" }}
           >
             AI-POWERED RECRUITMENT
           </Tag>
@@ -393,7 +382,7 @@ export default function CompanyProfilePage() {
                     )}
 
                     <Col xs={24}>
-                      <div className="flex items-center gap-3 p-3 rounded-lg bg-cyan-50">
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-50">
                         <MailOutlined className="text-cyan-600 text-lg flex-shrink-0" />
                         <div className="min-w-0">
                           <Text type="secondary" className="text-xs block">Contact Email</Text>
@@ -493,8 +482,7 @@ export default function CompanyProfilePage() {
                       Tech Stack
                     </Title>
                     <Tag
-                      className="!rounded-full !font-mono !text-xs"
-                      style={{ background: "#f0f7ff", color: "#1677ff", border: "1px solid #bae0ff" }}
+                      className="!rounded-full !font-mono !text-sm"
                     >
                       {company.techStack.length}
                     </Tag>
@@ -625,12 +613,12 @@ export default function CompanyProfilePage() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 60, scale: 0.92 }}
               transition={{ type: "spring", stiffness: 280, damping: 26 }}
-              className="fixed bottom-4 right-4 z-50 flex flex-col rounded-2xl overflow-hidden"
+              className="chatbot-panel fixed bottom-4 right-4 z-50 flex flex-col rounded-2xl overflow-hidden"
               style={{
                 width: "min(calc(100vw - 2rem),380px)",
                 height: "min(calc(100vh - 5rem),560px)",
                 boxShadow: "0 8px 40px rgba(22,119,255,0.22),0 2px 10px rgba(0,0,0,0.1)",
-                background: "white",
+                background: "var(--chatbot-panel-bg)",
               }}
             >
               <ChatPanel
@@ -727,14 +715,7 @@ function ChatPanel({
       </div>
 
       {/* Messages */}
-      <div
-        className="flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-2"
-        style={{
-          background: "#fafcff",
-          scrollbarWidth: "thin",
-          scrollbarColor: "#bae0ff transparent",
-        }}
-      >
+      <div className="chatbot-scroll flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-2">
         {messages.map((msg) => {
           const isUser = msg.role === "user";
           return (
@@ -749,8 +730,12 @@ function ChatPanel({
                 className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center"
                 style={
                   isUser
-                    ? { background: "#1677ff", color: "white" }
-                    : { background: "#e6f4ff", color: "#1677ff", border: "1px solid #bae0ff" }
+                    ? { background: "var(--chatbot-user-bubble)", color: "white" }
+                    : {
+                      background: "var(--chatbot-bot-chip-bg)",
+                      color: "var(--chatbot-accent)",
+                      border: "1px solid var(--chatbot-bot-chip-border)",
+                    }
                 }
               >
                 {isUser
@@ -763,18 +748,18 @@ function ChatPanel({
                   style={
                     isUser
                       ? {
-                          background: "linear-gradient(135deg,#1677ff,#0958d9)",
-                          color: "white",
-                          borderBottomRightRadius: 4,
-                          boxShadow: "0 2px 8px rgba(22,119,255,0.28)",
-                        }
+                        background: "var(--chatbot-user-gradient)",
+                        color: "white",
+                        borderBottomRightRadius: 4,
+                        boxShadow: "0 2px 8px rgba(22,119,255,0.28)",
+                      }
                       : {
-                          background: "white",
-                          color: "#374151",
-                          borderBottomLeftRadius: 4,
-                          border: "1px solid #e6f0ff",
-                          boxShadow: "0 1px 4px rgba(22,119,255,0.06)",
-                        }
+                        background: "var(--chatbot-bot-bubble)",
+                        color: "var(--chatbot-bot-text)",
+                        borderBottomLeftRadius: 4,
+                        border: "1px solid var(--chatbot-bot-border)",
+                        boxShadow: "0 1px 4px rgba(22,119,255,0.06)",
+                      }
                   }
                 >
                   {msg.content}
@@ -795,13 +780,19 @@ function ChatPanel({
             >
               <div
                 className="w-5 h-5 rounded-full flex items-center justify-center"
-                style={{ background: "#e6f4ff", border: "1px solid #bae0ff" }}
+                style={{
+                  background: "var(--chatbot-bot-chip-bg)",
+                  border: "1px solid var(--chatbot-bot-chip-border)",
+                }}
               >
                 <RobotOutlined style={{ fontSize: 9, color: "#1677ff" }} />
               </div>
               <div
                 className="rounded-2xl rounded-bl-sm px-3 py-2.5 flex gap-1 items-center"
-                style={{ background: "white", border: "1px solid #e6f0ff" }}
+                style={{
+                  background: "var(--chatbot-bot-bubble)",
+                  border: "1px solid var(--chatbot-bot-border)",
+                }}
               >
                 {[0, 1, 2].map((i) => (
                   <motion.span
@@ -834,9 +825,19 @@ function ChatPanel({
                     key={chip}
                     onClick={() => onSend(chip)}
                     className="text-[11px] px-2.5 py-1 rounded-full cursor-pointer transition-all duration-150 font-medium"
-                    style={{ background: "white", border: "1px solid #bae0ff", color: "#1677ff" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#e6f4ff"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "white"; }}
+                    style={{
+                      background: "var(--chatbot-chip-bg)",
+                      border: "1px solid var(--chatbot-chip-border)",
+                      color: "var(--chatbot-accent)",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        "var(--chatbot-chip-hover)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        "var(--chatbot-chip-bg)";
+                    }}
                   >
                     {chip}
                   </button>
@@ -850,10 +851,7 @@ function ChatPanel({
       </div>
 
       {/* Input */}
-      <div
-        className="flex-shrink-0 px-3 py-2.5"
-        style={{ borderTop: "1px solid #e6f0ff", background: "white" }}
-      >
+      <div className="chatbot-input flex-shrink-0 px-3 py-2.5">
         <div className="flex gap-2 items-end">
           <Input.TextArea
             value={inputText}
@@ -862,7 +860,7 @@ function ChatPanel({
             placeholder="Ask about the company..."
             autoSize={{ minRows: 1, maxRows: 3 }}
             className="!rounded-xl !text-xs"
-            style={{ borderColor: "#bae0ff" }}
+            style={{ borderColor: "var(--chatbot-chip-border)" }}
             disabled={isTyping}
           />
           <Button
@@ -885,10 +883,7 @@ function ChatPanel({
       </div>
 
       {/* Footer */}
-      <div
-        className="flex-shrink-0 flex items-center justify-center gap-1 py-1.5"
-        style={{ borderTop: "1px solid #f0f7ff", background: "#fafcff" }}
-      >
+      <div className="chatbot-footer flex-shrink-0 flex items-center justify-center gap-1 py-1.5">
         <ThunderboltFilled style={{ color: "#1677ff", fontSize: 9 }} />
         <span className="text-[9px] text-gray-400">
           Powered by{" "}

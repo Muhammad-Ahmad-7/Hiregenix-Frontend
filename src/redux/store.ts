@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import userReducer from "./slices/userSlice";
 import companyJobReducer from "./slices/company/companyJobSlice";
+import themeReducer from "./slices/themeSlice";
 
 import messagesReducer from "./slices/chat/messagesSlice";
 import chatsReducers from "./slices/chat/chatsSlice";
@@ -10,6 +11,7 @@ export const store = configureStore({
     companyJob: companyJobReducer,
     chats: chatsReducers,
     messages: messagesReducer,
+    theme: themeReducer,
   },
   // devTools: true,
 });

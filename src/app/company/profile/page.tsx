@@ -320,7 +320,7 @@ export default function CompanyProfile() {
   // );
 
   return (
-    <div className="bg-gray-50  p-2">
+    <div className="  p-2">
       <div className="max-w-6xl mx-auto">
         <Row gutter={[24, 24]}>
           {/* Profile Sidebar */}
@@ -328,9 +328,6 @@ export default function CompanyProfile() {
             <div className="sticky top-6">
               <Card
                 className="rounded-2xl shadow-md border-0"
-                style={{
-                  background: "var(--profile-card-gradient)",
-                }}
               >
                 <Space
                   direction="vertical"
@@ -429,8 +426,8 @@ export default function CompanyProfile() {
 
                     {/* Email */}
                     <Col xs={24}>
-                      <div className="flex items-center gap-3 p-3 rounded-lg bg-cyan-50">
-                        <MailOutlined className="text-cyan-600 text-lg" />
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50">
+                        <MailOutlined className="text-blue-600 text-lg" />
                         <div className="min-w-0">
                           <Typography.Text
                             type="secondary"

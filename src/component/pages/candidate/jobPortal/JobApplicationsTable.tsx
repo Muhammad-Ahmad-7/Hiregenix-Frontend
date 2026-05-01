@@ -326,7 +326,7 @@ const JobApplicationsTable = () => {
         <h1 className="text-2xl font-bold text-gray-900">Your Job Applications</h1>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow-sm w-full">
+      <div className="bg-white card p-4 rounded-lg shadow-sm w-full">
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}

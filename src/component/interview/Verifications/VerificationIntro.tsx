@@ -20,7 +20,7 @@ const VerificationIntro: React.FC<VerificationIntroProps> = ({ onStart }) => {
 
             {/* Heading */}
             <div className="space-y-3 max-w-sm">
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-snug">
+                <h1 className="text-2xl font-bold tracking-tight leading-snug">
                     Identity Verification Required
                 </h1>
                 <p className="text-sm text-slate-500 leading-relaxed">
@@ -40,8 +40,8 @@ const VerificationIntro: React.FC<VerificationIntroProps> = ({ onStart }) => {
                         desc: 'A 5-second video challenge to confirm you are live.',
                     },
                     {
-                        icon: <Camera className="w-5 h-5 text-violet-600" />,
-                        bg: 'bg-violet-50',
+                        icon: <Camera className="w-5 h-5 text-blue-600" />,
+                        bg: 'bg-blue-50',
                         step: 'Step 2',
                         title: 'Face Capture',
                         desc: 'A clear photo to match your identity on record.',
@@ -49,7 +49,7 @@ const VerificationIntro: React.FC<VerificationIntroProps> = ({ onStart }) => {
                 ].map((item) => (
                     <div
                         key={item.step}
-                        className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 text-left"
+                        className="flex items-start gap-4 p-4 rounded-xl  border  text-left"
                     >
                         <div className={`w-9 h-9 rounded-lg ${item.bg} flex items-center justify-center flex-shrink-0`}>
                             {item.icon}

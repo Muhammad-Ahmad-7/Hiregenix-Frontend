@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import { CheckCircle2, ShieldCheck, Scan } from 'lucide-react';
+import { Button } from 'antd';
 
 interface VerificationCompleteProps {
     onStartInterview: () => void;
@@ -22,46 +23,46 @@ const VerificationComplete: React.FC<VerificationCompleteProps> = ({ onStartInte
 
             {/* Text */}
             <div className="space-y-3 max-w-sm">
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                <h1 className="text-2xl font-bold tracking-tight">
                     Verification Complete
                 </h1>
-                <p className="text-sm text-slate-500 leading-relaxed">
+                <p className="text-sm  leading-relaxed">
                     Your identity has been verified successfully. You are cleared to begin your interview.
                 </p>
             </div>
 
             {/* Verification badges */}
             <div className="w-full max-w-sm space-y-2">
-                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-100">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                        <Scan className="w-4 h-4 text-emerald-600" />
+                <div className="verification-badge verification-badge--success">
+                    <div className="verification-badge__icon">
+                        <Scan className="w-4 h-4" />
                     </div>
                     <div className="flex-1 text-left">
-                        <p className="text-sm font-semibold text-emerald-800">Liveness Check</p>
-                        <p className="text-xs text-emerald-600">Confirmed — you are live</p>
+                        <p className="verification-badge__title">Liveness Check</p>
+                        <p className="verification-badge__subtitle">Confirmed — you are live</p>
                     </div>
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                    <CheckCircle2 className="verification-badge__check w-5 h-5 flex-shrink-0" />
                 </div>
 
-                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-100">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <div className="verification-badge verification-badge--success">
+                    <div className="verification-badge__icon">
+                        <ShieldCheck className="w-4 h-4" />
                     </div>
                     <div className="flex-1 text-left">
-                        <p className="text-sm font-semibold text-emerald-800">Face Verification</p>
-                        <p className="text-xs text-emerald-600">Identity matched successfully</p>
+                        <p className="verification-badge__title">Face Verification</p>
+                        <p className="verification-badge__subtitle">Identity matched successfully</p>
                     </div>
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                    <CheckCircle2 className="verification-badge__check w-5 h-5 flex-shrink-0" />
                 </div>
             </div>
 
             {/* Start button */}
-            <button
+            <Button
                 onClick={onStartInterview}
                 className="w-full max-w-sm py-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-base font-bold tracking-wide transition-all duration-150 shadow-sm shadow-blue-200"
             >
                 Start Interview →
-            </button>
+            </Button>
         </div>
     );
 };

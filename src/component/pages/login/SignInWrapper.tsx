@@ -14,14 +14,14 @@ export default function SignInWrapper({
 }) {
   const childArray = React.Children.toArray(children);
   return (
-    <div className="bg-white">
-      <div className="px-4 bg-white h-screen max-w-[1500px] mx-auto">
+    <div className="auth-page">
+      <div className="auth-shell px-4 h-screen max-w-[1500px] mx-auto">
         {/* Header */}
 
         <LoginHeader />
 
         {/* Content Section */}
-        <Row className="bg-white h-[calc(100vh-5rem)] ">
+        <Row className="auth-content h-[calc(100vh-5rem)]">
           {/* Left Section */}
           {/* <Left1 /> */}
           {childArray[0]}
@@ -29,7 +29,7 @@ export default function SignInWrapper({
           <Col
             xs={0}
             md={12}
-            className="!flex !justify-center !items-center rounded-4xl"
+            className="auth-image-panel !flex !justify-center !items-center rounded-4xl"
           >
             <Image
               width={550}

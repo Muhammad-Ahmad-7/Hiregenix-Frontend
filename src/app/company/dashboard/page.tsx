@@ -8,6 +8,7 @@ import {
   CheckCircleFilled,
 } from "@ant-design/icons";
 import StatsCard from "@/component/pages/dashboard/StatsCard";
+import DashboardSkeleton from "@/component/Skeletons/DashboardSkeleton";
 import { useEffect, useRef, useState } from "react";
 import { getCompanyStatsApi } from "@/app/api/company/dashboard.api";
 import { CompanyDashboardResponse } from "@/constants/Interfaces/Types/Dashboard.interface";
@@ -198,6 +199,10 @@ export default function Dashboard() {
   const lgColStyle = isLargeScreen
     ? { height: "100%", display: "flex", flexDirection: "column" as const }
     : { marginBottom: 12 };
+
+  if (loading) {
+    return <DashboardSkeleton variant="company" />;
+  }
 
   return (
     <div

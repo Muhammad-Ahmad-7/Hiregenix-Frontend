@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Input,
   Avatar,
@@ -459,7 +459,7 @@ const MessagingInterface = () => {
     candidates,
   ]);
 
-  const handleStartChatWithUser = async (participantUserId: string) => {
+  const handleStartChatWithUser = useCallback(async (participantUserId: string) => {
     if (!participantUserId) return;
 
     const res = await createChatApi(participantUserId);
@@ -480,7 +480,7 @@ const MessagingInterface = () => {
     setSelectedChat(chat._id);
     setShowChatList(false);
     setDirectoryModalOpen(false);
-  };
+  }, [dispatch]);
 
   // ── Deep-link support: /company/chat?participantId=USER_ID ────────────────
   useEffect(() => {
@@ -503,7 +503,7 @@ const MessagingInterface = () => {
     handleStartChatWithUser(participantId)
       .then(() => router.replace("/company/chat"))
       .catch(console.error);
-  }, [searchParams, currentUserId, chats, router]);
+  }, [searchParams, currentUserId, chats, router, handleStartChatWithUser]);
 
   // ── Debug: log all socket events ──────────────────────────────────────────
   useEffect(() => {
@@ -598,7 +598,7 @@ const MessagingInterface = () => {
   };
 
   const handleReply = (msg: IMessage) => setReplyingTo(msg);
-const clearReplyTo=()=>setReplyingTo(null);
+  const clearReplyTo = () => setReplyingTo(null);
   const sendDocumentMessage = (fileUrl: string) => {
     if (!currentUserId) return;
     socket.emit("sendMessage", {
@@ -641,7 +641,7 @@ const clearReplyTo=()=>setReplyingTo(null);
 
   return (
     <div
-      className="flex h-[calc(100vh-100px)] bg-white"
+      className="flex h-[calc(100vh-100px)] bg-white rounded-xl"
       onClick={handleOverlayClick}
     >
       <Modal
@@ -753,7 +753,7 @@ const clearReplyTo=()=>setReplyingTo(null);
       {/* ── Left Sidebar ──────────────────────────────────────────────────── */}
       <div
         className={`${showChatList ? "flex" : "hidden"
-          } md:flex w-full md:w-[380px] lg:w-[420px] border-r border-gray-200 flex-col`}
+          } md:flex w-full md:w-[380px] lg:w-[420px] border-r border-gray-200 flex-col card rounded-l-xl`}
       >
         <div className="p-3 md:p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-2">
@@ -924,7 +924,7 @@ const clearReplyTo=()=>setReplyingTo(null);
 
       {/* ── Right Side - Chat Window ──────────────────────────────────────── */}
       <div
-        className={`${!showChatList ? "flex" : "hidden"} md:flex flex-1 flex-col`}
+        className={`${!showChatList ? "flex" : "hidden"} md:flex flex-1 flex-col card rounded-r-xl`}
       >
         {selectedChat ? (
           <>
@@ -961,7 +961,7 @@ const clearReplyTo=()=>setReplyingTo(null);
             {/* Messages Area */}
             <div
               ref={containerRef}
-              className="flex-1 relative overflow-y-auto p-3 md:p-6 bg-gray-50 chat-messages-scroll"
+              className="flex-1 relative overflow-y-auto p-3 md:p-6 bg-gray-50 chat-messages-scroll card"
             >
               {/* ── Animated Sticky Date Pill ──────────────────────────────── */}
               <div className="sticky top-0 flex justify-center z-10 pointer-events-none py-2">
@@ -1078,7 +1078,8 @@ const clearReplyTo=()=>setReplyingTo(null);
           </>
         ) : (
           <EmptyChatState
-            directoryLabel={isCandidateUser ? "Company Chats" : "Candidate Chats"}
+            userType={isCandidateUser ? "candidate" : "company"}
+            directoryLabel={isCandidateUser ? "Search Companies" : "Search Candidates"}
             onDirectoryOpen={() => {
               setDirectoryModalOpen(true);
             }}

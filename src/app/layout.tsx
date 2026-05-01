@@ -50,7 +50,13 @@ const RootLayout = ({ children }: React.PropsWithChildren) => (
     <body>
       <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
         <ReduxProviders>
-          <Toaster position="top-center" />
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              className: "app-toast",
+              duration: 3500,
+            }}
+          />
           <AntdRegistry>{children}</AntdRegistry>
         </ReduxProviders>
       </GoogleOAuthProvider>

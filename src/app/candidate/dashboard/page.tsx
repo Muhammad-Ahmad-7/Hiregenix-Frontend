@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Card, Table, Button, Row, Col, Tag, Spin } from "antd";
+import { Card, Table, Button, Row, Col, Tag } from "antd";
 import {
   ContainerFilled,
   StarFilled,
@@ -11,6 +11,7 @@ import {
   ArrowUpOutlined,
 } from "@ant-design/icons";
 import StatsCard from "@/component/pages/dashboard/StatsCard";
+import DashboardSkeleton from "@/component/Skeletons/DashboardSkeleton";
 import { getCandidateStatsApi } from "@/app/api/candidate/dashboard.api";
 import { CandidateDashboardResponse } from "@/constants/Interfaces/Types/Dashboard.interface";
 import UiButton from "@/component/common/CustomButton";
@@ -41,11 +42,7 @@ export default function Dashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="w-full h-screen flex justify-center items-center">
-        <Spin size="large" />
-      </div>
-    );
+    return <DashboardSkeleton variant="candidate" />;
   }
 
   // Recent applied jobs table
@@ -146,7 +143,6 @@ export default function Dashboard() {
         display: "flex",
         flexDirection: "column",
         gap: "12px",
-        background: "var(--surface-2)",
       }}
     >
       {/* Stats Row */}

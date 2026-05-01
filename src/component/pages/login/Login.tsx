@@ -120,7 +120,7 @@ export default function LoginScreen({ role }: { role: "company" | "candidate" })
     <Col
       xs={24}
       md={12}
-      className="flex flex-col justify-center items-center min-h-screen p-6 lg:p-12 overflow-y-auto"
+      className="auth-panel flex flex-col justify-center items-center min-h-screen p-6 lg:p-12 overflow-y-auto"
     >
       {/* Logo */}
       <div className="flex w-full mb-4">

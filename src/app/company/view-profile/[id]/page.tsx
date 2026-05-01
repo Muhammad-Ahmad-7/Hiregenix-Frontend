@@ -257,13 +257,13 @@ export default function CandidateProfileView() {
                 ? profile?.skills?.length || resumeData?.parsedData.skills?.length || 0
                 : resumeData?.parsedData.skills?.length || 0
             ) > 8 && (
-              <Tag className="rounded-full">
-                +{Math.max(
-                  resumeData?.parsedData.skills?.length || 0,
-                  isCandidateProfile(profile) ? profile?.skills?.length || 0 : 0
-                ) - 8}
-              </Tag>
-            )}
+                <Tag className="rounded-full">
+                  +{Math.max(
+                    resumeData?.parsedData.skills?.length || 0,
+                    isCandidateProfile(profile) ? profile?.skills?.length || 0 : 0
+                  ) - 8}
+                </Tag>
+              )}
           </Space>
         </div>
 
@@ -371,7 +371,7 @@ export default function CandidateProfileView() {
                     <CheckCircleOutlined style={{ color: "#52c41a", marginRight: 8 }} />
                     Resume Available
                   </Title>
-                  <Text type="secondary">You can view or download the candidate's resume below.</Text>
+                  <Text type="secondary">You can view or download the candidate&apos;s resume below.</Text>
                   <div className="!mt-4 gap-2 flex items-center">
                     <PaperClipOutlined />
                     <a

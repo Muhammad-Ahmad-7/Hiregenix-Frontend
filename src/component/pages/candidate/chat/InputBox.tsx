@@ -29,7 +29,7 @@ export default function InputBox({
   showEmoji,
   sendDocumentMessage,
 }: {
-  setReplyingTo:()=>void;
+  setReplyingTo: () => void;
   replyingTo: IMessage | null;
   messageText: string;
   setSelectReplyId: Dispatch<SetStateAction<string | null>>;
@@ -71,14 +71,14 @@ export default function InputBox({
   };
   return (
     <>
-      <div className="p-3 md:p-4 border-t border-gray-200 bg-white">
+      <div className="p-3 card rounded-br-xl md:p-4 border-t border-gray-200 bg-white">
         {replyingTo && (
           // <div
           //   onClick={() => setSelectReplyId(replyingTo?._id)}
           //   className="mb-2"
           // >
           <SmallReplyCard
-          setReplyingTo={setReplyingTo}
+            setReplyingTo={setReplyingTo}
             messageId={replyingTo._id}
             setSelectReplyId={setSelectReplyId}
             text={replyingTo.text}

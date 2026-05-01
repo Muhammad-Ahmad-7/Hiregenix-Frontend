@@ -404,8 +404,8 @@ const LiveInterviewPage = () => {
     }
     // ── RENDER: Interview ─────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-            <div className="flex flex-col md:flex-row w-full max-w-7xl h-[85vh] bg-white rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center  p-6">
+            <div className="card flex flex-col md:flex-row w-full max-w-7xl h-[85vh] bg-white rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden">
 
                 {/* Left: AI Monitor */}
                 <div className="w-full md:w-1/2 h-[40vh] md:h-full">
@@ -434,19 +434,27 @@ const LiveInterviewPage = () => {
 
                     {/* Wait timer */}
                     {interviewState.showWaitTimer && !interviewState.isRecording && (
-                        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mt-4">
+                        <div className="wait-timer-card bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mt-4">
                             <div className="flex items-center justify-between mb-2">
-                                <Text className="text-sm text-yellow-700 font-medium">
+                                <Text className="wait-timer-label text-sm text-yellow-700 font-medium">
                                     ⏳ Start recording or skip in:
                                 </Text>
-                                <Text className="text-2xl font-bold text-yellow-600">
+                                <Text className="wait-timer-value text-2xl font-bold text-yellow-600">
                                     {interviewState.waitTimeLeft}s
                                 </Text>
                             </div>
                             <Progress
                                 percent={waitProgress}
-                                strokeColor="#eab308"
-                                trailColor="#fef3c7"
+                                strokeColor={
+                                    document.documentElement.getAttribute("data-theme") === "dark"
+                                        ? "#f59e0b"
+                                        : "#eab308"
+                                }
+                                trailColor={
+                                    document.documentElement.getAttribute("data-theme") === "dark"
+                                        ? "#3f2f12"
+                                        : "#fef3c7"
+                                }
                                 showInfo={false}
                                 strokeWidth={8}
                             />

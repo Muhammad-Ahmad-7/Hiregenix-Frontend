@@ -112,10 +112,10 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
 
   // Get color based on score
   const getAvgColor = (value: number) => {
-    if (value >= 85) return "bg-purple-200";
-    if (value >= 80) return "bg-green-200";
-    if (value >= 70) return "bg-yellow-200";
-    return "bg-red-200";
+    if (value >= 85) return "score-badge score-badge--excellent";
+    if (value >= 80) return "score-badge score-badge--good";
+    if (value >= 70) return "score-badge score-badge--fair";
+    return "score-badge score-badge--low";
   };
 
   // Format date
@@ -215,7 +215,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
 
 
   const handleRejectionClick = (record: InterviewRecord) => {
-    console.log("z:",record)
+    console.log("z:", record)
     setRejectionRecord(record);
     setIsRejectionModalOpen(true);
   };
@@ -264,7 +264,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
   const handleChat = async (record: InterviewRecord) => {
     try {
       const candidateProfileId =
-        (record as any)?.candidate?._id ?? record?.candidateId?._id;
+        (record)?.candidateId?._id ?? record?.candidateId?._id;
 
       if (!candidateProfileId) {
         toast.error("Invalid candidate");
@@ -429,12 +429,12 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
                 icon: <ProfileOutlined />,
                 onClick: () => {
                   const id =
-                    (record as any)?.candidate?._id ?? record?.candidateId?._id;
+                    (record)?.candidateId?._id ?? record?.candidateId?._id;
                   if (!id) return toast.error("Invalid candidate");
-              
+
                   router.push(`/company/view-profile/${id}`);
                 }
-              },              { key: "chat", label: "Chat", icon: <MessageOutlined />, onClick: () => handleChat(record) },
+              }, { key: "chat", label: "Chat", icon: <MessageOutlined />, onClick: () => handleChat(record) },
 
             ],
           }}
@@ -488,7 +488,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
 
     return filtered;
   };
-const router=useRouter()
+  const router = useRouter()
   // Sort data
   const getSortedData = (filteredData: InterviewRecord[]) => {
     const sorted = [...filteredData];

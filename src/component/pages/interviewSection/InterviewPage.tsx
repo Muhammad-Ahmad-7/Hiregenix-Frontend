@@ -72,7 +72,7 @@ const InterviewCard = ({
   onStart,
 }: InterviewCardProps & { onStart: () => void }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
+    <div className="interview-card rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3 mb-3">
         <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
           {logo ? (
@@ -317,7 +317,7 @@ export default function InterviewsPage() {
       dataIndex: "name",
       key: "name",
       render: (text: string) => (
-        <span className="font-medium cursor-pointer hover:underline">
+        <span className="font-medium">
           {text}
         </span>
       ),
@@ -378,9 +378,9 @@ export default function InterviewsPage() {
   ];
 
   return (
-    <div className="w-full bg-gray-50 min-h-screen flex flex-col gap-6">
+    <div className="w-full min-h-screen flex flex-col gap-6">
       {/* Interviews Today Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="bg-white card rounded-lg shadow-sm p-6">
         <div className="mb-4">
           <h2 className="text-xl font-semibold text-gray-900">
             Interviews Today
@@ -427,7 +427,7 @@ export default function InterviewsPage() {
       </div>
 
       {/* Interviews Analytics Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="bg-white card rounded-lg shadow-sm p-6">
         <div className="mb-4">
           <h2 className="text-xl font-semibold text-gray-900">
             All Interviews Analytics
@@ -490,7 +490,7 @@ export default function InterviewsPage() {
                 showTotal: (total) => `Total ${total} items`,
               }}
               scroll={{ x: 1200 }}
-              rowClassName="hover:bg-gray-50"
+              rowClassName="hover:bg-blue-50/30"
             />
           )
 
