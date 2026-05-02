@@ -11,11 +11,12 @@
 // import { Button, DatePicker } from "antd";
 import React from "react";
 
-import sign_in from "../../../public/main.png";
+import company_dashboard from "../../../public/dashboard-company.svg";
+import candidate_dashboard from "../../../public/dashboard-candidate.svg";
 import SignInWrapper from "@/component/pages/login/SignInWrapper";
 import Left1 from "@/component/pages/login/Left1";
 const Home = () => (
-  <SignInWrapper img={sign_in}>
+  <SignInWrapper img={company_dashboard} secondaryImg={candidate_dashboard}>
     <Left1 />
     {/* <CompanyProfilePage /> */}
     {/* <LoginScreen /> */}

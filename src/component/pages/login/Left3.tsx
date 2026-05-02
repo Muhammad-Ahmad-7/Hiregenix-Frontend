@@ -135,12 +135,6 @@ export default function Left3({ role }: { role: "company" | "candidate" }) {
               visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
             }
           />
-
-          <div className="flex justify-end">
-            <UiButton type="link" className="!p-0">
-              Forgot Password?
-            </UiButton>
-          </div>
         </div>
 
         {/* Actions */}

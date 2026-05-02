@@ -15,6 +15,7 @@ import DashboardSkeleton from "@/component/Skeletons/DashboardSkeleton";
 import { getCandidateStatsApi } from "@/app/api/candidate/dashboard.api";
 import { CandidateDashboardResponse } from "@/constants/Interfaces/Types/Dashboard.interface";
 import UiButton from "@/component/common/CustomButton";
+import Link from "next/link";
 
 
 interface TopIconAndNavigationProps {
@@ -28,6 +29,7 @@ export default function Dashboard() {
   const [candidateStats, setCandidateStats] =
     useState<CandidateDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
 
   const statsRowRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +41,16 @@ export default function Dashboard() {
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const updateScreen = () => {
+      setIsLargeScreen(window.innerWidth >= 992);
+    };
+
+    updateScreen();
+    window.addEventListener("resize", updateScreen);
+    return () => window.removeEventListener("resize", updateScreen);
   }, []);
 
   if (loading) {
@@ -138,8 +150,9 @@ export default function Dashboard() {
   return (
     <div
       style={{
-        height: "100vh",
-        overflow: "hidden",
+        height: isLargeScreen ? "100vh" : "auto",
+        minHeight: "100vh",
+        overflow: isLargeScreen ? "hidden" : "visible",
         display: "flex",
         flexDirection: "column",
         gap: "12px",
@@ -184,43 +197,57 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content Row */}
-      <Row gutter={[12, 0]} style={{ flex: 1, minHeight: 0 }}>
+      <Row
+        gutter={[12, 0]}
+        style={isLargeScreen ? { flex: 1, minHeight: 0 } : {}}
+      >
         {/* Left: Recent Applied Jobs */}
         <Col
           xs={24}
           lg={16}
-          style={{ height: "100%", display: "flex", flexDirection: "column" }}
+          style={
+            isLargeScreen
+              ? { height: "100%", display: "flex", flexDirection: "column" }
+              : {}
+          }
         >
           <Card
-            style={{
-              flex: 1,
-              minHeight: 0,
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-            styles={{
-              body: {
-                flex: 1,
-                minHeight: 0,
-                overflow: "hidden",
-                padding: "0 16px 12px",
-              },
-            }}
+            style={
+              isLargeScreen
+                ? {
+                  flex: 1,
+                  minHeight: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "hidden",
+                }
+                : {}
+            }
+            styles={
+              isLargeScreen
+                ? {
+                  body: {
+                    flex: 1,
+                    minHeight: 0,
+                    overflow: "hidden",
+                    padding: "0 16px 12px",
+                  },
+                }
+                : { body: { padding: "0 16px 12px" } }
+            }
             title={
               <span style={{ fontSize: 14, fontWeight: 500 }}>
                 Recent Applied Jobs
               </span>
             }
             extra={
-              <Button
+              <Link
                 type="link"
-                size="small"
-                href="/candidate/job-portal"
+                href="/candidate/job-analytics"
                 style={{ fontSize: 12, padding: 0 }}
               >
                 View all →
-              </Button>
+              </Link>
             }
           >
             <Table
@@ -238,26 +265,38 @@ export default function Dashboard() {
         <Col
           xs={24}
           lg={8}
-          style={{ height: "100%", display: "flex", flexDirection: "column", gap: "12px" }}
+          style={
+            isLargeScreen
+              ? { height: "100%", display: "flex", flexDirection: "column", gap: "12px" }
+              : { gap: "12px" }
+          }
         >
 
           {/* Today's Interviews */}
           <Card
-            style={{
-              flex: 1,
-              minHeight: 0,
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-            styles={{
-              body: {
-                flex: 1,
-                minHeight: 0,
-                overflowY: "auto",
-                padding: "12px 16px",
-              },
-            }}
+            style={
+              isLargeScreen
+                ? {
+                  flex: 1,
+                  minHeight: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "hidden",
+                }
+                : {}
+            }
+            styles={
+              isLargeScreen
+                ? {
+                  body: {
+                    flex: 1,
+                    minHeight: 0,
+                    overflowY: "auto",
+                    padding: "12px 16px",
+                  },
+                }
+                : { body: { padding: "12px 16px" } }
+            }
             title={
               <span style={{ fontSize: 14, fontWeight: 500 }}>
                 Today&apos;s interviews

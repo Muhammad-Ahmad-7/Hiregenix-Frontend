@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, Table, Button, Row, Col, Tag } from "antd";
+import { Card, Table, Row, Col, Tag } from "antd";
 import {
   ContainerFilled,
   StarFilled,
@@ -12,6 +12,7 @@ import DashboardSkeleton from "@/component/Skeletons/DashboardSkeleton";
 import { useEffect, useRef, useState } from "react";
 import { getCompanyStatsApi } from "@/app/api/company/dashboard.api";
 import { CompanyDashboardResponse } from "@/constants/Interfaces/Types/Dashboard.interface";
+import Link from "next/link";
 
 export default function Dashboard() {
   const [companyStats, setCompanyStats] =
@@ -211,6 +212,7 @@ export default function Dashboard() {
         // On mobile/medium: auto height, outer div scrolls
         height: isLargeScreen ? "100vh" : "auto",
         minHeight: "100vh",
+        overflow: isLargeScreen ? "hidden" : "visible",
         display: "flex",
         flexDirection: "column",
         gap: "12px",
@@ -271,14 +273,13 @@ export default function Dashboard() {
               </span>
             }
             extra={
-              <Button
+              <Link
                 type="link"
-                size="small"
                 href="/company/job-analytics"
                 style={{ fontSize: 12, padding: 0 }}
               >
                 View all →
-              </Button>
+              </Link>
             }
           >
             <Table
@@ -302,14 +303,13 @@ export default function Dashboard() {
               </span>
             }
             extra={
-              <Button
+              <Link
                 type="link"
-                size="small"
                 href="/company/job-applications"
                 style={{ fontSize: 12, padding: 0 }}
               >
                 View all →
-              </Button>
+              </Link>
             }
             loading={loading}
           >

@@ -126,6 +126,42 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.auth-image-panel {
+  position: relative;
+}
+
+.auth-image-stack {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+.auth-image-card {
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.auth-image-primary {
+  transform: translateY(-6px);
+}
+
+.auth-image-secondary {
+  position: absolute;
+  right: 24px;
+  bottom: 10px;
+  transform: translateY(12px);
+  opacity: 0.96;
+}
+
+[data-theme="dark"] .auth-image-card {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  background: rgba(15, 23, 42, 0.4);
+}
+
 [data-theme="dark"] .auth-page .ant-typography {
   color: var(--text-primary);
 }
@@ -155,7 +191,15 @@ body {
 }
 
 [data-theme="dark"] .auth-page .ant-btn-default:hover {
+  background: #111827;
   border-color: #334155;
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .auth-page .ant-btn-primary:hover {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #0b1220;
 }
 
 [data-theme="dark"] .auth-page a {
@@ -586,11 +630,21 @@ body {
 
 .landing-content {
   padding: 32px;
-  background: var(--background);
+  background: radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.08), transparent 45%),
+    radial-gradient(circle at 85% 10%, rgba(14, 165, 233, 0.08), transparent 40%),
+    var(--background);
+}
+
+[data-theme="dark"] .landing-content {
+  background: radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.14), transparent 45%),
+    radial-gradient(circle at 85% 10%, rgba(14, 165, 233, 0.14), transparent 40%),
+    var(--background);
 }
 
 .landing-hero {
   padding: 32px 0 56px;
+  position: relative;
+  overflow: hidden;
   background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 55%),
     linear-gradient(135deg, rgba(15, 23, 42, 0.04), transparent 60%);
 }
@@ -598,6 +652,55 @@ body {
 [data-theme="dark"] .landing-hero {
   background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 55%),
     linear-gradient(135deg, rgba(15, 23, 42, 0.55), transparent 60%);
+}
+
+.landing-hero::before,
+.landing-hero::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(40px);
+  opacity: 0.8;
+  z-index: 0;
+}
+
+.landing-hero::before {
+  width: 260px;
+  height: 260px;
+  background: rgba(59, 130, 246, 0.2);
+  top: -120px;
+  left: -60px;
+}
+
+.landing-hero::after {
+  width: 300px;
+  height: 300px;
+  background: rgba(14, 165, 233, 0.18);
+  bottom: -160px;
+  right: -80px;
+}
+
+[data-theme="dark"] .landing-hero::before {
+  background: rgba(59, 130, 246, 0.35);
+}
+
+[data-theme="dark"] .landing-hero::after {
+  background: rgba(14, 165, 233, 0.3);
+}
+
+.landing-hero>.ant-row {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-hero-copy {
+  width: 100%;
+  text-align: center;
+  align-items: center;
+}
+
+.landing-hero-actions {
+  justify-content: center;
 }
 
 .landing-title {
@@ -614,6 +717,7 @@ body {
 
 .landing-metrics {
   margin-top: 8px;
+  justify-content: center;
 }
 
 .landing-metric {
@@ -789,6 +893,64 @@ body {
   border-radius: 16px;
 }
 
+.landing-reviews {
+  position: relative;
+}
+
+.reviews-marquee {
+  position: relative;
+  overflow: hidden;
+  padding: 6px 0 12px;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+}
+
+.reviews-track {
+  display: flex;
+  gap: 16px;
+  width: max-content;
+  animation: reviews-scroll 35s linear infinite;
+}
+
+.review-card {
+  width: 280px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), var(--surface));
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="dark"] .review-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), var(--surface));
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.review-quote {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.review-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.review-role {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+@keyframes reviews-scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
 .landing-footer {
   background: var(--surface-2);
   color: var(--text-primary);
@@ -801,4 +963,180 @@ body {
 
 .landing-footer-copy {
   color: var(--text-muted);
+}
+
+/* Landing page animations */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glow {
+
+  0%,
+  100% {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+  }
+
+  50% {
+    box-shadow: 0 20px 80px rgba(22, 119, 255, 0.15);
+  }
+}
+
+.landing-dashboard-snapshot {
+  animation: glow 3s ease-in-out infinite;
+}
+
+.dashboard-table-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dashboard-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-table-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 0.8fr;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.08);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+}
+
+.dashboard-table-header {
+  background: transparent;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.68rem;
+}
+
+[data-theme="dark"] .dashboard-table-row {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.dashboard-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.dashboard-status-success {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.dashboard-status-info {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.dashboard-status-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.landing-feature-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.landing-feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] .landing-feature-card:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.landing-logo-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.landing-logo-card:hover {
+  transform: scale(1.05);
+}
+
+.landing-tile-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.landing-tile-card:hover {
+  transform: translateX(8px);
+}
+
+.landing-title {
+  background: linear-gradient(135deg, #1677ff 0%, #1677ff 50%, #60a5fa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: slideInDown 0.8s ease-out;
+}
+
+[data-theme="dark"] .landing-title {
+  background: linear-gradient(135deg, #60a5fa 0%, #60a5fa 50%, #7dd3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.landing-metric {
+  transition: all 0.3s ease;
+}
+
+.landing-metric:hover {
+  transform: scale(1.1);
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Landing sections stagger effect */
+.landing-section {
+  animation: slideInUp 0.8s ease-out;
 }

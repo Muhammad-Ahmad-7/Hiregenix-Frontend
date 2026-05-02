@@ -1,12 +1,13 @@
 "use client";
 import React from "react";
-import sign_in from "../../../../public/main.png";
+import company_dashboard from "../../../../public/dashboard-company.svg";
+import candidate_dashboard from "../../../../public/dashboard-candidate.svg";
 import SignInWrapper from "@/component/pages/login/SignInWrapper";
 import LoginScreen from "@/component/pages/login/Login";
 
 const Page: React.FC = () => {
   return (
-    <SignInWrapper img={sign_in}>
+    <SignInWrapper img={candidate_dashboard} secondaryImg={company_dashboard}>
       {/* <Left1 /> */}
       {/* <Left2 /> */}
       {/* <Left3 role="candidate" /> */}
