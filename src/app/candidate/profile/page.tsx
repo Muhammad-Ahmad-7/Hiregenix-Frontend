@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Avatar,
   Card,
@@ -23,6 +23,7 @@ import {
   DatePicker,
   InputNumber,
   Popconfirm,
+  Progress,
 } from "antd";
 import {
   EditOutlined,
@@ -141,6 +142,12 @@ export default function ProfileDashboard() {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
+  const [parsingStatus, setParsingStatus] = useState<
+    "idle" | "uploading" | "queued" | "parsing" | "finalizing" | "completed" | "failed"
+  >("idle");
+  const [parsingProgress, setParsingProgress] = useState(0);
+  const [parsingMessage, setParsingMessage] = useState("");
+  const pollingActiveRef = useRef(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [form] = Form.useForm<CandidateProfileResponse>();
   const { profile } = useSelector((state: RootState) => state.user);
@@ -224,13 +231,127 @@ export default function ProfileDashboard() {
     fetchResumeData();
   }, [fetchResumeData]);
 
+  useEffect(() => {
+    return () => {
+      pollingActiveRef.current = false;
+    };
+  }, []);
+
+  const parsingSteps = [
+    { key: "uploading", label: "Uploading resume" },
+    { key: "queued", label: "Queued for parsing" },
+    { key: "parsing", label: "Parsing resume content" },
+    { key: "finalizing", label: "Finalizing profile" },
+  ];
+
+  const stepOrder = ["uploading", "queued", "parsing", "finalizing", "completed"] as const;
+
+  const getStepState = (key: string) => {
+    const statusForIndex =
+      parsingStatus === "idle"
+        ? "uploading"
+        : parsingStatus === "failed"
+          ? "parsing"
+          : parsingStatus;
+    const currentIndex = stepOrder.indexOf(statusForIndex);
+    const stepIndex = stepOrder.indexOf(key as (typeof stepOrder)[number]);
+    if (parsingStatus === "failed") return stepIndex <= currentIndex ? "error" : "pending";
+    if (stepIndex < currentIndex) return "done";
+    if (stepIndex === currentIndex) return "active";
+    return "pending";
+  };
+
+  const resetParsingUi = () => {
+    setParsingStatus("idle");
+    setParsingProgress(0);
+    setParsingMessage("");
+  };
+
+  const pollResumeTask = async (taskId: string): Promise<CandidateResume | null> => {
+    pollingActiveRef.current = true;
+    setParsingStatus("queued");
+    setParsingProgress(20);
+    setParsingMessage("Queued for parsing");
+
+    const maxAttempts = 24; // 2 minutes at 5s interval
+    let attempts = 0;
+
+    while (pollingActiveRef.current && attempts < maxAttempts) {
+      const res = await getTask(taskId);
+      if (!res || res.status !== "Success" || !res.data?.task) {
+        setParsingStatus("failed");
+        setParsingMessage("Parsing failed. Please try again.");
+        setParsingProgress(100);
+        return null;
+      }
+
+      const status = res.data.task.status;
+      if (status === "completed") {
+        setParsingStatus("finalizing");
+        setParsingMessage("Finalizing profile");
+        setParsingProgress(92);
+
+        const resumeRes = await getResumeDataApi();
+        const apiResume = resumeRes?.data?.resume || null;
+        if (!apiResume) {
+          setParsingStatus("failed");
+          setParsingMessage("Parsed data unavailable. Please retry upload.");
+          setParsingProgress(100);
+          return null;
+        }
+
+        setParsingStatus("completed");
+        setParsingMessage("Resume parsed successfully");
+        setParsingProgress(100);
+        window.setTimeout(resetParsingUi, 2500);
+        return apiResume;
+      }
+
+      if (status === "failed") {
+        setParsingStatus("failed");
+        setParsingMessage("Parsing failed. Please try again.");
+        setParsingProgress(100);
+        return null;
+      }
+
+      setParsingStatus("parsing");
+      setParsingMessage("Parsing resume content");
+      setParsingProgress((prev) => Math.min(prev + 12, 85));
+
+      attempts += 1;
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+
+    setParsingStatus("failed");
+    setParsingMessage("Parsing timed out. Please retry.");
+    setParsingProgress(100);
+    return null;
+  };
+
   const handleResumeUpload = async (file: File): Promise<void> => {
     setUploading(true);
+    setParsingStatus("uploading");
+    setParsingProgress(10);
+    setParsingMessage("Uploading resume");
     try {
       const formData = new FormData();
       formData.append("file", file);
       const response = await uploadResumeApi(formData);
-      const apiResume = response?.data?.resume;
+      console.log("Upload response", response)
+
+      const taskId = response?.data?.taskId;
+
+      if (!taskId) {
+        setParsingStatus("failed");
+        setParsingMessage("Upload failed. No task assigned.");
+        setParsingProgress(100);
+        return;
+      }
+
+      // Short polling on taskId to check for resume is parsed or not
+      const apiResume = await pollResumeTask(taskId);
+
+
       if (apiResume) {
         const mapped = mapApiResumeToState(apiResume);
         setResumeData(mapped);
@@ -245,8 +366,11 @@ export default function ProfileDashboard() {
           }));
         }
       }
-      toast.success("Resume uploaded successfully! We're parsing your resume and updating your profile...");
+      toast.success("Resume uploaded successfully and parsing completed!");
     } catch (error: unknown) {
+      setParsingStatus("failed");
+      setParsingMessage("Failed to upload resume");
+      setParsingProgress(100);
       toast.error("Failed to upload resume");
       console.error(error);
     } finally {
@@ -762,7 +886,7 @@ export default function ProfileDashboard() {
                       <Text type="secondary">Upload your resume in PDF format to complete your profile.</Text>
                       <div className="!mt-4">
                         <Upload {...uploadProps} accept=".pdf">
-                          <Button icon={<UploadOutlined />} loading={uploading} type="primary">
+                          <Button icon={<UploadOutlined />} loading={uploading} type="primary" disabled={parsingStatus !== "idle"}>
                             {uploading ? "Uploading..." : "Upload Resume"}
                           </Button>
                         </Upload>
@@ -778,12 +902,38 @@ export default function ProfileDashboard() {
                         type="text"
                         loading={uploading}
                         icon={<EditOutlined />}
-                        disabled={uploading}
+                        disabled={uploading || parsingStatus !== "idle"}
                       />
                     </Upload>
                   )
                 }
               </div>
+              {parsingStatus !== "idle" && (
+                <div className="resume-parsing">
+                  <div className="resume-parsing-header">
+                    <Text strong>Resume parsing</Text>
+                    <Tag className={`resume-parsing-tag resume-parsing-${parsingStatus}`}>
+                      {parsingStatus === "failed" ? "Failed" : parsingStatus === "completed" ? "Completed" : "In progress"}
+                    </Tag>
+                  </div>
+                  <Text type="secondary" className="resume-parsing-message">
+                    {parsingMessage}
+                  </Text>
+                  <Progress
+                    percent={parsingProgress}
+                    status={parsingStatus === "failed" ? "exception" : parsingStatus === "completed" ? "success" : "active"}
+                    strokeColor={parsingStatus === "failed" ? "#ef4444" : undefined}
+                  />
+                  <div className="resume-parsing-steps">
+                    {parsingSteps.map((step) => (
+                      <div key={step.key} className={`resume-parsing-step resume-step-${getStepState(step.key)}`}>
+                        <span className="resume-parsing-dot" />
+                        <span>{step.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Card>
 
             {/* AI Suggestions */}
@@ -1014,6 +1164,7 @@ export default function ProfileDashboard() {
 import ReactMarkdown from "react-markdown";
 import ProfileSkeleton from "@/component/Skeletons/ProfileSkeleton";
 import toast from "react-hot-toast";
+import { getTask } from "@/app/api/candidate/task.api";
 
 const AIResponseViewer = ({ aiResult }: { aiResult: string }) => (
   <div className="ai-response-container">

@@ -35,7 +35,7 @@ export const updateProfileApi = async (body: CompleteCandidateProfile) => {
 };
 export const uploadResumeApi = async (formData: FormData) => {
   console.log("Uploading resume:", formData.get("file"));
-  return safeApiCall<{ resume: CandidateResume }>({
+  return safeApiCall<{ taskId: string }>({
     apiCall: () =>
       api.post("/candidate/resume", formData, {
         headers: {
@@ -52,7 +52,7 @@ export const getResumeDataApi = async () => {
   });
 };
 // 
-export const getResumeDataByIdApi = async (id:string) => {
+export const getResumeDataByIdApi = async (id: string) => {
   return safeApiCall<{ resume: CandidateResume }>({
     apiCall: () => api.get(`/candidate/get-resume-parsed-data/${id}`),
     showToaster: true,

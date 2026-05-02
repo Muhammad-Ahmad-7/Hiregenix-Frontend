@@ -379,6 +379,14 @@ const LiveInterviewPage = () => {
         `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
     const waitProgress = ((5 - interviewState.waitTimeLeft) / 5) * 100;
+    const totalQuestions = interviewState.interviewQuestions.length || 1;
+    const questionNumber = interviewState.currentQuestionIndex + 1;
+    const interviewProgress = Math.round((questionNumber / totalQuestions) * 100);
+    const statusLabel = interviewState.isRecording
+        ? "Recording"
+        : interviewState.isSpeaking
+            ? "Listening"
+            : "Ready";
 
     // ── RENDER: Verification gate ─────────────────────────────────────────────
     if (!isVerified) {
@@ -404,113 +412,145 @@ const LiveInterviewPage = () => {
     }
     // ── RENDER: Interview ─────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen flex items-center justify-center  p-6">
-            <div className="card flex flex-col md:flex-row w-full max-w-7xl h-[85vh] bg-white rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden">
-
-                {/* Left: AI Monitor */}
-                <div className="w-full md:w-1/2 h-[40vh] md:h-full">
-                    <AIFrameMonitor
-                        videoRef={videoRef}
-                        isSpeaking={interviewState.isSpeaking}
-                        isRecording={interviewState.isRecording}
-                        currentQuestionIndex={interviewState.currentQuestionIndex}
-                        totalQuestions={interviewState.interviewQuestions.length}
-                        aiMetrics={aiMetrics}
-                    />
-                </div>
-
-                {/* Right: Interaction panel */}
-                <div className="w-full md:w-1/2 h-[60vh] md:h-full flex flex-col p-8 md:p-12 overflow-y-auto">
-
-                    {/* Question */}
-                    <div className="flex-1">
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">
-                            Question context
-                        </p>
-                        <h2 className="text-2xl font-bold text-slate-800 leading-snug">
-                            {interviewState.currentQuestion || 'Loading questions…'}
-                        </h2>
+        <div className="interview-page">
+            <div className="interview-shell">
+                <div className="interview-header">
+                    <div>
+                        <p className="interview-eyebrow">Live interview</p>
+                        <h1 className="interview-title">Focused, AI-guided assessment</h1>
+                        <p className="interview-subtitle">Answer clearly. Keep your video in frame for accurate scoring.</p>
                     </div>
-
-                    {/* Wait timer */}
-                    {interviewState.showWaitTimer && !interviewState.isRecording && (
-                        <div className="wait-timer-card bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mt-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <Text className="wait-timer-label text-sm text-yellow-700 font-medium">
-                                    ⏳ Start recording or skip in:
-                                </Text>
-                                <Text className="wait-timer-value text-2xl font-bold text-yellow-600">
-                                    {interviewState.waitTimeLeft}s
-                                </Text>
-                            </div>
+                    <div className="interview-header-right">
+                        <div className={`interview-status-pill ${interviewState.isRecording ? "is-recording" : ""}`}>
+                            <span className="interview-status-dot" />
+                            {statusLabel}
+                        </div>
+                        <div className="interview-progress">
+                            <span>Question {questionNumber} / {totalQuestions}</span>
                             <Progress
-                                percent={waitProgress}
+                                percent={interviewProgress}
+                                showInfo={false}
                                 strokeColor={
                                     document.documentElement.getAttribute("data-theme") === "dark"
-                                        ? "#f59e0b"
-                                        : "#eab308"
+                                        ? "#60a5fa"
+                                        : "#1677ff"
                                 }
                                 trailColor={
                                     document.documentElement.getAttribute("data-theme") === "dark"
-                                        ? "#3f2f12"
-                                        : "#fef3c7"
+                                        ? "#1f2937"
+                                        : "#e5e7eb"
                                 }
-                                showInfo={false}
-                                strokeWidth={8}
                             />
                         </div>
-                    )}
+                    </div>
+                </div>
 
-                    {/* Recording countdown */}
-                    {interviewState.isRecording && (
-                        <div className="text-center bg-gray-100 rounded-xl p-4 mt-4">
-                            <Text className="text-sm text-gray-500 block mb-1">Time Remaining</Text>
-                            <div
-                                className={`text-5xl font-bold ${interviewState.timeLeft < 30 ? 'text-red-500' : 'text-blue-600'}`}
-                            >
-                                {formatTime(interviewState.timeLeft)}
-                            </div>
+                <div className="interview-body">
+                    {/* Left: AI Monitor */}
+                    <div className="interview-left">
+                        <div className="interview-video-frame">
+                            <AIFrameMonitor
+                                videoRef={videoRef}
+                                isSpeaking={interviewState.isSpeaking}
+                                isRecording={interviewState.isRecording}
+                                currentQuestionIndex={interviewState.currentQuestionIndex}
+                                totalQuestions={interviewState.interviewQuestions.length}
+                                aiMetrics={aiMetrics}
+                            />
                         </div>
-                    )}
+                    </div>
 
-                    {/* Record / Stop button */}
-                    <div className="mt-8 flex flex-row gap-2 max-lg:flex-wrap">
-                        {!interviewState.isRecording ? (
-                            <Button
-                                type="primary"
-                                size="large"
-                                block
-                                icon={<AudioOutlined />}
-                                onClick={handleStartRecording}
-                                disabled={interviewState.isSpeaking}
-                                className="h-14 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-                            >
-                                {interviewState.isSpeaking
-                                    ? 'Please wait…'
-                                    : 'Start Recording Answer'}
-                            </Button>
-                        ) : (
+                    {/* Right: Interaction panel */}
+                    <div className="interview-right">
+
+                        {/* Question */}
+                        <div className="interview-question">
+                            <p className="interview-question-label">Question</p>
+                            <h2 className="interview-question-text">
+                                {interviewState.currentQuestion || 'Loading questions…'}
+                            </h2>
+                        </div>
+
+                        {/* Wait timer */}
+                        {interviewState.showWaitTimer && !interviewState.isRecording && (
+                            <div className="wait-timer-card mt-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <Text className="wait-timer-label text-sm text-yellow-700 font-medium">
+                                        ⏳ Start recording or skip in:
+                                    </Text>
+                                    <Text className="wait-timer-value text-2xl font-bold text-yellow-600">
+                                        {interviewState.waitTimeLeft}s
+                                    </Text>
+                                </div>
+                                <Progress
+                                    percent={waitProgress}
+                                    strokeColor={
+                                        document.documentElement.getAttribute("data-theme") === "dark"
+                                            ? "#f59e0b"
+                                            : "#eab308"
+                                    }
+                                    trailColor={
+                                        document.documentElement.getAttribute("data-theme") === "dark"
+                                            ? "#3f2f12"
+                                            : "#fef3c7"
+                                    }
+                                    showInfo={false}
+                                    strokeWidth={8}
+                                />
+                            </div>
+                        )}
+
+                        {/* Recording countdown */}
+                        {interviewState.isRecording && (
+                            <div className="recording-timer">
+                                <Text className="recording-label">Time Remaining</Text>
+                                <div
+                                    className={`recording-time ${interviewState.timeLeft < 30 ? 'is-critical' : ''}`}
+                                >
+                                    {formatTime(interviewState.timeLeft)}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Record / Stop button */}
+                        <div className="interview-controls">
+                            {!interviewState.isRecording ? (
+                                <Button
+                                    type="primary"
+                                    size="large"
+                                    block
+                                    icon={<AudioOutlined />}
+                                    onClick={handleStartRecording}
+                                    disabled={interviewState.isSpeaking}
+                                    className="interview-primary-button"
+                                >
+                                    {interviewState.isSpeaking
+                                        ? 'Please wait…'
+                                        : 'Start Recording Answer'}
+                                </Button>
+                            ) : (
+                                <Button
+                                    danger
+                                    size="large"
+                                    block
+                                    icon={<StopOutlined />}
+                                    onClick={handleStopRecording}
+                                    className="interview-primary-button"
+                                >
+                                    Stop & Submit Answer
+                                </Button>
+                            )}
+
                             <Button
                                 danger
                                 size="large"
                                 block
-                                icon={<StopOutlined />}
-                                onClick={handleStopRecording}
-                                className="h-14 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+                                className="interview-secondary-button"
+                                onClick={() => setShowEndInterviewModal(true)}
                             >
-                                Stop & Submit Answer
+                                End Interview
                             </Button>
-                        )}
-
-                        <Button
-                            danger
-                            size="large"
-                            block
-                            className="h-12 rounded-xl font-semibold mt-4"
-                            onClick={() => setShowEndInterviewModal(true)}
-                        >
-                            End Interview
-                        </Button>
+                        </div>
                     </div>
                 </div>
 
