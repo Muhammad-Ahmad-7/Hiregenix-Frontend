@@ -258,6 +258,83 @@ body {
   color: #065f46;
 }
 
+/* AI report modal (dark theme) */
+[data-theme="dark"] .ai-report-modal .ant-modal-content {
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+[data-theme="dark"] .ai-report-modal .ant-modal-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+[data-theme="dark"] .ai-report-modal .ant-modal-title,
+[data-theme="dark"] .ai-report-modal .ai-report-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ai-report-modal .ai-report-subtitle {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .ai-report-modal .ant-modal-close-x {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .ai-report-modal .ant-modal-close-x:hover {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ai-report-modal .ai-report-card {
+  background: #0b1220;
+  border-color: #1f2937;
+}
+
+[data-theme="dark"] .ai-report-modal .ai-report-card--strengths {
+  background: #0f2a1d;
+  border-color: #14532d;
+}
+
+[data-theme="dark"] .ai-report-modal .ai-report-card--strengths h3 {
+  color: #86efac;
+}
+
+[data-theme="dark"] .ai-report-modal .ai-report-dot--strengths {
+  background: #22c55e;
+}
+
+[data-theme="dark"] .ai-report-modal .ai-report-card--weaknesses {
+  background: #2a1114;
+  border-color: #4c1d1f;
+}
+
+[data-theme="dark"] .ai-report-modal .ai-report-card--weaknesses h3 {
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .ai-report-modal .ai-report-dot--weaknesses {
+  background: #f87171;
+}
+
+[data-theme="dark"] .ai-report-modal .ai-report-card--improvements {
+  background: #0d1b34;
+  border-color: #1e3a8a;
+}
+
+[data-theme="dark"] .ai-report-modal .ai-report-card--improvements h3 {
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .ai-report-modal .ai-report-dot--improvements {
+  background: #60a5fa;
+}
+
+[data-theme="dark"] .ai-report-modal .ai-report-item {
+  color: var(--text-primary);
+}
+
 .verification-badge--success .verification-badge__subtitle {
   color: #047857;
 }

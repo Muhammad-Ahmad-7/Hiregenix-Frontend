@@ -154,6 +154,8 @@ export interface ScheduledInterview {
   }
   __v: number;
   _raw: ScheduledInterview;
+  rank: number;
+  totalApplicants: number;
 }
 
 export interface TodayInterviews {

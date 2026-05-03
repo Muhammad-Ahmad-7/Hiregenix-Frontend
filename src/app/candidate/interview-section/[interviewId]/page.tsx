@@ -572,8 +572,8 @@ const LiveInterviewPage = () => {
                                 title={<span style={{ fontWeight: 700, fontSize: '24px' }}>Interview Completed!</span>}
                                 subTitle={
                                     <div style={{ fontSize: '16px', color: '#595959' }}>
-                                        <p>Thank you for completing your interview. We truly appreciate your time, presence, and patience throughout this process.</p>
-                                        <p><strong>What&apos;s next?</strong> Our team is now reviewing your responses. You will receive an email notification once your evaluation is finalized.</p>
+                                        <Text>Thank you for completing your interview. We truly appreciate your time, presence, and patience throughout this process.</Text>
+                                        <Text><strong>What&apos;s next?</strong> Our team is now reviewing your responses. You will receive an email notification once your evaluation is finalized.</Text>
                                     </div>
                                 }
                                 extra={[

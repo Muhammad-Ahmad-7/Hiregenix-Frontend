@@ -182,6 +182,8 @@ const JobApplicationsTable = () => {
       type: interview.job?.workMode || "N/A",
       date: formatDate(interview.scheduledDate),
       status: interview.status,
+      totalApplicants: interview.totalApplicants ?? 0,
+      rank: typeof interview.rank === 'number' ? interview.rank : null,
       report: interview.report || null,
       _raw: interview,
     }));
@@ -290,6 +292,23 @@ const JobApplicationsTable = () => {
       render: (status: string) => getStatusTag(status),
     },
     {
+      title: "Applicants",
+      dataIndex: "totalApplicants",
+      key: "applicants",
+      render: (_: unknown, record: ReturnType<typeof getTableData>[number]) => {
+        const total = record.totalApplicants ?? record._raw?.totalApplicants ?? 0;
+        const rank = record.rank ?? record._raw?.rank ?? null;
+        return (
+          <div className="text-sm text-gray-700">
+            {total}
+            {rank !== null && rank !== undefined ? (
+              <span className="text-xs text-gray-500"> &nbsp;(Rank {rank})</span>
+            ) : <span className="text-xs text-gray-500"> &nbsp;(No Rank)</span>}
+          </div>
+        );
+      },
+    },
+    {
       title: "Actions",
       key: "actions",
       render: (_: unknown, record: ReturnType<typeof getTableData>[number]) => (
@@ -364,7 +383,7 @@ const JobApplicationsTable = () => {
                   return originalElement;
                 },
               }}
-              className="border border-gray-200 rounded-lg overflow-x-auto"
+              className="border border-gray-200 rounded-lg overflow-x-auto chat-list-scroll"
             />
           )
         }
@@ -376,14 +395,15 @@ const JobApplicationsTable = () => {
         onCancel={() => setReportModalOpen(false)}
         footer={null}
         width={680}
+        className="ai-report-modal"
         title={
           <div className="flex items-center gap-2">
             <span className="text-purple-600 text-lg">✦</span>
-            <span className="text-base font-semibold text-gray-900">
+            <span className="ai-report-title text-base font-semibold text-gray-900">
               AI Interview Report
             </span>
             {selectedJobTitle && (
-              <span className="text-sm font-normal text-gray-500">
+              <span className="ai-report-subtitle text-sm font-normal text-gray-500">
                 — {selectedJobTitle}
               </span>
             )}
@@ -394,14 +414,14 @@ const JobApplicationsTable = () => {
           <div className="flex flex-col gap-5 pt-2">
 
             {/* Strengths */}
-            <div className="rounded-lg border border-green-100 bg-green-50 p-4">
+            <div className="ai-report-card ai-report-card--strengths rounded-lg border border-green-100 bg-green-50 p-4">
               <h3 className="flex items-center gap-2 text-sm font-semibold text-green-700 mb-3">
                 <span className="text-base">💪</span> Top Strengths
               </h3>
               <ul className="flex flex-col gap-2">
                 {selectedReport.topStrengths.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-green-400" />
+                  <li key={i} className="ai-report-item flex items-start gap-2 text-sm text-gray-700">
+                    <span className="ai-report-dot ai-report-dot--strengths mt-1 h-2 w-2 shrink-0 rounded-full bg-green-400" />
                     {item}
                   </li>
                 ))}
@@ -409,14 +429,14 @@ const JobApplicationsTable = () => {
             </div>
 
             {/* Weaknesses */}
-            <div className="rounded-lg border border-red-100 bg-red-50 p-4">
+            <div className="ai-report-card ai-report-card--weaknesses rounded-lg border border-red-100 bg-red-50 p-4">
               <h3 className="flex items-center gap-2 text-sm font-semibold text-red-700 mb-3">
                 <span className="text-base">⚠️</span> Top Weaknesses
               </h3>
               <ul className="flex flex-col gap-2">
                 {selectedReport.topWeaknesses.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-400" />
+                  <li key={i} className="ai-report-item flex items-start gap-2 text-sm text-gray-700">
+                    <span className="ai-report-dot ai-report-dot--weaknesses mt-1 h-2 w-2 shrink-0 rounded-full bg-red-400" />
                     {item}
                   </li>
                 ))}
@@ -424,14 +444,14 @@ const JobApplicationsTable = () => {
             </div>
 
             {/* Improvement Suggestions */}
-            <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+            <div className="ai-report-card ai-report-card--improvements rounded-lg border border-blue-100 bg-blue-50 p-4">
               <h3 className="flex items-center gap-2 text-sm font-semibold text-blue-700 mb-3">
                 <span className="text-base">🚀</span> Improvement Suggestions
               </h3>
               <ul className="flex flex-col gap-2">
                 {selectedReport.overallImprovementSuggestions.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-400" />
+                  <li key={i} className="ai-report-item flex items-start gap-2 text-sm text-gray-700">
+                    <span className="ai-report-dot ai-report-dot--improvements mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-400" />
                     {item}
                   </li>
                 ))}

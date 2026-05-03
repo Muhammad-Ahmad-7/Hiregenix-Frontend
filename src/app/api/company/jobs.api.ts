@@ -126,3 +126,10 @@ export const sendRejectionEmailApi = async (interviewId: string) => {
     showToaster: true,
   });
 }
+
+export const toggleJobStatus = async (jobId: string) => {
+  return safeApiCall<{ taskId: string }>({
+    apiCall: () => api.patch(`/job/toggle-job-status/${jobId}`),
+    showToaster: true,
+  });
+}

@@ -15,15 +15,17 @@ import {
   Col,
   Select,
   DatePicker,
+  Spin,
 } from "antd";
 
-import { PlusOutlined, SearchOutlined, MoreOutlined, ExclamationCircleOutlined, EditOutlined, EyeOutlined } from "@ant-design/icons";
+import { PlusOutlined, SearchOutlined, MoreOutlined, ExclamationCircleOutlined, EditOutlined, EyeOutlined, LockOutlined, UnlockOutlined } from "@ant-design/icons";
 
 import { useDispatch, useSelector } from "react-redux";
 import {
   deleteJobApi,
   getCompanyClosedJobsApi,
   getCompanyOpenJobsApi,
+  toggleJobStatus,
   updateJobApi,
 } from "@/app/api/company/jobs.api";
 
@@ -88,6 +90,7 @@ const MyJobsTable: React.FC = () => {
 
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [togglingJobId, setTogglingJobId] = useState<string | null>(null);
 
 
   // -----------------------
@@ -161,6 +164,30 @@ const MyJobsTable: React.FC = () => {
     } finally {
       setIsDeleting(false);
       setDeleteJobId(null);
+    }
+  };
+
+  const handleToggleJobStatus = async (jobId: string) => {
+    try {
+      setTogglingJobId(jobId);
+      const res = await toggleJobStatus(jobId);
+
+      if (!res) {
+        toast.error("Failed to update job status");
+        return;
+      }
+
+      if (res.status === "Failed") {
+        toast.error(res.message || "Failed to update job status");
+        return;
+      }
+
+      toast.success(res.message || "Job status updated");
+      await Promise.all([fetchOpenJobs(), fetchClosedJobs()]);
+    } catch {
+      toast.error("Failed to update job status");
+    } finally {
+      setTogglingJobId(null);
     }
   };
 
@@ -321,38 +348,65 @@ const MyJobsTable: React.FC = () => {
       align: "center" as const,
       fixed: "right", // 🔥 important for usability
       responsive: ["xs", "sm", "md", "lg"],
-      render: (_: unknown, record: JobResponse) => (
-        <Dropdown
-          trigger={["click"]}
-          menu={{
-            items: [
-              {
-                key: "1",
-                label: "View Details",
-                icon: <EyeOutlined />,
-                onClick: () => openViewModal(record),
-              },
-              {
-                key: "2",
-                label: `Edit ${record.totalInterviews === 0 ? "Job" : "Deadline"}`,
-                icon: <EditOutlined />,
-                disabled: record.status === "closed",
-                onClick: () => openEditModal(record),
-              },
-              {
-                key: "3",
-                label: "Delete Job",
-                danger: true,
-                disabled: record.totalInterviews > 0, // disable if interviews are scheduled
-                icon: <ExclamationCircleOutlined />,
-                onClick: () => setDeleteJobId(record._id),
-              },
-            ],
-          }}
-        >
-          <Button type="text" icon={<MoreOutlined />} />
-        </Dropdown>
-      ),
+      render: (_: unknown, record: JobResponse) => {
+        const isTogglingThisJob = togglingJobId === record._id;
+
+        return (
+          <Dropdown
+            trigger={["click"]}
+            menu={{
+              items: [
+                {
+                  key: "1",
+                  label: "View Details",
+                  icon: <EyeOutlined />,
+                  onClick: () => openViewModal(record),
+                },
+                {
+                  key: "2",
+                  label: `Edit ${record.totalInterviews === 0 ? "Job" : "Deadline"}`,
+                  icon: <EditOutlined />,
+                  disabled: record.status === "closed",
+                  onClick: () => openEditModal(record),
+                },
+                {
+                  key: "3",
+                  label: isTogglingThisJob
+                    ? record.status === "closed"
+                      ? "Opening Job..."
+                      : "Closing Job..."
+                    : record.status === "closed"
+                      ? "Open Job"
+                      : "Close Job",
+                  icon: isTogglingThisJob ? (
+                    <Spin size="small" />
+                  ) : record.status === "closed" ? (
+                    <UnlockOutlined />
+                  ) : (
+                    <LockOutlined />
+                  ),
+                  onClick: () => handleToggleJobStatus(record._id),
+                  disabled: isTogglingThisJob,
+                },
+                {
+                  key: "4",
+                  label: "Delete Job",
+                  danger: true,
+                  disabled: record.totalInterviews > 0, // disable if interviews are scheduled
+                  icon: <ExclamationCircleOutlined />,
+                  onClick: () => setDeleteJobId(record._id),
+                },
+              ],
+            }}
+          >
+            <Button
+              type="text"
+              icon={isTogglingThisJob ? <Spin size="small" /> : <MoreOutlined />}
+              disabled={isTogglingThisJob}
+            />
+          </Dropdown>
+        );
+      },
     },
   ];
 
@@ -653,7 +707,7 @@ const MyJobsTable: React.FC = () => {
               columns={columns}
               dataSource={filteredJobs.map((job) => ({ ...job, key: job._id }))}
               pagination={{
-                pageSize: 10,
+                pageSize: 5,
                 responsive: true,
                 showSizeChanger: false,
               }}

@@ -13,6 +13,7 @@ import {
   Tag,
   Avatar,
   Modal,
+  Tooltip,
 } from "antd";
 import {
   MoreOutlined,
@@ -47,7 +48,7 @@ export interface AIResult {
 
 export interface InterviewRecord {
   _id: string;
-  candidateId: CandidateInfo;
+  candidate: CandidateInfo;
   companyId: string;
   jobId: string;
   type: string;
@@ -71,12 +72,14 @@ export interface InterviewRecord {
 
 interface ApplicationTableProps {
   data?: InterviewRecord[];
+  scheduledInterviews?: number;
   loading?: boolean;
   pagination?: TablePaginationConfig;
 }
 
 const ApplicationTable: React.FC<ApplicationTableProps> = ({
   data = [],
+  scheduledInterviews = 0,
   loading = false,
   pagination,
 }) => {
@@ -264,7 +267,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
   const handleChat = async (record: InterviewRecord) => {
     try {
       const candidateProfileId =
-        (record)?.candidateId?._id ?? record?.candidateId?._id;
+        (record)?.candidate?._id ?? record?.candidate?._id;
 
       if (!candidateProfileId) {
         toast.error("Invalid candidate");
@@ -417,38 +420,91 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       title: "Actions",
       key: "actions",
       align: "center" as const,
-      render: (_: unknown, record: InterviewRecord) => (
-        <Dropdown
-          menu={{
-            items: [
-              { key: "sendHiringEmail", label: "Send Hiring Email", icon: <MailOutlined />, onClick: () => handleHiringEmail(record) },
-              { key: "sendRejectionEmail", label: "Send Rejection Email", icon: <MailOutlined />, onClick: () => handleRejectionClick(record) },
-              {
-                key: "viewProfile",
-                label: "View Profile",
-                icon: <ProfileOutlined />,
-                onClick: () => {
-                  const id =
-                    (record)?.candidateId?._id ?? record?.candidateId?._id;
-                  if (!id) return toast.error("Invalid candidate");
+      render: (_: unknown, record: InterviewRecord) => {
+        const hasScheduledInterviews = scheduledInterviews > 0;
+        const hireRejectDisabled = hasScheduledInterviews;
+        const disabledMessage =
+          "You can not hire/reject when the interviews are still in scheduled. Wait for all the interviews to be completed before hiring someone.";
 
-                  router.push(`/company/view-profile/${id}`);
-                }
-              }, { key: "chat", label: "Chat", icon: <MessageOutlined />, onClick: () => handleChat(record) },
+        const hiringLabel = hireRejectDisabled ? (
+          <Tooltip title={disabledMessage} placement="left">
+            <span>Send Hiring Email</span>
+          </Tooltip>
+        ) : (
+          "Send Hiring Email"
+        );
 
-            ],
-          }}
-          trigger={["click"]}
-        >
+        const rejectionLabel = hireRejectDisabled ? (
+          <Tooltip title={disabledMessage} placement="left">
+            <span>Send Rejection Email</span>
+          </Tooltip>
+        ) : (
+          "Send Rejection Email"
+        );
+
+        const actionButton = (
           <Button
             type="text"
             icon={<MoreOutlined />}
             disabled={record.status?.toLowerCase() === "rejected" || record.status?.toLowerCase() === "hired"}
             className="hover:bg-gray-100 rounded-full"
           />
-        </Dropdown>
+        );
 
-      ),
+        return (
+          <Dropdown
+            menu={{
+              items: [
+                {
+                  key: "sendHiringEmail",
+                  label: hiringLabel,
+                  icon: <MailOutlined />,
+                  disabled: hireRejectDisabled,
+                  onClick: () => handleHiringEmail(record),
+                },
+                {
+                  key: "sendRejectionEmail",
+                  label: rejectionLabel,
+                  icon: <MailOutlined />,
+                  disabled: hireRejectDisabled,
+                  onClick: () => handleRejectionClick(record),
+                },
+                {
+                  key: "viewProfile",
+                  label: "View Profile",
+                  icon: <ProfileOutlined />,
+                  onClick: () => {
+                    console.log("record", record)
+                    const id =
+                      (record)?.candidate?._id ?? record?.candidate?._id;
+                    if (!id) return toast.error("Invalid candidate");
+
+
+                    router.push(`/company/view-profile/${id}`);
+                  },
+                },
+                {
+                  key: "chat",
+                  label: "Chat",
+                  icon: <MessageOutlined />,
+                  onClick: () => handleChat(record),
+                },
+              ],
+            }}
+            trigger={["click"]}
+          >
+            <Space>
+              {hasScheduledInterviews ? (
+                <Tooltip title={""} placement="top">
+                  <span>{actionButton}</span>
+                </Tooltip>
+              ) : (
+                actionButton
+              )}
+            </Space>
+          </Dropdown>
+        );
+      },
     },
   ];
 
@@ -496,8 +552,8 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
     switch (sortBy) {
       case "name":
         return sorted.sort((a, b) =>
-          (a.candidateId?.fullName || "").localeCompare(
-            b.candidateId?.fullName || ""
+          (a.candidate?.fullName || "").localeCompare(
+            b.candidate?.fullName || ""
           )
         );
       case "score":

@@ -71,6 +71,7 @@ export default function ApplicationsPage() {
   const [applications, setApplications] = useState<JobWithStats[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [interviewsData, setInterviewsData] = useState<InterviewRecord[]>([]);
+  const [scheduledInterviews, setScheduledInterviews] = useState<number>(0);
   const [metaData, setMetaData] = useState<MetaData>({
     total: 0,
     page: 1,
@@ -120,6 +121,7 @@ export default function ApplicationsPage() {
 
         if (!res || !res.data) {
           setInterviewsData([]);
+          setScheduledInterviews(0);
           setMetaData({
             total: 0,
             page: 1,
@@ -133,7 +135,9 @@ export default function ApplicationsPage() {
         setInterviewsData(
           (res.data.interviews as unknown as InterviewRecord[]) || []
         );
-console.log("y:",res.data.interviews)
+
+        setScheduledInterviews(res.data.scheduledInterviewsCount || 0);
+        console.log("y:", res.data.interviews)
         // Set pagination meta from res.meta
         setMetaData(
           res?.meta || {
@@ -146,6 +150,7 @@ console.log("y:",res.data.interviews)
       } catch (error) {
         console.error("Error fetching specific job applications:", error);
         setInterviewsData([]);
+        setScheduledInterviews(0);
         setMetaData({
           total: 0,
           page: 1,
@@ -180,6 +185,7 @@ console.log("y:",res.data.interviews)
 
       if (!res || !res.data) {
         setInterviewsData([]);
+        setScheduledInterviews(0);
         return;
       }
 
@@ -187,6 +193,8 @@ console.log("y:",res.data.interviews)
       setInterviewsData(
         (res.data.interviews as unknown as InterviewRecord[]) || []
       );
+
+      setScheduledInterviews(res.data.scheduledInterviewsCount || 0);
 
       // Set pagination meta from res.meta
       setMetaData(
@@ -239,6 +247,7 @@ console.log("y:",res.data.interviews)
 
       <ApplicationTable
         data={interviewsData}
+        scheduledInterviews={scheduledInterviews}
         loading={loading}
         pagination={{
           current: metaData.page,
