@@ -67,6 +67,7 @@ export interface InterviewRecord {
   aiResult?: AIResult;
   applicationScore?: number;
   interviewScore?: number;
+  rank: number;
   [key: string]: unknown;
 }
 
@@ -75,6 +76,8 @@ interface ApplicationTableProps {
   scheduledInterviews?: number;
   loading?: boolean;
   pagination?: TablePaginationConfig;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
 const ApplicationTable: React.FC<ApplicationTableProps> = ({
@@ -82,9 +85,10 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
   scheduledInterviews = 0,
   loading = false,
   pagination,
+  activeTab = "all",
+  onTabChange,
 }) => {
-  const [activeTab, setActiveTab] = useState("all");
-  const [sortBy, setSortBy] = useState<string>("date");
+  const [sortBy, setSortBy] = useState<string>("backend");
 
   // Calculate average score based on AI results
   const calculateAvgScore = (record: InterviewRecord) => {
@@ -191,14 +195,14 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
     const res = await sendHiringEmailApi(selectedRecord?._id || "", emailQuery);
     setLoadingEmail(false);
     if (!res || res.status === "Failed") {
-      toast.error("Failed to send hiring email. Please try again.");
+      toast.error("Failed to send offer letter email. Please try again.");
       setIsEmailModalOpen(false);
       setEmailQuery("");
       setSelectedRecord(null);
       return;
     }
     if (res.status === "Success") {
-      toast.success("Hiring email sent successfully!");
+      toast.success("Offer letter email sent successfully!");
     }
     setIsEmailModalOpen(false);
     setEmailQuery("");
@@ -365,17 +369,14 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       },
     },
     {
-      title: "Avg Score",
-      key: "avgScore",
+      title: "Rank",
+      key: "rank",
       render: (_: unknown, record: InterviewRecord) => {
-        const avgScore = calculateAvgScore(record);
         return (
           <div
-            className={`text-center rounded-md py-1 font-medium ${getAvgColor(
-              avgScore
-            )}`}
+            className="text-center rounded-md py-1 font-medium"
           >
-            {avgScore}%
+            {record.rank !== undefined ? record.rank : "N/A"}
           </div>
         );
       },
@@ -428,10 +429,10 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
 
         const hiringLabel = hireRejectDisabled ? (
           <Tooltip title={disabledMessage} placement="left">
-            <span>Send Hiring Email</span>
+            <span>Send Offer Letter Email</span>
           </Tooltip>
         ) : (
-          "Send Hiring Email"
+          "Send Offer Letter Email"
         );
 
         const rejectionLabel = hireRejectDisabled ? (
@@ -508,46 +509,10 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
     },
   ];
 
-  // Filter data based on active tab
-  const getFilteredData = () => {
-    let filtered = localData;
-
-    // Filter by tab
-    if (activeTab === "best") {
-      filtered = filtered.filter((item) => {
-        const avgScore = calculateAvgScore(item);
-        return avgScore >= 50;
-      });
-    } else if (activeTab === "failed") {
-      filtered = filtered.filter(
-        (item) =>
-          item.status?.toLowerCase() === "failed" ||
-          item.status?.toLowerCase() === "cancelled"
-      );
-    } else if (activeTab === "scheduled") {
-      filtered = filtered.filter(
-        (item) => item.status?.toLowerCase() === "scheduled"
-      );
-    } else if (activeTab === "completed") {
-      filtered = filtered.filter(
-        (item) => item.status?.toLowerCase() === "completed"
-      );
-    } else if (activeTab === "rejected") {
-      filtered = filtered.filter(
-        (item) => item.status?.toLowerCase() === "rejected"
-      );
-    } else if (activeTab === "hired") {
-      filtered = filtered.filter(
-        (item) => item.status?.toLowerCase() === "hired"
-      );
-    }
-
-    return filtered;
-  };
   const router = useRouter()
   // Sort data
-  const getSortedData = (filteredData: InterviewRecord[]) => {
-    const sorted = [...filteredData];
+  const getSortedData = (inputData: InterviewRecord[]) => {
+    const sorted = [...inputData];
 
     switch (sortBy) {
       case "name":
@@ -573,11 +538,11 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
     }
   };
 
-  const filteredData = getFilteredData();
-  const sortedData = getSortedData(filteredData);
+  const sortedData = getSortedData(localData);
 
   const filterMenu = {
     items: [
+      { key: "backend", label: "Backend Order" },
       { key: "name", label: "Sort by Name" },
       { key: "score", label: "Sort by Score" },
       { key: "date", label: "Sort by Date" },
@@ -590,15 +555,15 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       {/* Tabs */}
       <Tabs
         activeKey={activeTab}
-        onChange={setActiveTab}
+        onChange={(tab) => onTabChange?.(tab)}
         items={[
           { key: "all", label: "All Interviews" },
           { key: "best", label: "Best Matches" },
           // { key: "failed", label: "Failed" },
           { key: "scheduled", label: "Scheduled" },
           { key: "completed", label: "Completed" },
-          { key: "hired", label: "Hired" },
-          { key: "rejected", label: "Rejected" },
+          // { key: "hired", label: "Hired" },
+          // { key: "rejected", label: "Rejected" },
         ]}
         className="mb-4"
       />
@@ -649,7 +614,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
         title={
           <div className="flex items-center gap-2">
             <MailOutlined className="text-blue-500" />
-            <span>Send Hiring Email</span>
+            <span>Send Offer Letter Email</span>
           </div>
         }
         open={isEmailModalOpen}
@@ -672,7 +637,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
         <div className="py-4 flex flex-col gap-3">
           <p className="text-gray-500 text-sm">
             Describe the role, requirements, joining date, or any specific details you&apos;d like
-            included in the hiring email.
+            included in the offer letter email.
           </p>
 
           <TextArea

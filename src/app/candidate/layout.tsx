@@ -240,7 +240,7 @@ const CandidateLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
             <div className="p-4 bottom-0 absolute w-full">
               <Button
-                type="text"
+                type="default"
                 icon={isDark ? <BulbOutlined /> : <MoonOutlined />}
                 onClick={() =>
                   dispatch(setThemeMode(isDark ? "light" : "dark"))
@@ -250,16 +250,14 @@ const CandidateLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   : ""
                   }`}
                 style={{
-                  color: uiColors.textColor,
                   marginBottom: 8,
-                  border: `1px solid ${uiColors.borderColor}`,
                 }}
               >
                 {(!collapsed || isMobile) &&
                   (isDark ? "Light Mode" : "Dark Mode")}
               </Button>
               <Button
-                type="text"
+                type="default"
                 icon={<LogoutOutlined />}
                 onClick={() => {
                   removeToken();

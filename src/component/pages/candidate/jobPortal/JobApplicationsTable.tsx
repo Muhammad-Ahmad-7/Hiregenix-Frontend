@@ -292,7 +292,7 @@ const JobApplicationsTable = () => {
       render: (status: string) => getStatusTag(status),
     },
     {
-      title: "Applicants",
+      title: "Your Rank",
       dataIndex: "totalApplicants",
       key: "applicants",
       render: (_: unknown, record: ReturnType<typeof getTableData>[number]) => {
@@ -300,10 +300,10 @@ const JobApplicationsTable = () => {
         const rank = record.rank ?? record._raw?.rank ?? null;
         return (
           <div className="text-sm text-gray-700">
-            {total}
             {rank !== null && rank !== undefined ? (
-              <span className="text-xs text-gray-500"> &nbsp;(Rank {rank})</span>
-            ) : <span className="text-xs text-gray-500"> &nbsp;(No Rank)</span>}
+              <span className="font-semibold text-gray-900">{rank}</span>
+            ) : <span className="text-xs text-gray-500">(No Rank)</span>}
+            <span className="text-xs text-gray-500"> &nbsp;(Total Applicants {total})</span>
           </div>
         );
       },

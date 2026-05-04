@@ -216,6 +216,7 @@ export interface ScheduledInterviewWithCandidate {
   updatedAt: string;
   totalInterviews: number; // total interviews for this job
   __v: number;
+  rank: number; // candidate's rank among all applicants for this job
 }
 export interface CandidateMini {
   _id: string;

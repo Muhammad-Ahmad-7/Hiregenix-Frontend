@@ -70,15 +70,28 @@ type JobWithStats = Pick<JobResponse, "_id" | "title"> & {
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<JobWithStats[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("all");
   const [interviewsData, setInterviewsData] = useState<InterviewRecord[]>([]);
   const [scheduledInterviews, setScheduledInterviews] = useState<number>(0);
   const [metaData, setMetaData] = useState<MetaData>({
     total: 0,
     page: 1,
-    limit: 10,
+    limit: 5,
     totalPages: 0,
   });
   const [loading, setLoading] = useState(false);
+
+  const getInterviewQueryParams = (
+    tab: string,
+    page: number,
+    limit: number
+  ) => ({
+    page,
+    limit,
+    ...(tab === "best" ? { status: "bestMatch" } : {}),
+    ...(tab === "scheduled" ? { status: "scheduled" } : {}),
+    ...(tab === "completed" ? { status: "completed" } : {}),
+  });
 
   // Fetch all jobs on mount
   useEffect(() => {
@@ -114,10 +127,10 @@ export default function ApplicationsPage() {
     const fetchApplications = async () => {
       setLoading(true);
       try {
-        const res = await getSpecificJobApplicationsApi(selectedJobId, {
-          page: metaData.page,
-          limit: metaData.limit,
-        });
+        const res = await getSpecificJobApplicationsApi(
+          selectedJobId,
+          getInterviewQueryParams(activeTab, metaData.page, metaData.limit)
+        );
 
         if (!res || !res.data) {
           setInterviewsData([]);
@@ -137,16 +150,26 @@ export default function ApplicationsPage() {
         );
 
         setScheduledInterviews(res.data.scheduledInterviewsCount || 0);
-        console.log("y:", res.data.interviews)
-        // Set pagination meta from res.meta
-        setMetaData(
+        // Set pagination meta from res.meta but only if it changed
+        const returnedMeta =
           res?.meta || {
             total: 0,
             page: 1,
             limit: 10,
             totalPages: 0,
+          };
+
+        setMetaData((prev) => {
+          if (
+            prev.total === returnedMeta.total &&
+            prev.page === returnedMeta.page &&
+            prev.limit === returnedMeta.limit &&
+            prev.totalPages === returnedMeta.totalPages
+          ) {
+            return prev;
           }
-        );
+          return returnedMeta;
+        });
       } catch (error) {
         console.error("Error fetching specific job applications:", error);
         setInterviewsData([]);
@@ -163,12 +186,18 @@ export default function ApplicationsPage() {
     };
 
     fetchApplications();
-  }, [selectedJobId, metaData.page, metaData.limit]);
+  }, [selectedJobId, activeTab, metaData.page, metaData.limit]);
 
   // Handle job role change from stats component
   const handleJobRoleChange = (jobId: string) => {
     setSelectedJobId(jobId);
+    setActiveTab("all");
     // Reset to page 1 when changing jobs
+    setMetaData((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
     setMetaData((prev) => ({ ...prev, page: 1 }));
   };
 
@@ -178,10 +207,10 @@ export default function ApplicationsPage() {
 
     setLoading(true);
     try {
-      const res = await getSpecificJobApplicationsApi(selectedJobId, {
-        page,
-        limit: pageSize,
-      });
+      const res = await getSpecificJobApplicationsApi(
+        selectedJobId,
+        getInterviewQueryParams(activeTab, page, pageSize)
+      );
 
       if (!res || !res.data) {
         setInterviewsData([]);
@@ -196,15 +225,26 @@ export default function ApplicationsPage() {
 
       setScheduledInterviews(res.data.scheduledInterviewsCount || 0);
 
-      // Set pagination meta from res.meta
-      setMetaData(
+      // Set pagination meta from res.meta but only if it changed
+      const returnedMeta2 =
         res?.meta || {
           total: 0,
           page,
           limit: pageSize,
           totalPages: 0,
+        };
+
+      setMetaData((prev) => {
+        if (
+          prev.total === returnedMeta2.total &&
+          prev.page === returnedMeta2.page &&
+          prev.limit === returnedMeta2.limit &&
+          prev.totalPages === returnedMeta2.totalPages
+        ) {
+          return prev;
         }
-      );
+        return returnedMeta2;
+      });
     } catch (error) {
       console.error("Error fetching paginated applications:", error);
     } finally {
@@ -249,6 +289,8 @@ export default function ApplicationsPage() {
         data={interviewsData}
         scheduledInterviews={scheduledInterviews}
         loading={loading}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
         pagination={{
           current: metaData.page,
           total: metaData.total,
