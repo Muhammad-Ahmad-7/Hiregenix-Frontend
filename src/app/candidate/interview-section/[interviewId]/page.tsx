@@ -184,7 +184,8 @@ const LiveInterviewPage = () => {
             questionId: String(interviewState.currentQuestionIndex + 1),
             questionText: interviewState.currentQuestion,
         });
-
+        // Update the state to reflect the skipped question as "answered" so it doesn't block interview completion
+        setAnswerReceivedArray((prev) => [...prev, interviewState.currentQuestionIndex]);
         moveToNextQuestion();
         isSkippingRef.current = false;
     }, [interviewState.currentQuestionIndex, interviewState.currentQuestion, interviewId, moveToNextQuestion]);
