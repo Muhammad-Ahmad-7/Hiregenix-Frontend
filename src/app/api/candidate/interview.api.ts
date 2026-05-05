@@ -215,3 +215,10 @@ export const endInterviewApi = async (interviewId: string) => {
     showToaster: true,
   });
 }
+
+export const markInterviewAsInProcessApi = async (interviewId: string) => {
+  return safeApiCall<null>({
+    apiCall: () => api.post(`${BASE_API}/mark-in-process`, { interviewId }),
+    showToaster: true,
+  });
+}

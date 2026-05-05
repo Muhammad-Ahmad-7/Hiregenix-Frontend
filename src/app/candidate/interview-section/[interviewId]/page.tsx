@@ -9,6 +9,7 @@ import {
     createInterviewQuestionResultApi,
     createInterviewQuestionResultForSkipQuestionApi,
     endInterviewApi,
+    markInterviewAsInProcessApi,
     getInterviewByIdApi,
 } from '@/app/api/candidate/interview.api';
 import { useInterviewAI } from '@/hooks/useInterviewAI';
@@ -166,11 +167,24 @@ const LiveInterviewPage = () => {
             }
             return prev;
         });
+        // If this was the last question, mark interview as in-process and show end modal
         if (answerReceivedArray.length === interviewState.interviewQuestions.length - 1) {
+            // Attempt to mark interview as in-process on the backend (best-effort)
+            (async () => {
+                try {
+                    const interviewIdString = typeof interviewId === 'string' ? interviewId : interviewId?.[0];
+                    if (interviewIdString) {
+                        await markInterviewAsInProcessApi(interviewIdString);
+                    }
+                } catch (err) {
+                    console.warn('Failed to mark interview as in-process:', err);
+                }
+            })();
+
             // toast.success('You have completed all questions! Thank you for your time.');
             setShowInterviewEndModal(true);
         }
-    }, [stopWaitTimer, answerReceivedArray, interviewState.interviewQuestions]);
+    }, [stopWaitTimer, answerReceivedArray, interviewState.interviewQuestions, interviewId]);
 
     const handleSkipQuestion = useCallback(async () => {
         if (isSkippingRef.current) return;
