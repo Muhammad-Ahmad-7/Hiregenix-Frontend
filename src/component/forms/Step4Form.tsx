@@ -119,6 +119,7 @@ export default function Step4Form({
 
           <Col span={6}>
             <UiButton
+              className=""
               htmlType="submit"
               type="primary"
               block

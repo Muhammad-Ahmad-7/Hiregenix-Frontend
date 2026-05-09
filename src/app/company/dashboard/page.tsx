@@ -216,7 +216,6 @@ export default function Dashboard() {
         display: "flex",
         flexDirection: "column",
         gap: "12px",
-        background: "var(--surface-2)",
         boxSizing: "border-box",
       }}
     >
@@ -314,7 +313,7 @@ export default function Dashboard() {
             loading={loading}
           >
             <Table
-              dataSource={applicationData.slice(0, 4)}
+              dataSource={applicationData.slice(0, 5)}
               columns={applicationColumns}
               pagination={false}
               size="large"

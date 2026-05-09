@@ -47,7 +47,11 @@ import {
   updateProfileApi,
   uploadResumeApi,
 } from "@/app/api/candidate/profile.api";
-import { CandidateProfileResponse } from "@/constants/Interfaces/Types/Profile.interface";
+import { uploadFileApi } from "@/app/api/auth.api";
+import {
+  CandidateProfileResponse,
+  CompleteCandidateProfile,
+} from "@/constants/Interfaces/Types/Profile.interface";
 import { CandidateResume } from "@/constants/Interfaces/Types/Resume.interface";
 import { RootState } from "@/redux/store";
 import { setProfile } from "@/redux/slices/userSlice";
@@ -140,6 +144,7 @@ export default function ProfileDashboard() {
   const screens = useBreakpoint();
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [parsingStatus, setParsingStatus] = useState<
@@ -378,6 +383,59 @@ export default function ProfileDashboard() {
     }
   };
 
+  const handleAvatarUpload = async (file: File): Promise<void> => {
+    if (!isCandidateProfile(profile)) {
+      toast.error("Profile is not ready yet. Please try again.");
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await uploadFileApi(formData);
+      const profilePictureUrl = response?.data?.url;
+
+      if (!profilePictureUrl) {
+        toast.error("Failed to upload profile picture.");
+        return;
+      }
+
+      const updatedProfile: CompleteCandidateProfile = {
+        fullName: profile.fullName,
+        dateOfBirth: profile.dateOfBirth,
+        gender: profile.gender,
+        country: profile.country,
+        city: profile.city,
+        contactNumber: profile.contactNumber,
+        profilePictureUrl,
+        githubUrl: profile.githubUrl,
+        linkedinUrl: profile.linkedinUrl,
+        portfolioUrl: profile.portfolioUrl,
+        skills: profile.skills || [],
+        bio: profile.bio,
+        tagline: profile.tagline,
+      };
+
+      await updateProfileApi(updatedProfile);
+      dispatch(
+        setProfile({
+          ...profile,
+          profilePictureUrl,
+          userType: "candidate",
+        } as CandidateProfileResponse & { userType: "candidate" }),
+      );
+
+      toast.success("Profile picture updated successfully!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update profile picture");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   const uploadProps: UploadProps = {
     customRequest: async ({ file, onSuccess, onError }) => {
       try {
@@ -391,6 +449,29 @@ export default function ProfileDashboard() {
       } finally {
         setUploading(false);
       }
+    },
+    showUploadList: false,
+  };
+
+  const avatarUploadProps: UploadProps = {
+    beforeUpload: (file: File) => {
+      const isImage =
+        file.type === "image/jpeg" ||
+        file.type === "image/png" ||
+        file.type === "image/svg+xml";
+      if (!isImage) {
+        toast.error("You can only upload JPEG, PNG, or SVG files!");
+        return false;
+      }
+
+      const isLt5M = file.size / 1024 / 1024 < 5;
+      if (!isLt5M) {
+        toast.error("Image must be smaller than 5MB!");
+        return false;
+      }
+
+      handleAvatarUpload(file);
+      return false;
     },
     showUploadList: false,
   };
@@ -414,7 +495,6 @@ export default function ProfileDashboard() {
         githubUrl: profile?.githubUrl || resumeData?.parsedData.github || "",
         linkedinUrl: profile?.linkedinUrl || resumeData?.parsedData.linkedin || "",
         portfolioUrl: profile?.portfolioUrl || resumeData?.parsedData.portfolio || "",
-        skills: profile?.skills || resumeData?.parsedData.skills || [],
       } as Partial<CandidateProfileResponse>);
     }
     setIsEditModalOpen(true);
@@ -745,25 +825,33 @@ export default function ProfileDashboard() {
     </Button>
   );
 
-  const skillOptions =
-    (isCandidateProfile(profile)
-      ? profile?.skills || resumeData?.parsedData.skills || []
-      : resumeData?.parsedData.skills || []
-    ).map((s: string) => ({ label: s, value: s })) || [];
-
   const SidebarCard = (
     <Card className="rounded-xl">
       <Space direction="vertical" style={{ width: "100%" }}>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Avatar
-              size={72}
-              src={
-                isCandidateProfile(profile)
-                  ? profile?.profilePictureUrl
-                  : "https://api.dicebear.com/8.x/avataaars/svg?seed=user"
-              }
-            />
+            <div className="flex flex-col items-center gap-2">
+              <Avatar
+                size={72}
+                src={
+                  isCandidateProfile(profile)
+                    ? profile?.profilePictureUrl
+                    : "https://api.dicebear.com/8.x/avataaars/svg?seed=user"
+                }
+              />
+              <Upload {...avatarUploadProps} accept="image/*">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<UploadOutlined />}
+                  loading={avatarUploading}
+                  disabled={avatarUploading}
+                  className="!px-0"
+                >
+                  Change Photo
+                </Button>
+              </Upload>
+            </div>
             <div>
               <Title level={4} style={{ marginBottom: 0 }}>
                 {isCandidateProfile(profile)
@@ -791,20 +879,6 @@ export default function ProfileDashboard() {
         <div className="flex justify-between items-center">
           <Text strong>Location</Text>
           <Text>{isCandidateProfile(profile) && profile?.city && profile?.country ? `${profile.city}, ${profile.country}` : "Not specified"}</Text>
-        </div>
-
-        <div className="flex justify-between items-start">
-          <Text strong className="!w-[35%]">Skills</Text>
-          <Space wrap className="!flex justify-end">
-            {(isCandidateProfile(profile) ? profile?.skills || resumeData?.parsedData.skills || [] : resumeData?.parsedData.skills || [])
-              .slice(0, 8)
-              .map((skill: string, index: number) => (
-                <Tag key={index} className="rounded-full" color="blue">{skill}</Tag>
-              ))}
-            {(isCandidateProfile(profile) ? profile?.skills?.length || resumeData?.parsedData.skills?.length || 0 : resumeData?.parsedData.skills?.length || 0) > 8 && (
-              <Tag className="rounded-full">+{Math.max(resumeData?.parsedData.skills?.length || 0, isCandidateProfile(profile) ? profile?.skills?.length || 0 : 0) - 8}</Tag>
-            )}
-          </Space>
         </div>
 
         <Divider className="!my-3" />
@@ -945,6 +1019,19 @@ export default function ProfileDashboard() {
                       <Text type="secondary">{index + 1}.</Text>
                       <AIResponseViewer aiResult={suggestion} />
                     </div>
+                  ))}
+                </Space>
+              </Card>
+            )}
+
+            {/* Skills */}
+            {resumeData?.parsedData.skills && resumeData.parsedData.skills.length > 0 && (
+              <Card title={<Title level={5}>Skills</Title>} className="rounded-xl">
+                <Space wrap size={[8, 8]}>
+                  {resumeData.parsedData.skills.map((skill, index) => (
+                    <Tag key={`${skill}-${index}`} color="blue" className="rounded-full px-3 py-1">
+                      {skill}
+                    </Tag>
                   ))}
                 </Space>
               </Card>
@@ -1121,9 +1208,6 @@ export default function ProfileDashboard() {
           </Row>
           <Form.Item label="Bio" name="bio" rules={[{ required: true }]}>
             <TextArea rows={4} placeholder="Tell us about yourself..." maxLength={500} showCount />
-          </Form.Item>
-          <Form.Item label={<span>Skills <span style={{ color: "rgba(0,0,0,.45)" }}>(up to 5)</span></span>} name="skills" rules={[{ required: true }]}>
-            <Select mode="tags" style={{ width: "100%" }} placeholder="Add or select skills" options={skillOptions} maxTagCount={5} />
           </Form.Item>
           <Form.Item label="GitHub URL" name="githubUrl" rules={[{ type: "url" }]}>
             <Input placeholder="https://github.com/yourusername" prefix={<GithubFilled />} />

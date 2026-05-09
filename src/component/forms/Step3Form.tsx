@@ -1,11 +1,10 @@
 import { Col, Flex, Form } from "antd";
 import React from "react";
-import { LabelInput, LabelSelect } from "../common";
+import { LabelInput } from "../common";
 import UiButton from "../common/CustomButton";
-import LeftArrow from "@/icons/LeftArrow";
 import LabelTextArea from "../common/LabelTextArea";
 import type { SelectProps } from "antd";
-import { skillsOptions } from "@/constants/job";
+import { ArrowLeftOutlined } from "@ant-design/icons";
 
 // Define proper types for form values
 export interface Step3FormValues {
@@ -37,10 +36,6 @@ export default function Step3Form({
 }: Step3FormProps) {
   const [form] = Form.useForm<Step3FormValues>();
 
-  const handleChange = (value: string[]) => {
-    console.log(`selected ${value}`);
-  };
-
   const onFinish = (values: Step3FormValues) => {
     console.log("Form Values:", values);
     onNext(values);
@@ -56,11 +51,11 @@ export default function Step3Form({
     >
       <div className="flex flex-col ">
         <Col span={24}>
-          <LabelSelect
+          {/* <LabelSelect
             label={
               <span>
                 Skills{" "}
-                <span className="text-gray-500 text-sm">(upto 10)</span>
+                <span className="text-gray-500 dark:text-[var(--text-subtle)] text-sm">(upto 10)</span>
               </span>
             }
             maxCount={10}
@@ -70,7 +65,7 @@ export default function Step3Form({
             placeholder="Tags Mode"
             onChange={handleChange}
             options={skillsOptions}
-          />
+          /> */}
         </Col>
         <Col span={24}>
           <LabelTextArea
@@ -93,7 +88,7 @@ export default function Step3Form({
       <Flex gap="small" wrap className="!mt-6">
         <Col span={2}>
           <UiButton onClick={onBack} block size="large" className="!rounded-xl">
-            <LeftArrow />
+            <ArrowLeftOutlined />
           </UiButton>
         </Col>
         <Col span={6}>

@@ -2,7 +2,6 @@
 //can we change (means not tested yet)
 import { Col, Form, Row, Typography, Upload, Avatar } from "antd";
 import React, { useState } from "react";
-import PlusIcon from "@/icons/PlusIcon";
 import {
   LabelDatePicker,
   LabelInput,
@@ -10,7 +9,7 @@ import {
   LabelSelect,
 } from "../common";
 import UiButton from "../common/CustomButton";
-import { LoadingOutlined } from "@ant-design/icons";
+import { LoadingOutlined, UploadOutlined } from "@ant-design/icons";
 import { uploadFileApi } from "@/app/api/auth.api";
 import { AxiosError } from "axios";
 import type { UploadProps } from "antd";
@@ -112,10 +111,9 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
     beforeUpload: (file: File) => {
       const isImage =
         file.type === "image/jpeg" ||
-        file.type === "image/png" ||
-        file.type === "image/svg+xml";
+        file.type === "image/png"
       if (!isImage) {
-        toast.error("You can only upload JPEG, PNG, or SVG files!");
+        toast.error("You can only upload JPEG or PNG!");
         return false;
       }
       const isLt5M = file.size / 1024 / 1024 < 5;
@@ -187,7 +185,6 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
           <Col span={12}>
             <LabelSelect
               label="Gender"
-              placeholder="Gender"
               name="gender"
               required
               options={genderOptions}
@@ -234,13 +231,13 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
             <Text type="secondary">5MB Limit (JPEG, PNG, SVG)</Text>
           </div>
           <Upload {...uploadProps}>
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer transition-all">
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white dark:bg-[var(--surface)] shadow-lg dark:shadow-none border-2 border-dashed border-gray-300 dark:border-[var(--border)] hover:border-blue-500 dark:hover:border-[var(--accent)] cursor-pointer transition-all">
               {uploading ? (
                 <LoadingOutlined className="text-2xl text-blue-500" />
               ) : profilePictureUrl ? (
                 <Avatar size={60} src={profilePictureUrl} />
               ) : (
-                <PlusIcon />
+                <UploadOutlined className="text-2xl text-gray-500 dark:text-[var(--text-subtle)]" />
               )}
             </div>
           </Upload>

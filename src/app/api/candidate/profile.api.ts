@@ -23,7 +23,7 @@ export const getCandidateProfileApi = async () => {
 export const completeProfileApi = async (body: CompleteCandidateProfile) => {
   return safeApiCall<{ candidate: CandidateProfileResponse }>({
     apiCall: () => api.post("/candidate/complete-profile", body),
-    showToaster: true,
+    showToaster: false,
   });
 };
 // /candidate/update-profile

@@ -17,7 +17,6 @@ import {
   Button,
   message,
   Upload,
-  Spin,
   Tooltip,
 } from "antd";
 import {
@@ -43,6 +42,7 @@ import {
 } from "@/constants/Interfaces/Types/Profile.interface";
 import { uploadCompanyKnowledgeBasePdfApi } from "@/app/api/company/knowledgeBase.api";
 import toast from "react-hot-toast";
+import CompanyProfileSkeleton from "@/component/Skeletons/CompanyProfileSkeleton";
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -104,11 +104,7 @@ export default function CompanyProfile() {
   }, []);
 
   if (!companyProfile && loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Spin size="large" tip="Loading profile..." />
-      </div>
-    );
+    return <CompanyProfileSkeleton />;
   }
 
   if (!companyProfile && !loading) {
@@ -190,134 +186,6 @@ export default function CompanyProfile() {
       setSaveLoading(false);
     }
   };
-
-  // const SidebarCard = (
-  //   <Card className="rounded-xl">
-  //     <Space direction="vertical" style={{ width: "100%" }}>
-  //       {/* Header */}
-  //       <div className="flex justify-between items-center">
-  //         <div className="flex items-center gap-3">
-  //           <Avatar
-  //             size={72}
-  //             src={
-  //               companyProfile.logoUrl
-  //             }
-  //           />
-
-  //           <div>
-  //             <Title level={4} style={{ marginBottom: 0 }}>
-  //               {companyProfile?.companyName}
-  //             </Title>
-  //             <Text type="secondary">
-  //               {companyProfile.hiringStatus === "actively_hiring"
-  //                 ? "Actively Hiring"
-  //                 : "Not Hiring"}
-  //             </Text>
-  //           </div>
-  //         </div>
-
-  //         <div onClick={handleEditClick} className="cursor-pointer">
-  //           <IconWrapper icon={<EditOutlined />} bgColorIcon="default" />
-  //         </div>
-  //       </div>
-
-  //       <Divider className="!my-3" />
-
-  //       {/* Location */}
-  //       <div className="flex justify-between items-center">
-  //         <Text strong>Location</Text>
-  //         <Text>
-  //           {companyProfile.city && companyProfile.country
-  //             ? `${companyProfile.city}, ${companyProfile.country}`
-  //             : "Not specified"}
-  //         </Text>
-  //       </div>
-
-  //       {/* Founded Year */}
-  //       {companyProfile.foundedYear && (
-  //         <div className="flex justify-between items-center">
-  //           <Text strong>Founded</Text>
-  //           <Text>{companyProfile.foundedYear}</Text>
-  //         </div>
-  //       )}
-
-  //       {/* NTN Number */}
-  //       {companyProfile.ntnNumber && (
-  //         <div className="flex justify-between items-center">
-  //           <Text strong>NTN Number</Text>
-  //           <Text>{companyProfile.ntnNumber}</Text>
-  //         </div>
-  //       )}
-
-  //       {/* Contact Email */}
-  //       <div className="flex justify-between items-center">
-  //         <Text strong>Contact Email</Text>
-  //         <Text>{companyProfile.contactEmail || "No email available"}</Text>
-  //       </div>
-
-  //       <Divider className="!my-3" />
-
-  //       {/* About Company */}
-  //       <Text strong>About Company</Text>
-  //       <Paragraph>
-  //         {companyProfile.description || "No company description added yet."}
-  //       </Paragraph>
-
-  //       <Divider className="!my-3" />
-
-  //       {/* Tech Stack */}
-  //       <Text strong>Tech Stack</Text>
-  //       <Space wrap>
-  //         {companyProfile.techStack?.length > 0 ? (
-  //           companyProfile.techStack.map((tech: string, i: number) => (
-  //             <Tag key={i} color="blue" className="rounded-full">
-  //               {tech}
-  //             </Tag>
-  //           ))
-  //         ) : (
-  //           <Text type="secondary">No tech stack added</Text>
-  //         )}
-  //       </Space>
-
-  //       <Divider className="!my-3" />
-
-  //       {/* Links */}
-  //       <Text strong>Links</Text>
-
-  //       {/* Website */}
-  //       {companyProfile.website && (
-  //         <div className="flex items-center gap-2">
-  //           <GlobalOutlined className="text-2xl" />
-  //           <a
-  //             href={companyProfile.website}
-  //             target="_blank"
-  //             className="hover:text-blue-500"
-  //           >
-  //             <Text strong>Website</Text>
-  //           </a>
-  //         </div>
-  //       )}
-
-  //       {/* LinkedIn */}
-  //       {companyProfile.linkedInUrl && (
-  //         <div className="flex items-center gap-2">
-  //           <LinkedinFilled className="text-3xl text-[#0A66C2]" />
-  //           <a
-  //             href={companyProfile.linkedInUrl}
-  //             target="_blank"
-  //             className="hover:text-blue-500"
-  //           >
-  //             <Text strong>LinkedIn</Text>
-  //           </a>
-  //         </div>
-  //       )}
-
-  //       {!companyProfile.website && !companyProfile.linkedInUrl && (
-  //         <Text type="secondary">No links added</Text>
-  //       )}
-  //     </Space>
-  //   </Card>
-  // );
 
   return (
     <div className="  p-2">
@@ -455,7 +323,7 @@ export default function CompanyProfile() {
                       Knowledge Base
                     </Typography.Text>
                     <Typography.Paragraph
-                      type="secondary"
+                      type="success"
                       className="text-sm mb-3"
                     >
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -476,7 +344,7 @@ export default function CompanyProfile() {
                         loading={kbUploading}
                         disabled={kbUploading}
                         block
-                        className="!border-blue-500 !text-blue-600"
+                        type="primary"
                       >
                         {kbUploading ? "Uploading..." : "Upload PDF"}
                       </Button>

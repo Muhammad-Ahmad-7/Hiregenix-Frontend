@@ -81,6 +81,10 @@ export default function CreateJob() {
   ];
 
   const onFinish = async (values: CreateJobFormValues) => {
+    if (values.minSalary > values.maxSalary) {
+      toast.error("Min salary cannot be greater than max salary.");
+      return;
+    }
     const jobData: JobPostingCompany = {
       title: values.title,
       role: values.role,
@@ -314,7 +318,7 @@ export default function CreateJob() {
                   Min Salary (PKR) <span className="text-red-500">*</span>
                 </span>
               }
-              rules={[{ required: true, message: "Min salary is required" }]}
+              rules={[{ required: true, message: "Min salary is required" }, { type: "number", min: 0, message: "Min salary must be a positive number" }]}
             >
               <InputNumber
                 placeholder="80000"
@@ -332,7 +336,7 @@ export default function CreateJob() {
                   Max Salary (PKR) <span className="text-red-500">*</span>
                 </span>
               }
-              rules={[{ required: true, message: "Max salary is required" }]}
+              rules={[{ required: true, message: "Max salary is required" }, { type: "number", min: 0, message: "Max salary must be a positive number" }]}
             >
               <InputNumber
                 placeholder="130000"
