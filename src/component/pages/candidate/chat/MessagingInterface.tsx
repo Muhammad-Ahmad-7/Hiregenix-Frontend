@@ -1,5 +1,11 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Input,
   Avatar,
@@ -89,7 +95,9 @@ const MessagingInterface = () => {
   const [directoryModalOpen, setDirectoryModalOpen] = useState(false);
   const [directoryLoading, setDirectoryLoading] = useState(false);
   const [companies, setCompanies] = useState<CompanyListItem[] | null>(null);
-  const [candidates, setCandidates] = useState<CandidateListItem[] | null>(null);
+  const [candidates, setCandidates] = useState<CandidateListItem[] | null>(
+    null,
+  );
   const [directorySearch, setDirectorySearch] = useState("");
   const { profile } = useSelector((state: RootState) => state.user);
   const currentUserId = profile?.userId?._id ?? profile?._id ?? null;
@@ -293,9 +301,9 @@ const MessagingInterface = () => {
               replyingTo:
                 replyingTo && typeof replyingTo === "string"
                   ? (() => {
-                    const ref = messages.find((m) => m._id === replyingTo);
-                    return ref ? { _id: ref._id, text: ref.text } : null;
-                  })()
+                      const ref = messages.find((m) => m._id === replyingTo);
+                      return ref ? { _id: ref._id, text: ref.text } : null;
+                    })()
                   : replyingTo && typeof replyingTo === "object"
                     ? { _id: replyingTo._id, text: replyingTo.text }
                     : null,
@@ -459,28 +467,31 @@ const MessagingInterface = () => {
     candidates,
   ]);
 
-  const handleStartChatWithUser = useCallback(async (participantUserId: string) => {
-    if (!participantUserId) return;
+  const handleStartChatWithUser = useCallback(
+    async (participantUserId: string) => {
+      if (!participantUserId) return;
 
-    const res = await createChatApi(participantUserId);
-    const chat = res?.data?.chat;
-    if (!chat) return;
+      const res = await createChatApi(participantUserId);
+      const chat = res?.data?.chat;
+      if (!chat) return;
 
-    // Refresh sidebar list so the chat appears/sorts correctly
-    dispatch(setChatsLoading(true));
-    getAllChats()
-      .then((r) => {
-        if (!r?.data) return;
-        dispatch(setChats(r.data.chats));
-      })
-      .catch(console.error)
-      .finally(() => dispatch(setChatsLoading(false)));
+      // Refresh sidebar list so the chat appears/sorts correctly
+      dispatch(setChatsLoading(true));
+      getAllChats()
+        .then((r) => {
+          if (!r?.data) return;
+          dispatch(setChats(r.data.chats));
+        })
+        .catch(console.error)
+        .finally(() => dispatch(setChatsLoading(false)));
 
-    setSelectedChatP(chat);
-    setSelectedChat(chat._id);
-    setShowChatList(false);
-    setDirectoryModalOpen(false);
-  }, [dispatch]);
+      setSelectedChatP(chat);
+      setSelectedChat(chat._id);
+      setShowChatList(false);
+      setDirectoryModalOpen(false);
+    },
+    [dispatch],
+  );
 
   // ── Deep-link support: /company/chat?participantId=USER_ID ────────────────
   useEffect(() => {
@@ -631,10 +642,10 @@ const MessagingInterface = () => {
 
   const sortedChats = chats
     ? [...chats].sort((a, b) => {
-      const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-      const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-      return timeB - timeA;
-    })
+        const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return timeB - timeA;
+      })
     : [];
 
   if (profile === null) return null;
@@ -655,7 +666,9 @@ const MessagingInterface = () => {
           <Input
             value={directorySearch}
             onChange={(e) => setDirectorySearch(e.target.value)}
-            placeholder={isCandidateUser ? "Search company..." : "Search candidate..."}
+            placeholder={
+              isCandidateUser ? "Search company..." : "Search candidate..."
+            }
             allowClear
           />
         </div>
@@ -717,9 +730,9 @@ const MessagingInterface = () => {
                         size={40}
                         src={
                           isCandidateUser
-                            ? (item as CompanyListItem).logoUrl ?? undefined
-                            : (item as CandidateListItem).profilePictureUrl ??
-                            undefined
+                            ? ((item as CompanyListItem).logoUrl ?? undefined)
+                            : ((item as CandidateListItem).profilePictureUrl ??
+                              undefined)
                         }
                       >
                         {(isCandidateUser
@@ -738,7 +751,7 @@ const MessagingInterface = () => {
                     description={
                       <div className="text-xs text-gray-500">
                         {isCandidateUser
-                          ? (item as CompanyListItem).contactEmail ?? ""
+                          ? ((item as CompanyListItem).contactEmail ?? "")
                           : ""}
                       </div>
                     }
@@ -752,8 +765,9 @@ const MessagingInterface = () => {
 
       {/* ── Left Sidebar ──────────────────────────────────────────────────── */}
       <div
-        className={`${showChatList ? "flex" : "hidden"
-          } md:flex w-full md:w-[380px] lg:w-[420px] border-r border-gray-200 flex-col card rounded-l-xl`}
+        className={`${
+          showChatList ? "flex" : "hidden"
+        } md:flex w-full md:w-[380px] lg:w-[420px] border-r border-gray-200 flex-col card rounded-l-xl`}
       >
         <div className="p-3 md:p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-2">
@@ -772,30 +786,6 @@ const MessagingInterface = () => {
               prefix={<SearchOutlined className="text-gray-400" />}
               className="flex-1"
             />
-            <Dropdown
-              menu={{
-                items: [
-                  { key: "1", label: "All" },
-                  { key: "2", label: "Unread" },
-                  { key: "3", label: "Archived" },
-                ],
-              }}
-            >
-              <Button className="hidden sm:flex">
-                All <DownOutlined />
-              </Button>
-            </Dropdown>
-            <Dropdown
-              menu={{
-                items: [
-                  { key: "1", label: "All" },
-                  { key: "2", label: "Unread" },
-                  { key: "3", label: "Archived" },
-                ],
-              }}
-            >
-              <Button icon={<MenuOutlined />} className="sm:hidden" />
-            </Dropdown>
           </div>
         </div>
 
@@ -819,7 +809,7 @@ const MessagingInterface = () => {
             <Reorder.Group
               axis="y"
               values={sortedChats}
-              onReorder={() => { }}
+              onReorder={() => {}}
               className="flex flex-col"
             >
               {sortedChats.map((chat) => (
@@ -827,8 +817,9 @@ const MessagingInterface = () => {
                   key={chat._id}
                   value={chat}
                   as="div"
-                  className={`flex items-start gap-3 p-3 md:p-4 cursor-pointer hover:bg-blue-50/30 transition-colors ${selectedChat === chat._id ? "bg-blue-50" : ""
-                    }`}
+                  className={`flex items-start gap-3 p-3 md:p-4 cursor-pointer hover:bg-blue-50/30 transition-colors ${
+                    selectedChat === chat._id ? "bg-blue-50" : ""
+                  }`}
                   onClick={() => {
                     setSelectedChatP(chat);
                     handleChatSelect(chat._id);
@@ -862,11 +853,12 @@ const MessagingInterface = () => {
                           : chat.participant.companyName}
                       </span>
                       <span
-                        className={`text-xs ml-2 flex-shrink-0 ${chat.unReadCount > 0 &&
+                        className={`text-xs ml-2 flex-shrink-0 ${
+                          chat.unReadCount > 0 &&
                           chat.lastMessage?.sender !== currentUserId
-                          ? "text-[#1677ff]"
-                          : "text-gray-500"
-                          }`}
+                            ? "text-[#1677ff]"
+                            : "text-gray-500"
+                        }`}
                       >
                         {chat.updatedAt && formatChatTime(chat.updatedAt)}
                       </span>
@@ -876,7 +868,7 @@ const MessagingInterface = () => {
                       style={{
                         fontWeight:
                           chat.unReadCount > 0 &&
-                            chat.lastMessage?.sender !== currentUserId
+                          chat.lastMessage?.sender !== currentUserId
                             ? "bold"
                             : "normal",
                       }}
@@ -942,7 +934,7 @@ const MessagingInterface = () => {
                   src={
                     selectedChatP?.participant.logoUrl === undefined
                       ? selectedChatP?.participant.profilePictureUrl ||
-                      undefined
+                        undefined
                       : selectedChatP?.participant.logoUrl || undefined
                   }
                   onError={onImgErrorHandler}
@@ -1079,7 +1071,9 @@ const MessagingInterface = () => {
         ) : (
           <EmptyChatState
             userType={isCandidateUser ? "candidate" : "company"}
-            directoryLabel={isCandidateUser ? "Search Companies" : "Search Candidates"}
+            directoryLabel={
+              isCandidateUser ? "Search Companies" : "Search Candidates"
+            }
             onDirectoryOpen={() => {
               setDirectoryModalOpen(true);
             }}

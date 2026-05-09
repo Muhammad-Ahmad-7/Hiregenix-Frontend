@@ -10,7 +10,7 @@ export default function LoadingMessage({
   loading = false,
 }: MessageProps) {
   return (
-    <div className="mb-4 flex justify-start">
+    <div className="mb-4 flex justify-end">
       <div className="max-w-[85%] md:max-w-2xl flex flex-col items-start">
         <div className="relative px-3 py-2 md:px-4 md:py-2.5 shadow-sm bg-white border border-gray-200 rounded-lg">
           {loading ? (

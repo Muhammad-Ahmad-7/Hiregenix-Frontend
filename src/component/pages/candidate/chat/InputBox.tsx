@@ -9,11 +9,7 @@ import {
 import { Button, Input } from "antd";
 import EmojiPicker from "emoji-picker-react";
 import { AnimatePresence, motion } from "framer-motion";
-import React, {
-  useRef,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
+import React, { useRef, type Dispatch, type SetStateAction } from "react";
 import type { IMessage } from "@/constants/Interfaces/Types/Chat.interface";
 import SmallReplyCard from "./SmallReplyCard";
 
@@ -86,12 +82,6 @@ export default function InputBox({
           // {/* </div> */}
         )}
         <div className="flex items-center gap-2 md:gap-3">
-          <Button
-            type="primary"
-            icon={<span className="text-base md:text-lg">⚡</span>}
-            className="h-9 md:h-10 px-3 md:px-4 hidden sm:flex"
-            style={{ backgroundColor: "#7c3aed" }}
-          />
           <Input
             placeholder="Write a message..."
             className="flex-1 h-9 md:h-10 text-sm md:text-base"
