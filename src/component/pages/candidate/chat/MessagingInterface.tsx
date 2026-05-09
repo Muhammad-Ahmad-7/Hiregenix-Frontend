@@ -99,6 +99,7 @@ const MessagingInterface = () => {
     null,
   );
   const [directorySearch, setDirectorySearch] = useState("");
+  const [chatSearch, setChatSearch] = useState("");
   const { profile } = useSelector((state: RootState) => state.user);
   const currentUserId = profile?.userId?._id ?? profile?._id ?? null;
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
@@ -648,6 +649,18 @@ const MessagingInterface = () => {
       })
     : [];
 
+  const filteredChats = useMemo(() => {
+    const query = chatSearch.trim().toLowerCase();
+    if (!query) return sortedChats;
+    return sortedChats.filter((chat) => {
+      const name =
+        chat.participant.companyName === undefined
+          ? (chat.participant.fullName ?? "")
+          : (chat.participant.companyName ?? "");
+      return name.toLowerCase().includes(query);
+    });
+  }, [chatSearch, sortedChats]);
+
   if (profile === null) return null;
 
   return (
@@ -785,6 +798,9 @@ const MessagingInterface = () => {
               placeholder="Search name"
               prefix={<SearchOutlined className="text-gray-400" />}
               className="flex-1"
+              value={chatSearch}
+              onChange={(e) => setChatSearch(e.target.value)}
+              allowClear
             />
           </div>
         </div>
@@ -808,11 +824,11 @@ const MessagingInterface = () => {
           ) : (
             <Reorder.Group
               axis="y"
-              values={sortedChats}
+              values={filteredChats}
               onReorder={() => {}}
               className="flex flex-col"
             >
-              {sortedChats.map((chat) => (
+              {filteredChats.map((chat) => (
                 <Reorder.Item
                   key={chat._id}
                   value={chat}
