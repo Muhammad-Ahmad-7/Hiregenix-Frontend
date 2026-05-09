@@ -69,7 +69,7 @@ const messagesSlice = createSlice({
       state.messages.forEach((msg) => {
         if (
           msg.chat === chatId &&
-          msg.sender !== userId &&
+          msg.sender === userId &&
           msg.status !== "seen"
         ) {
           console.log("hang", msg.sender);
@@ -88,7 +88,7 @@ const messagesSlice = createSlice({
       state.messages.forEach((msg) => {
         if (
           msg.chat === chatId &&
-          msg.sender !== userId &&
+          msg.sender === userId &&
           msg.status !== "seen"
         ) {
           console.log("hang", msg.sender);
