@@ -4,6 +4,8 @@
 
 import {
   GetInterviewDataByIdApiResponse,
+  InterviewOverallAnalysis,
+  InterviewQuestionResult,
   InterviewQuestionResultApiResponse,
   InterviewVideoUploadSignedUrlApiResponse,
   ScheduledInterview,
@@ -219,6 +221,13 @@ export const endInterviewApi = async (interviewId: string) => {
 export const markInterviewAsInProcessApi = async (interviewId: string) => {
   return safeApiCall<null>({
     apiCall: () => api.post(`${BASE_API}/mark-in-process`, { interviewId }),
+    showToaster: true,
+  });
+}
+
+export const fetchQuestionsResultForInterview = async (interviewId: string) => {
+  return safeApiCall<{ questionResults: InterviewQuestionResult[], report: InterviewOverallAnalysis }>({
+    apiCall: () => api.get(`${BASE_API}/interview-question-results/${interviewId}`),
     showToaster: true,
   });
 }

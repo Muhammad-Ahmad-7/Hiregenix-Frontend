@@ -56,7 +56,7 @@ export interface JobPosting {
   location: Location;
   salaryRange: SalaryRange;
   deadline: string; // ISO date string
-  status: "scheduled" | "completed" | "rejected" | "cancelled";
+  status: "open" | "closed";
 }
 
 export interface JobUpdate {
@@ -254,4 +254,61 @@ export interface InterviewQuestionResultApiResponse {
   stages: {
     uploaded: boolean;
   }
+}
+
+export interface InterviewOverallAnalysis {
+  _id: string;
+  overallImprovementSuggestions: string[];
+  topStrengths: string[];
+  topWeaknesses: string[];
+  commonMissingConcepts: string[];
+  interviewSummary: string;
+  pdfUrl: string;
+}
+
+export interface InterviewQuestionResult {
+  _id: string;
+  questionId: string;
+  questionText: string;
+  videoUrl: string | null;
+  lLMAnalysis: LLMAnalysis;
+  sttData: {
+    text: string;
+  }
+}
+
+export interface LLMAnalysis {
+  scores: Scores;
+  fluencyAssessment: FluencyAssessment;
+  insights: Insights;
+  answerQuality: string;
+  integrity: Integrity;
+  shortSummary: string;
+}
+
+export interface Scores {
+  contentScore: number;
+  communicationScore: number;
+  fluencyScore: number;
+  confidenceScore: number;
+  overallScore: number;
+}
+
+export interface FluencyAssessment {
+  grammarQuality: string;
+  speechFlow: string;
+  paceAssessment: string;
+  detectedIssues: string[];
+}
+
+export interface Insights {
+  strengths: string[];
+  weaknesses: string[];
+  missingConcepts: string[];
+  improvementSuggestions: string[];
+}
+
+export interface Integrity {
+  integrityConcern: boolean;
+  integrityNotes: string | null;
 }

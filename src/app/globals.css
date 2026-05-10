@@ -431,6 +431,289 @@ body {
   color: var(--text-primary);
 }
 
+/* Candidate interview report page */
+.candidate-report-page {
+  background:
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(16, 185, 129, 0.14), transparent 24%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+.candidate-report-hero {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+}
+
+.candidate-report-badge {
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  background: linear-gradient(135deg, rgba(240, 253, 250, 0.9), rgba(239, 246, 255, 0.9));
+  color: #0f766e;
+}
+
+.candidate-report-hero__glow {
+  position: absolute;
+  inset: auto -10% -60% auto;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.22), transparent 60%);
+  filter: blur(16px);
+  pointer-events: none;
+}
+
+.candidate-report-card,
+.candidate-report-question {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.07),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+}
+
+.candidate-report-alert {
+  border-radius: 18px;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  background: rgba(254, 242, 242, 0.8);
+}
+
+.candidate-report-panel {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.9));
+  box-shadow:
+    0 12px 30px rgba(15, 23, 42, 0.05),
+    0 0 24px rgba(34, 211, 238, 0.08);
+}
+
+.candidate-report-panel--strengths {
+  border-color: rgba(34, 197, 94, 0.16);
+}
+
+.candidate-report-panel--weaknesses {
+  border-color: rgba(239, 68, 68, 0.16);
+}
+
+.candidate-report-panel--improvements {
+  border-color: rgba(59, 130, 246, 0.16);
+}
+
+.candidate-report-score-card,
+.candidate-report-mini-card,
+.candidate-report-video-shell {
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.96));
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.04),
+    0 0 20px rgba(59, 130, 246, 0.06);
+}
+
+.candidate-report-video-timecode {
+  background: rgba(15, 23, 42, 0.82);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  letter-spacing: 0.04em;
+}
+
+.candidate-report-text,
+.candidate-report-muted {
+  color: #475569;
+}
+
+.candidate-report-list-item {
+  color: #334155;
+}
+
+.candidate-report-missing-answer {
+  background:
+    radial-gradient(circle at top, rgba(34, 211, 238, 0.16), transparent 38%),
+    linear-gradient(180deg, rgba(240, 253, 250, 0.92), rgba(239, 246, 255, 0.92));
+  border: 1px dashed rgba(56, 189, 248, 0.28);
+  color: #0f172a;
+}
+
+.candidate-report-secondary-btn {
+  border-color: rgba(148, 163, 184, 0.28) !important;
+}
+
+.candidate-report-pdf-link {
+  letter-spacing: 0.02em;
+}
+
+.candidate-report-actions {
+  width: auto;
+}
+
+.candidate-report-secondary-btn--block {
+  width: auto;
+}
+
+.candidate-report-back-btn {
+  min-width: 92px;
+}
+
+[data-theme="dark"] .candidate-report-page {
+  background:
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(16, 185, 129, 0.16), transparent 24%),
+    linear-gradient(180deg, #020617 0%, #0f172a 100%);
+}
+
+[data-theme="dark"] .candidate-report-hero {
+  background: rgba(15, 23, 42, 0.88);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+[data-theme="dark"] .candidate-report-badge {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(6, 95, 70, 0.25));
+  border-color: rgba(34, 211, 238, 0.28);
+  color: #67e8f9;
+}
+
+[data-theme="dark"] .candidate-report-card,
+[data-theme="dark"] .candidate-report-question {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border-color: rgba(51, 65, 85, 0.95) !important;
+  box-shadow:
+    0 16px 40px rgba(2, 6, 23, 0.5),
+    0 0 24px rgba(34, 211, 238, 0.08);
+}
+
+[data-theme="dark"] .candidate-report-alert {
+  border-color: rgba(248, 113, 113, 0.2);
+  background: rgba(55, 48, 48, 0.35);
+}
+
+[data-theme="dark"] .candidate-report-panel,
+[data-theme="dark"] .candidate-report-score-card,
+[data-theme="dark"] .candidate-report-mini-card,
+[data-theme="dark"] .candidate-report-video-shell {
+  background: rgba(15, 23, 42, 0.82);
+  border-color: rgba(51, 65, 85, 0.95);
+  box-shadow:
+    0 12px 30px rgba(2, 6, 23, 0.4),
+    0 0 20px rgba(16, 185, 129, 0.08);
+}
+
+[data-theme="dark"] .candidate-report-video-timecode {
+  background: rgba(2, 6, 23, 0.78);
+  color: #e2e8f0;
+  border-color: rgba(71, 85, 105, 0.6);
+}
+
+[data-theme="dark"] .candidate-report-text,
+[data-theme="dark"] .candidate-report-muted,
+[data-theme="dark"] .candidate-report-question .ant-typography,
+[data-theme="dark"] .candidate-report-card .ant-typography {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .candidate-report-hero .ant-typography,
+[data-theme="dark"] .candidate-report-hero .ant-typography-secondary {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .candidate-report-secondary-btn {
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--text-primary);
+  border-color: rgba(71, 85, 105, 0.9) !important;
+}
+
+[data-theme="dark"] .candidate-report-pdf-link {
+  border-color: rgba(34, 211, 238, 0.3);
+  background: rgba(6, 95, 70, 0.18);
+  color: #67e8f9;
+}
+
+[data-theme="dark"] .candidate-report-back-btn {
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--text-primary);
+  border-color: rgba(71, 85, 105, 0.9) !important;
+}
+
+@media (max-width: 640px) {
+  .candidate-report-hero {
+    padding: 1.25rem;
+  }
+
+  .candidate-report-hero .ant-typography h2,
+  .candidate-report-hero .ant-typography-h2 {
+    font-size: 1.35rem;
+  }
+
+  .candidate-report-hero .ant-typography,
+  .candidate-report-text,
+  .candidate-report-list-item {
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  .candidate-report-badge {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+  }
+
+  .candidate-report-actions {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .candidate-report-pdf-link,
+  .candidate-report-secondary-btn--block {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .candidate-report-score-card {
+    width: 100%;
+  }
+
+  .candidate-report-score-card {
+    padding: 0.75rem !important;
+  }
+
+  .candidate-report-score-card .ant-typography,
+  .candidate-report-score-card .ant-typography-secondary {
+    font-size: 0.7rem;
+  }
+
+  .candidate-report-score-card .text-2xl,
+  .candidate-report-score-card .text-3xl {
+    font-size: 1.5rem;
+    line-height: 1.8rem;
+  }
+
+  .candidate-report-collapse .ant-collapse-header {
+    align-items: flex-start;
+  }
+
+  .candidate-report-collapse .ant-collapse-header-text {
+    font-size: 0.9rem;
+  }
+
+  .candidate-report-collapse .ant-tag {
+    font-size: 0.7rem;
+    padding: 0 0.5rem;
+  }
+}
+
+[data-theme="dark"] .candidate-report-page .ant-empty-description,
+[data-theme="dark"] .candidate-report-page .ant-alert-message,
+[data-theme="dark"] .candidate-report-page .ant-alert-description {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .candidate-report-list-item {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .candidate-report-missing-answer {
+  background:
+    radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 38%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.88));
+  border-color: rgba(34, 211, 238, 0.22);
+  color: var(--text-primary);
+}
+
 .verification-badge--success .verification-badge__subtitle {
   color: #047857;
 }

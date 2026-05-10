@@ -10,7 +10,6 @@ import {
   Input,
   Avatar,
   Badge,
-  Dropdown,
   Button,
   Skeleton,
   Modal,
@@ -18,10 +17,8 @@ import {
 } from "antd";
 import {
   SearchOutlined,
-  DownOutlined,
   MoreOutlined,
   ArrowLeftOutlined,
-  MenuOutlined,
   FileTextOutlined,
   FileImageOutlined,
 } from "@ant-design/icons";
@@ -302,9 +299,9 @@ const MessagingInterface = () => {
               replyingTo:
                 replyingTo && typeof replyingTo === "string"
                   ? (() => {
-                      const ref = messages.find((m) => m._id === replyingTo);
-                      return ref ? { _id: ref._id, text: ref.text } : null;
-                    })()
+                    const ref = messages.find((m) => m._id === replyingTo);
+                    return ref ? { _id: ref._id, text: ref.text } : null;
+                  })()
                   : replyingTo && typeof replyingTo === "object"
                     ? { _id: replyingTo._id, text: replyingTo.text }
                     : null,
@@ -641,13 +638,15 @@ const MessagingInterface = () => {
     return true;
   };
 
-  const sortedChats = chats
-    ? [...chats].sort((a, b) => {
+  const sortedChats = useMemo(() => {
+    return chats
+      ? [...chats].sort((a, b) => {
         const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
         const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
         return timeB - timeA;
       })
-    : [];
+      : [];
+  }, [chats]);
 
   const filteredChats = useMemo(() => {
     const query = chatSearch.trim().toLowerCase();
@@ -778,9 +777,8 @@ const MessagingInterface = () => {
 
       {/* ── Left Sidebar ──────────────────────────────────────────────────── */}
       <div
-        className={`${
-          showChatList ? "flex" : "hidden"
-        } md:flex w-full md:w-[380px] lg:w-[420px] border-r border-gray-200 flex-col card rounded-l-xl`}
+        className={`${showChatList ? "flex" : "hidden"
+          } md:flex w-full md:w-[380px] lg:w-[420px] border-r border-gray-200 flex-col card rounded-l-xl`}
       >
         <div className="p-3 md:p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-2">
@@ -825,7 +823,7 @@ const MessagingInterface = () => {
             <Reorder.Group
               axis="y"
               values={filteredChats}
-              onReorder={() => {}}
+              onReorder={() => { }}
               className="flex flex-col"
             >
               {filteredChats.map((chat) => (
@@ -833,9 +831,8 @@ const MessagingInterface = () => {
                   key={chat._id}
                   value={chat}
                   as="div"
-                  className={`flex items-start gap-3 p-3 md:p-4 cursor-pointer hover:bg-blue-50/30 transition-colors ${
-                    selectedChat === chat._id ? "bg-blue-50" : ""
-                  }`}
+                  className={`flex items-start gap-3 p-3 md:p-4 cursor-pointer hover:bg-blue-50/30 transition-colors ${selectedChat === chat._id ? "bg-blue-50" : ""
+                    }`}
                   onClick={() => {
                     setSelectedChatP(chat);
                     handleChatSelect(chat._id);
@@ -869,12 +866,11 @@ const MessagingInterface = () => {
                           : chat.participant.companyName}
                       </span>
                       <span
-                        className={`text-xs ml-2 flex-shrink-0 ${
-                          chat.unReadCount > 0 &&
+                        className={`text-xs ml-2 flex-shrink-0 ${chat.unReadCount > 0 &&
                           chat.lastMessage?.sender !== currentUserId
-                            ? "text-[#1677ff]"
-                            : "text-gray-500"
-                        }`}
+                          ? "text-[#1677ff]"
+                          : "text-gray-500"
+                          }`}
                       >
                         {chat.updatedAt && formatChatTime(chat.updatedAt)}
                       </span>
@@ -884,7 +880,7 @@ const MessagingInterface = () => {
                       style={{
                         fontWeight:
                           chat.unReadCount > 0 &&
-                          chat.lastMessage?.sender !== currentUserId
+                            chat.lastMessage?.sender !== currentUserId
                             ? "bold"
                             : "normal",
                       }}
@@ -950,7 +946,7 @@ const MessagingInterface = () => {
                   src={
                     selectedChatP?.participant.logoUrl === undefined
                       ? selectedChatP?.participant.profilePictureUrl ||
-                        undefined
+                      undefined
                       : selectedChatP?.participant.logoUrl || undefined
                   }
                   onError={onImgErrorHandler}

@@ -30,6 +30,7 @@ import TextArea from "antd/es/input/TextArea";
 import { sendHiringEmailApi, sendRejectionEmailApi } from "@/app/api/company/jobs.api";
 import TableSkeleton from "@/component/Skeletons/TableSkeleton";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { getCandidateProfileWithIdApi } from "@/app/api/general/general.api";
 import { createChatApi } from "@/app/api/chat/chats.api";
 
@@ -396,23 +397,14 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({
       key: "aiResult",
       render: (_: unknown, record: InterviewRecord) => {
         if (!record.report) return <span className="text-gray-400">N/A</span>;
-
-        const pdfUrl = record.report?.pdfUrl;
-
         return (
           <div className="">
-            {pdfUrl ? (
-              <a
-                href={pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                <EyeFilled /> Report
-              </a>
-            ) : (
-              <span className="text-gray-400">N/A</span>
-            )}
+            <Link
+              href={`/company/job-applications/${record._id}`}
+              className="text-blue-600 hover:underline"
+            >
+              <EyeFilled /> Report
+            </Link>
           </div>
         );
       },
