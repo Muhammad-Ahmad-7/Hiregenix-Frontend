@@ -1,8 +1,7 @@
 "use client";
 //can we change (means not tested yet)
-import { Col, Form, Row, Typography, Upload, message, Avatar } from "antd";
+import { Col, Form, Row, Typography, Upload, Avatar } from "antd";
 import React, { useState } from "react";
-import PlusIcon from "@/icons/PlusIcon";
 import {
   LabelDatePicker,
   LabelInput,
@@ -10,11 +9,13 @@ import {
   LabelSelect,
 } from "../common";
 import UiButton from "../common/CustomButton";
-import { LoadingOutlined } from "@ant-design/icons";
+import { LoadingOutlined, UploadOutlined } from "@ant-design/icons";
 import { uploadFileApi } from "@/app/api/auth.api";
 import { AxiosError } from "axios";
 import type { UploadProps } from "antd";
 import { Dayjs } from "dayjs";
+import toast from "react-hot-toast";
+import { pakistanCities } from "@/constants/job";
 
 const { Text } = Typography;
 
@@ -73,19 +74,7 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
   ];
 
   const countryOptions = [
-    { label: "USA", value: "USA" },
-    { label: "UK", value: "UK" },
     { label: "Pakistan", value: "Pakistan" },
-    { label: "India", value: "India" },
-    { label: "Canada", value: "Canada" },
-  ];
-
-  const cityOptions = [
-    { label: "Lahore", value: "Lahore" },
-    { label: "Karachi", value: "Karachi" },
-    { label: "Islamabad", value: "Islamabad" },
-    { label: "New York", value: "New York" },
-    { label: "London", value: "London" },
   ];
 
   const handleImageUpload = async (file: File): Promise<void> => {
@@ -100,9 +89,9 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
       if (response?.data?.url) {
         setProfilePictureUrl(response.data.url);
         form.setFieldValue("profilePictureUrl", response.data.url);
-        message.success("Profile picture uploaded successfully!");
+        toast.success("Profile picture uploaded successfully!");
       } else {
-        message.error("Upload failed: Invalid response from server");
+        toast.error("Upload failed: Invalid response from server");
         console.error("Invalid response structure:", response);
       }
     } catch (error: unknown) {
@@ -111,7 +100,7 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
         err?.response?.data?.message ||
         err?.message ||
         "Failed to upload image. Please try again.";
-      message.error(errorMessage);
+      toast.error(errorMessage);
       console.error("Upload error:", error);
     } finally {
       setUploading(false);
@@ -122,15 +111,14 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
     beforeUpload: (file: File) => {
       const isImage =
         file.type === "image/jpeg" ||
-        file.type === "image/png" ||
-        file.type === "image/svg+xml";
+        file.type === "image/png"
       if (!isImage) {
-        message.error("You can only upload JPEG, PNG, or SVG files!");
+        toast.error("You can only upload JPEG or PNG!");
         return false;
       }
       const isLt5M = file.size / 1024 / 1024 < 5;
       if (!isLt5M) {
-        message.error("Image must be smaller than 5MB!");
+        toast.error("Image must be smaller than 5MB!");
         return false;
       }
       handleImageUpload(file);
@@ -142,7 +130,7 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
   const onFinish = (values: Step1FormValues): void => {
     // Check if profile picture is uploaded
     if (!profilePictureUrl) {
-      message.error("Please upload a profile picture");
+      toast.error("Please upload a profile picture");
       return;
     }
 
@@ -197,7 +185,6 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
           <Col span={12}>
             <LabelSelect
               label="Gender"
-              placeholder="Gender"
               name="gender"
               required
               options={genderOptions}
@@ -209,7 +196,6 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
             <LabelSelect
               name="country"
               label="Country"
-              placeholder="Country"
               required
               options={countryOptions}
               itemProps={{
@@ -224,7 +210,7 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
               placeholder="City"
               name="city"
               required
-              options={cityOptions}
+              options={pakistanCities}
             />
           </Col>
         </Row>
@@ -245,13 +231,13 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
             <Text type="secondary">5MB Limit (JPEG, PNG, SVG)</Text>
           </div>
           <Upload {...uploadProps}>
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer transition-all">
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white dark:bg-[var(--surface)] shadow-lg dark:shadow-none border-2 border-dashed border-gray-300 dark:border-[var(--border)] hover:border-blue-500 dark:hover:border-[var(--accent)] cursor-pointer transition-all">
               {uploading ? (
                 <LoadingOutlined className="text-2xl text-blue-500" />
               ) : profilePictureUrl ? (
                 <Avatar size={60} src={profilePictureUrl} />
               ) : (
-                <PlusIcon />
+                <UploadOutlined className="text-2xl text-gray-500 dark:text-[var(--text-subtle)]" />
               )}
             </div>
           </Upload>

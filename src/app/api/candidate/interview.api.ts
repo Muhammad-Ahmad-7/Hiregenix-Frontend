@@ -4,6 +4,8 @@
 
 import {
   GetInterviewDataByIdApiResponse,
+  InterviewOverallAnalysis,
+  InterviewQuestionResult,
   InterviewQuestionResultApiResponse,
   InterviewVideoUploadSignedUrlApiResponse,
   ScheduledInterview,
@@ -25,6 +27,8 @@ export const getAllInterviewsApi = async (params: {
   page: number;
   limit: number;
   status: string | undefined;
+  withInLastOneWeek?: boolean;
+  withInLastOneMonth?: boolean;
 }) => {
   return safeApiCall<{ interviews: ScheduledInterview[] }>({
     apiCall: () =>
@@ -58,9 +62,23 @@ export const getInterviewByIdApi = async (
 }
 
 export const createInterviewQuestionResultApi = async (
-  { interviewId, questionId, questionText, numberOfTabSwitch, file }:
-    { interviewId: string, questionId: string, questionText: string, numberOfTabSwitch: number, file: File }
+  { interviewId, questionId, questionText, numberOfTabSwitch, file, verificationEvents }:
+    {
+      interviewId: string;
+      questionId: string;
+      questionText: string;
+      numberOfTabSwitch: number;
+      file: File;
+      verificationEvents?: Array<{ type: string; timestamp: number; score?: number; verified?: boolean }>;
+    }
 ) => {
+
+  console.log("DATA", {
+    interviewId,
+    questionId,
+    numberOfTabSwitch,
+    verificationEvents
+  })
 
   // Api Call to generate the signed url
   const signedUrlRes = await safeApiCall<{ data: InterviewVideoUploadSignedUrlApiResponse }>({
@@ -109,6 +127,7 @@ export const createInterviewQuestionResultApi = async (
       questionId,
       questionText,
       numberOfTabSwitch,
+      verificationEvents,
       videoUrl: uploadResult.secure_url,
     }),
   });
@@ -206,3 +225,24 @@ export const verifyCandidateIdentityApi = async (file: File) => {
     },
   });
 };
+
+export const endInterviewApi = async (interviewId: string) => {
+  return safeApiCall<null>({
+    apiCall: () => api.post(`${BASE_API}/end-interview`, { interviewId }),
+    showToaster: true,
+  });
+}
+
+export const markInterviewAsInProcessApi = async (interviewId: string) => {
+  return safeApiCall<null>({
+    apiCall: () => api.post(`${BASE_API}/mark-in-process`, { interviewId }),
+    showToaster: true,
+  });
+}
+
+export const fetchQuestionsResultForInterview = async (interviewId: string) => {
+  return safeApiCall<{ questionResults: InterviewQuestionResult[], report: InterviewOverallAnalysis }>({
+    apiCall: () => api.get(`${BASE_API}/interview-question-results/${interviewId}`),
+    showToaster: true,
+  });
+}

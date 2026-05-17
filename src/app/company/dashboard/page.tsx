@@ -1,33 +1,43 @@
 "use client";
 
-import { Card, Table, List, Avatar, Button, Row, Col, Dropdown } from "antd";
+import { Card, Table, Row, Col, Tag } from "antd";
 import {
-  CalendarOutlined,
   ContainerFilled,
   StarFilled,
-  MessageFilled,
-  MoreOutlined,
-  ArrowUpOutlined,
+  CloseCircleFilled,
+  CheckCircleFilled,
 } from "@ant-design/icons";
 import StatsCard from "@/component/pages/dashboard/StatsCard";
-import { TopIconAndNavigation } from "@/app/candidate/dashboard/page";
-import UiButton from "@/component/common/CustomButton";
-import { ROUTES } from "@/constants/routes";
-import { useEffect, useState } from "react";
+import DashboardSkeleton from "@/component/Skeletons/DashboardSkeleton";
+import { useEffect, useRef, useState } from "react";
 import { getCompanyStatsApi } from "@/app/api/company/dashboard.api";
 import { CompanyDashboardResponse } from "@/constants/Interfaces/Types/Dashboard.interface";
+import Link from "next/link";
 
 export default function Dashboard() {
   const [companyStats, setCompanyStats] =
     useState<CompanyDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLargeScreen, setIsLargeScreen] = useState<boolean>(false);
+
+  const statsRowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const calculateScrollY = () => {
+      const lg = window.innerWidth >= 992; // Ant Design lg breakpoint
+      setIsLargeScreen(lg);
+    };
+
+    calculateScrollY();
+    window.addEventListener("resize", calculateScrollY);
+    return () => window.removeEventListener("resize", calculateScrollY);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
     getCompanyStatsApi()
       .then((res) => {
         if (!res || !res.data) return;
-        console.log("Company Dashboard Stats:", res.data);
         setCompanyStats(res.data);
       })
       .catch((error) => {
@@ -38,312 +48,278 @@ export default function Dashboard() {
       });
   }, []);
 
-  // Transform active jobs data for table
+  const isExpiringSoon = (date: Date) => {
+    const diffDays = Math.ceil(
+      (date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    );
+    return diffDays <= 1;
+  };
+
   const jobData =
     companyStats?.activeJobs?.map((job) => ({
       key: job._id,
-      title: job.title,
-      applications: 0, // You may need to add this to your API response
-      views: 0, // You may need to add this to your API response
-      matches: 0, // You may need to add this to your API response
+      role: job.role,
+      subtitle: `${job.title} · ${job.experienceLevel}`,
+      workMode: job.workMode,
+      deadline: new Date(job.deadline).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      deadlineRaw: new Date(job.deadline),
     })) || [];
 
   const jobColumns = [
     {
-      title: "Title",
-      dataIndex: "title",
-      key: "title",
-      className: "font-medium",
+      title: "Role",
+      key: "role",
+      render: (record: (typeof jobData)[0]) => (
+        <div style={{ minWidth: 0 }}>
+          <p className="font-medium text-sm text-gray-800 m-0 truncate">
+            {record.role}
+          </p>
+          <p className="text-xs text-gray-400 m-0 truncate">{record.subtitle}</p>
+        </div>
+      ),
     },
     {
-      title: "Applications",
-      dataIndex: "applications",
-      key: "applications",
-      align: "center" as const,
+      title: "Mode",
+      dataIndex: "workMode",
+      key: "workMode",
+      width: 95,
+      render: (mode: string) => (
+        <Tag
+          color={
+            mode === "remote" ? "blue" : mode === "full-time" ? "green" : "gold"
+          }
+          className="text-xs capitalize m-0"
+        >
+          {mode}
+        </Tag>
+      ),
     },
     {
-      title: "Views",
-      dataIndex: "views",
-      key: "views",
-      align: "center" as const,
-    },
-    {
-      title: "AI matches",
-      dataIndex: "matches",
-      key: "matches",
-      align: "center" as const,
-    },
-    {
-      title: "",
-      key: "action",
-      render: () => (
-        <Button type="link" className="text-blue-500 p-0">
-          View details
-        </Button>
+      title: "Due",
+      key: "deadline",
+      width: 58,
+      render: (record: (typeof jobData)[0]) => (
+        <span
+          className={`text-xs font-medium ${isExpiringSoon(record.deadlineRaw) ? "text-red-500" : "text-gray-500"
+            }`}
+        >
+          {record.deadline}
+        </span>
       ),
     },
   ];
 
-  // Messages Data (keep as is per your request)
-  const messages = [
+  const applicationData =
+    companyStats?.recentApplications?.map((app) => ({
+      key: app._id,
+      candidateName: app.candidateId?.fullName || "Unknown",
+      avatarInitials: app.candidateId?.fullName
+        ? app.candidateId.fullName
+          .split(" ")
+          .slice(0, 2)
+          .map((n: string) => n[0])
+          .join("")
+        : "?",
+      jobTitle: app.jobId?.title || "N/A",
+      status: app.status,
+    })) || [];
+
+  const applicationColumns = [
     {
-      name: "Alexa",
-      text: "Hey Adam! Interested in tex...",
-      time: "3m",
-      avatar: "A",
-      unread: true,
+      title: "Candidate",
+      key: "candidate",
+      render: (record: (typeof applicationData)[0]) => (
+        <div className="flex items-center gap-2" style={{ minWidth: 0 }}>
+          <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-medium flex-shrink-0">
+            {record.avatarInitials}
+          </div>
+          <span className="text-sm font-medium text-gray-800 truncate">
+            {record.candidateName}
+          </span>
+        </div>
+      ),
     },
     {
-      name: "Donald",
-      text: "Hey Adam! Interested in tex...",
-      time: "10m",
-      avatar: "D",
-      unread: true,
+      title: "Position",
+      dataIndex: "jobTitle",
+      key: "jobTitle",
+      render: (title: string) => (
+        <span className="text-xs text-gray-500 truncate block">{title}</span>
+      ),
     },
     {
-      name: "James Drew",
-      text: "Hey Adam! Interested in tex...",
-      time: "30m",
-      avatar: "J",
-      unread: false,
-    },
-    {
-      name: "Alexa",
-      text: "Hey Adam! Is Load more...",
-      time: "30m",
-      avatar: "A",
-      unread: false,
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: 105,
+      render: (status: string) => {
+        const config: Record<string, { color: string; icon: React.ReactNode }> =
+        {
+          ended: { color: "red", icon: <CloseCircleFilled /> },
+          scheduled: { color: "orange", icon: <CheckCircleFilled /> },
+          completed: { color: "green", icon: <CheckCircleFilled /> },
+        };
+        const cfg = config[status] || { color: "default", icon: null };
+        return (
+          <Tag
+            color={cfg.color}
+            icon={cfg.icon}
+            className="text-xs capitalize m-0"
+          >
+            {status}
+          </Tag>
+        );
+      },
     },
   ];
 
-  // Chart data for applications per week (keep as is per your request)
-  const weeklyData = [
-    { day: "Mon", value: 5 },
-    { day: "Tue", value: 9 },
-    { day: "Wed", value: 5 },
-    { day: "Thu", value: 12 },
-    { day: "Fri", value: 6 },
-    { day: "Sat", value: 7 },
-    { day: "Sun", value: 6 },
-  ];
+  // On large screens: fixed full-height layout with internal scroll
+  // On mobile/medium: natural flow layout, outer container scrolls
+  const lgCardStyle = isLargeScreen
+    ? {
+      flex: 1,
+      minHeight: 0,
+      display: "flex",
+      flexDirection: "column" as const,
+      overflow: "hidden",
+    }
+    : {};
 
-  // Get the most recent application
-  const recentApplication = companyStats?.recentApplications?.[0];
+  const lgCardBodyStyle = isLargeScreen
+    ? {
+      flex: 1,
+      minHeight: 0,
+      overflow: "hidden",
+      padding: "0 16px 12px",
+    }
+    : { padding: "0 16px 12px" };
+
+  const lgColStyle = isLargeScreen
+    ? { height: "100%", display: "flex", flexDirection: "column" as const }
+    : { marginBottom: 12 };
+
+  if (loading) {
+    return <DashboardSkeleton variant="company" />;
+  }
 
   return (
-    <div className=" bg-gray-50 min-h-screen fixed mr-5">
-      {/* First Row */}
-      <Row gutter={[8, 8]} className="sm:gutter-[16] md:gutter-[16]">
-        {/* (1,1) nested 2x2 grid */}
-        <Col xs={24} sm={24} md={24} lg={12}>
-          <Row gutter={[8, 8]} className="sm:gutter-[16] md:gutter-[16]">
-            <StatsCard
-              arrow={{ shown: true, href: "/company/job-analytics" }}
-              icon={<ContainerFilled style={{ color: "white" }} />}
-              title="Jobs Posted"
-              number={companyStats?.postedJobsCount || 0}
-              badgeText="45%+ in last 30 days"
-              badgeColor="green"
-            />
-            <StatsCard
-              arrow={{ shown: true, href: "/company/job-applications" }}
-              icon={<StarFilled className="!text-white" />}
-              title="Jobs Applications"
-              number={companyStats?.activeJobsCount || 0}
-              badgeText="45%+ in last 30 days"
-              badgeColor="orange"
-            />
-            <StatsCard
-              arrow={{ shown: true, href: "/company/job-analytics" }}
-              title="Applied Jobs"
-              icon={<StarFilled className="!text-white" />}
-              number={companyStats?.appliedJobsCount || 0}
-              badgeText="45%+ in last 30 days"
-              badgeColor="orange"
-            />
-            <StatsCard
-              arrow={{ shown: true, href: "/company/job-analytics" }}
-              icon={<StarFilled className="!text-white" />}
-              title="Closed Jobs"
-              number={companyStats?.closedJobsCount || 0}
-              badgeText="45%+ in last 30 days"
-              badgeColor="orange"
-            />
-          </Row>
-        </Col>
+    <div
+      style={{
+        // On large screens: fixed viewport height, no scroll (tables scroll internally)
+        // On mobile/medium: auto height, outer div scrolls
+        height: isLargeScreen ? "100vh" : "auto",
+        minHeight: "100vh",
+        overflow: isLargeScreen ? "hidden" : "visible",
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px",
+        boxSizing: "border-box",
+      }}
+    >
+      {/* Stats Row */}
+      <div ref={statsRowRef} style={{ flexShrink: 0 }}>
+        <Row gutter={[12, 12]}>
+          <StatsCard
+            arrow={{ shown: true, href: "/company/job-analytics" }}
+            icon={<ContainerFilled style={{ color: "white" }} />}
+            title="Jobs Posted"
+            number={companyStats?.postedJobsCount || 0}
+            badgeText="Total listings"
+            badgeColor="green"
+          />
+          <StatsCard
+            arrow={{ shown: true, href: "/company/job-analytics" }}
+            icon={<StarFilled className="!text-white" />}
+            title="Active Jobs"
+            number={companyStats?.activeJobsCount || 0}
+            badgeText="Currently open"
+            badgeColor="green"
+          />
+          <StatsCard
+            arrow={{ shown: true, href: "/company/job-applications" }}
+            icon={<StarFilled className="!text-white" />}
+            title="Applications"
+            number={companyStats?.appliedJobsCount || 0}
+            badgeText="In review"
+            badgeColor="orange"
+          />
+          <StatsCard
+            arrow={{ shown: true, href: "/company/job-analytics" }}
+            icon={<StarFilled className="!text-white" />}
+            title="Closed Jobs"
+            number={companyStats?.closedJobsCount || 0}
+            badgeText="Filled / expired"
+            badgeColor="green"
+          />
+        </Row>
+      </div>
 
-        {/* (1,2) applications chart */}
-        <Col xs={24} sm={24} md={24} lg={12}>
+      {/* Tables Row */}
+      <Row
+        gutter={[12, 12]}
+        style={isLargeScreen ? { flex: 1, minHeight: 0 } : {}}
+      >
+        <Col xs={24} lg={12} style={lgColStyle}>
           <Card
-            title="Applications received per week"
-            className="h-full"
-            extra={
-              <span className="text-xs sm:text-sm text-gray-400">
-                September 29 - October 6
+            style={lgCardStyle}
+            styles={{ body: lgCardBodyStyle }}
+            title={
+              <span style={{ fontSize: 14, fontWeight: 500 }}>
+                Active Job Listings
               </span>
             }
-          >
-            <div className="flex items-end justify-between h-30 px-2 sm:px-4 mt-4 gap-1 sm:gap-2">
-              {weeklyData.map((item, index) => (
-                <div key={index} className="flex flex-col items-center flex-1">
-                  <div className="text-xs text-gray-400 mb-1">{item.value}</div>
-                  <div
-                    className="bg-blue-500 rounded-t w-full max-w-6 flex items-end justify-center"
-                    style={{ height: `${(item.value / 12) * 100}px` }}
-                  ></div>
-                  <div className="text-xs text-gray-400 mt-2">{item.day}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Second Row */}
-      <Row
-        gutter={[8, 8]}
-        className="mt-4 sm:mt-6 sm:gutter-[16] md:gutter-[16]"
-      >
-        {/* (2,1) Active Jobs Table */}
-        <Col xs={24} sm={24} md={24} lg={12}>
-          <Card
-            style={{ height: "340px", maxHeight: "340px", overflowY: "auto" }}
-            // className="scrollbar-hide"
-            title="Active Jobs"
             extra={
-              <UiButton
-                href={"/company/job-analytics"}
-                className="group !w-8 !h-8 !rounded-full flex items-center justify-center bg-white border border-gray-300 transition-all duration-300 hover:!bg-blue-500"
+              <Link
+                type="link"
+                href="/company/job-analytics"
+                style={{ fontSize: 12, padding: 0 }}
               >
-                <ArrowUpOutlined className="text-gray-600 transform rotate-45 transition-all duration-300 ease-in-out group-hover:!text-white group-hover:rotate-90" />
-              </UiButton>
+                View all →
+              </Link>
             }
           >
             <Table
-              dataSource={jobData}
+              dataSource={jobData.slice(0, 4)}
               columns={jobColumns}
               pagination={false}
               size="small"
-              scroll={{ x: 600 }}
               loading={loading}
+              scroll={{ x: '100%' }}
             />
           </Card>
         </Col>
 
-        {/* (2,2) Messages + Interview Schedule */}
-        <Col xs={24} sm={24} md={24} lg={12}>
-          <Row gutter={[8, 8]} className="sm:gutter-[16] md:gutter-[16]">
-            <Col xs={24} lg={12}>
-              <div className="h-84 bg-white hover-gray-50 relative rounded-lg">
-                <div className="flex gap-2 font-bold text-md px-4 items-center py-2">
-                  <TopIconAndNavigation
-                    icon={
-                      <MessageFilled size={36} style={{ color: "white" }} />
-                    }
-                    title="Messages"
-                    arrow={{ shown: false }}
-                  />
-                </div>
-
-                <List
-                  itemLayout="horizontal"
-                  dataSource={messages}
-                  className="cursor-pointer !pb-9"
-                  renderItem={(item) => (
-                    <List.Item
-                      className="hover:bg-gray-50 hover:w-full !px-4 rounded"
-                      actions={[
-                        <div className="flex items-center gap-2" key="actions">
-                          {!item.time ? (
-                            <div className="bg-[#FF4D4F] w-5 h-5 flex justify-center items-center rounded-full text-white text-xs">
-                              5
-                            </div>
-                          ) : (
-                            <span className="text-xs text-[#202020]">
-                              {item.time}
-                            </span>
-                          )}
-                          <Dropdown trigger={["click"]}>
-                            <MoreOutlined className="!text-[#202020] cursor-pointer" />
-                          </Dropdown>
-                        </div>,
-                      ]}
-                    >
-                      <List.Item.Meta
-                        avatar={
-                          <div className="flex items-center gap-5">
-                            <div className="relative">
-                              <Avatar size={34} className="bg-gray-300 text-sm">
-                                {item.avatar}
-                              </Avatar>
-                              {item.unread && (
-                                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border border-white"></div>
-                              )}
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium">
-                                {item.name}
-                              </span>
-                              <span className="text-xs text-gray-500 line-clamp-1">
-                                {item.text}
-                              </span>
-                            </div>
-                          </div>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                />
-                <div className="absolute -bottom-0 right-1.5 flex justify-center w-[96%] py-3 bg-gradient-to-t from-gray-50 to-transparent rounded-b-lg">
-                  <UiButton className="!rounded-2xl" href={ROUTES.DASHBOARD}>
-                    Load More
-                  </UiButton>
-                </div>
-              </div>
-            </Col>
-
-            <Col xs={24} sm={24} md={24} lg={12}>
-              <Card
-                title="Recent Applications"
-                extra={
-                  <CalendarOutlined
-                    className="text-blue-500"
-                    style={{ fontSize: "16px" }}
-                  />
-                }
-                className="h-full"
-                loading={loading}
+        <Col xs={24} lg={12} style={lgColStyle}>
+          <Card
+            style={lgCardStyle}
+            styles={{ body: lgCardBodyStyle }}
+            title={
+              <span style={{ fontSize: 14, fontWeight: 500 }}>
+                Recent Applications
+              </span>
+            }
+            extra={
+              <Link
+                type="link"
+                href="/company/job-applications"
+                style={{ fontSize: 12, padding: 0 }}
               >
-                <p className="mb-3 font-medium text-sm text-gray-500">Today</p>
-                {recentApplication ? (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-green-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-                      <div>
-                        <p className="font-semibold text-sm">
-                          {recentApplication.jobId?.title || "N/A"}
-                        </p>
-                        <p className="text-gray-500 text-xs">
-                          {recentApplication.candidateId?.fullName || "Unknown"}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      type="primary"
-                      size="small"
-                      className="bg-orange-500 border-orange-500 hover:bg-orange-600 w-full sm:w-auto"
-                    >
-                      View Details
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="text-center text-gray-500 py-4">
-                    No recent applications
-                  </div>
-                )}
-              </Card>
-            </Col>
-          </Row>
+                View all →
+              </Link>
+            }
+            loading={loading}
+          >
+            <Table
+              dataSource={applicationData.slice(0, 5)}
+              columns={applicationColumns}
+              pagination={false}
+              size="large"
+              scroll={{ x: "100%" }}
+            />
+          </Card>
         </Col>
       </Row>
     </div>

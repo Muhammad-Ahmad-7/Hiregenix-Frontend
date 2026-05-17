@@ -3,7 +3,7 @@
 import type React from "react";
 import { useState, useEffect } from "react";
 import { Select, Row, Col, Statistic, Avatar } from "antd";
-import { DownOutlined } from "@ant-design/icons";
+import { DownOutlined, FileOutlined } from "@ant-design/icons";
 
 interface JobRole {
   value: string;
@@ -62,16 +62,10 @@ export const JobApplicationStats: React.FC<JobApplicationStatsProps> = ({
       <Row gutter={[24, 24]}>
         {/* Job Role Selector */}
         <Col xs={24} sm={12} lg={6}>
-          <div className="p-4 py-[34px] bg-white rounded-2xl shadow-sm flex justify-between items-center">
+          <div className="p-4 py-[34px] bg-white rounded-2xl shadow-sm flex justify-between items-center card">
             <Avatar
               size={40}
-              style={{
-                backgroundColor: "#FF6B35",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              icon={<span style={{ fontSize: "20px" }}>👨‍💻</span>}
+              icon={<FileOutlined />}
             />
             <Select
               value={selectedRole || undefined}
@@ -89,48 +83,17 @@ export const JobApplicationStats: React.FC<JobApplicationStatsProps> = ({
 
         {/* Total Applications */}
         <Col xs={24} sm={12} lg={6}>
-          <div className="p-4 bg-white rounded-2xl shadow-sm">
+          <div className="p-4 bg-white rounded-2xl shadow-sm card">
             <Statistic
               title="Total applications"
               value={totalApplications | 0}
               valueStyle={{
-                color: "#000",
                 fontSize: "32px",
                 fontWeight: "bold",
               }}
             />
           </div>
         </Col>
-
-        {/* Total Views */}
-        {/* <Col xs={24} sm={12} lg={6}>
-          <div className="p-4 bg-white rounded-2xl shadow-sm">
-            <Statistic
-              title="Total Views"
-              value={currentStats.totalViews}
-              valueStyle={{
-                color: "#000",
-                fontSize: "32px",
-                fontWeight: "bold",
-              }}
-            />
-          </div>
-        </Col> */}
-
-        {/* Best Matches */}
-        {/* <Col xs={24} sm={12} lg={6}>
-          <div className="p-4 bg-white rounded-2xl shadow-sm">
-            <Statistic
-              title="Best Matches"
-              value={currentStats.bestMatches}
-              valueStyle={{
-                color: "#000",
-                fontSize: "32px",
-                fontWeight: "bold",
-              }}
-            />
-          </div>
-        </Col> */}
       </Row>
     </div>
   );

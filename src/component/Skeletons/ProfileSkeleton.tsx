@@ -26,7 +26,7 @@ const ProfileSkeleton = () => {
                 <Col xs={24} lg={15}>
                     <Space direction="vertical" style={{ width: "100%" }} size="large">
                         {/* Score Card Skeleton */}
-                        <Card className="rounded-xl" style={{ background: '#f5f5f5' }}>
+                        <Card className="rounded-xl">
                             <Skeleton active paragraph={{ rows: 1 }} title={{ width: '30%' }} />
                         </Card>
 

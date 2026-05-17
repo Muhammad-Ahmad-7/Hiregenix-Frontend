@@ -19,7 +19,7 @@ export interface JobResponse {
   company?: CompanyResponse;
   isSaved?: boolean;
   isApplied?: boolean;
-  deadline: string; // ISO date string
+  deadline: Date; // ISO date string
   createdAt: string;
   updatedAt: string;
   status: "open" | "closed";
@@ -40,6 +40,7 @@ export interface JobResponse {
   requirements: string[];
   interviewGuideline: string;
   __v: number;
+  totalInterviews: number
 }
 
 export interface JobPosting {
@@ -55,7 +56,7 @@ export interface JobPosting {
   location: Location;
   salaryRange: SalaryRange;
   deadline: string; // ISO date string
-  status: "scheduled" | "completed" | "rejected" | "cancelled";
+  status: "open" | "closed";
 }
 
 export interface JobUpdate {
@@ -126,13 +127,14 @@ export interface AppliedJob {
   _id: string;
   candidateId: string;
   companyId: string;
-  jobId: { title: string };
+  jobId: { title: string, role: string, workMode: WorkMode, deadline: string };
   type: "live" | "recorded";
   scheduledDate: string; // ISO Date
   status: "scheduled" | "completed" | "cancelled";
   createdAt: string;
   updatedAt: string;
   aiResult: AiResult;
+
   __v: number;
 }
 export interface ScheduledInterview {
@@ -152,6 +154,8 @@ export interface ScheduledInterview {
   }
   __v: number;
   _raw: ScheduledInterview;
+  rank: number;
+  totalApplicants: number;
 }
 
 export interface TodayInterviews {
@@ -212,6 +216,7 @@ export interface ScheduledInterviewWithCandidate {
   updatedAt: string;
   totalInterviews: number; // total interviews for this job
   __v: number;
+  rank: number; // candidate's rank among all applicants for this job
 }
 export interface CandidateMini {
   _id: string;
@@ -249,4 +254,61 @@ export interface InterviewQuestionResultApiResponse {
   stages: {
     uploaded: boolean;
   }
+}
+
+export interface InterviewOverallAnalysis {
+  _id: string;
+  overallImprovementSuggestions: string[];
+  topStrengths: string[];
+  topWeaknesses: string[];
+  commonMissingConcepts: string[];
+  interviewSummary: string;
+  pdfUrl: string;
+}
+
+export interface InterviewQuestionResult {
+  _id: string;
+  questionId: string;
+  questionText: string;
+  videoUrl: string | null;
+  lLMAnalysis: LLMAnalysis;
+  sttData: {
+    text: string;
+  }
+}
+
+export interface LLMAnalysis {
+  scores: Scores;
+  fluencyAssessment: FluencyAssessment;
+  insights: Insights;
+  answerQuality: string;
+  integrity: Integrity;
+  shortSummary: string;
+}
+
+export interface Scores {
+  contentScore: number;
+  communicationScore: number;
+  fluencyScore: number;
+  confidenceScore: number;
+  overallScore: number;
+}
+
+export interface FluencyAssessment {
+  grammarQuality: string;
+  speechFlow: string;
+  paceAssessment: string;
+  detectedIssues: string[];
+}
+
+export interface Insights {
+  strengths: string[];
+  weaknesses: string[];
+  missingConcepts: string[];
+  improvementSuggestions: string[];
+}
+
+export interface Integrity {
+  integrityConcern: boolean;
+  integrityNotes: string | null;
 }

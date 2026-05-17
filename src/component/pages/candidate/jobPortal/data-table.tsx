@@ -346,7 +346,7 @@ export default function DataTable() {
   );
 
   return (
-    <div className="w-full bg-white rounded-lg shadow-sm p-6">
+    <div className="w-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Records</h1>
@@ -359,41 +359,43 @@ export default function DataTable() {
         </Button>
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-4">
-        <Input
-          placeholder="Search records..."
-          prefix={<SearchOutlined className="text-gray-400" />}
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          className="max-w-xs"
-          style={{ borderRadius: "6px" }}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        {/* Search Bar */}
+        <div className="mb-4">
+          <Input
+            placeholder="Search records..."
+            prefix={<SearchOutlined className="text-gray-400" />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="max-w-xs"
+            style={{ borderRadius: "6px" }}
+          />
+        </div>
+
+        {/* Tabs */}
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={tabItems}
+          className="mb-6"
+        />
+
+        {/* Table */}
+        <Table
+          columns={columns}
+          dataSource={filteredData}
+          pagination={{
+            pageSize: 10,
+            total: filteredData.length,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `Total ${total} items`,
+          }}
+          scroll={{ x: 1200 }}
+          className="bg-white"
+          rowClassName="hover:bg-gray-50"
         />
       </div>
-
-      {/* Tabs */}
-      <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        items={tabItems}
-        className="mb-6"
-      />
-
-      {/* Table */}
-      <Table
-        columns={columns}
-        dataSource={filteredData}
-        pagination={{
-          pageSize: 10,
-          total: filteredData.length,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `Total ${total} items`,
-        }}
-        scroll={{ x: 1200 }}
-        className="bg-white"
-        rowClassName="hover:bg-gray-50"
-      />
     </div>
   );
 }

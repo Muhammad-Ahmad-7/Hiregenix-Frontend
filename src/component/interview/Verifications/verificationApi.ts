@@ -21,24 +21,24 @@ export async function mockLivenessCheck(
 
 export async function faceVerification(
     _imageDataUrl: string
-): Promise<{ faceVerified: boolean }> {
+): Promise<{ faceVerified: boolean, score: number }> {
     // TODO: replace with:
     const blob = await (await fetch(_imageDataUrl)).blob();
     const file = new File([blob], `face-capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
     const res = await verifyCandidateIdentityApi(file);
     if (!res || res.status !== "Success") {
         toast.error("Face verification failed — please try again.");
-        return { faceVerified: false }
+        return { faceVerified: false, score: 0 }
     }
     if (res.data === undefined) {
         toast.error("Face verification failed — please try again.");
-        return { faceVerified: false }
+        return { faceVerified: false, score: 0 }
     }
     const { similarity } = res.data.verificationResult;
     if (similarity > 90) {
-        toast.success("Face verification successful!");
-        return { faceVerified: true };
+        // toast.success("Face verification successful!");
+        return { faceVerified: true, score: similarity };
     }
-    toast.error("Face verification failed — please try again.");
-    return { faceVerified: false };
+    // toast.error("Face verification failed — please try again.");
+    return { faceVerified: false, score: similarity };
 }

@@ -20,11 +20,13 @@ const messagesSlice = createSlice({
   reducers: {
     // 🔹 Replace entire message list (when loading chat)
     setMessages(state, action: PayloadAction<IMessage[]>) {
-      if (state.messages.length === 0) {
-        state.messages = action.payload;
-      } else {
-        state.messages = [...action.payload, ...state.messages];
-      }
+      state.messages = action.payload;
+    },
+
+    // 🔹 Prepend older messages (pagination)
+    prependMessages(state, action: PayloadAction<IMessage[]>) {
+      if (action.payload.length === 0) return;
+      state.messages = [...action.payload, ...state.messages];
     },
 
     // 🔹 Push single message (real-time receive or send)
@@ -67,7 +69,7 @@ const messagesSlice = createSlice({
       state.messages.forEach((msg) => {
         if (
           msg.chat === chatId &&
-          msg.sender !== userId &&
+          msg.sender === userId &&
           msg.status !== "seen"
         ) {
           console.log("hang", msg.sender);
@@ -86,7 +88,7 @@ const messagesSlice = createSlice({
       state.messages.forEach((msg) => {
         if (
           msg.chat === chatId &&
-          msg.sender !== userId &&
+          msg.sender === userId &&
           msg.status !== "seen"
         ) {
           console.log("hang", msg.sender);
@@ -118,6 +120,7 @@ const messagesSlice = createSlice({
 
 export const {
   setMessages,
+  prependMessages,
   addMessage,
   updateMessageStatus,
   updateAllMessagesStatusToSeen,

@@ -14,9 +14,9 @@ export const getAllJobsApplicationsApi = async () => {
 // /job/interview-applications/
 export const getSpecificJobApplicationsApi = async (
   jobId: string,
-  params: { page: number; limit: number }
+  params: { page: number; limit: number; status?: string; filter?: string }
 ) => {
-  return safeApiCall<{ interviews: ScheduledInterviewWithCandidate[] }>({
+  return safeApiCall<{ interviews: ScheduledInterviewWithCandidate[], scheduledInterviewsCount: number }>({
     apiCall: () =>
       api.get(`/job/interview-applications/${jobId}`, {
         params,

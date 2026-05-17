@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { Table, Tabs, Modal, Avatar, DatePicker, Button, Descriptions, Tag, GetProps, Spin } from "antd";
 import { getAllInterviewsApi, scheduleInterviewApi } from "@/app/api/candidate/interview.api";
 import { ScheduledInterview } from "@/constants/Interfaces/Types/Jobs.interface";
 import { EyeFilled } from "@ant-design/icons";
 import { DateTime } from "luxon";
 import toast from "react-hot-toast";
+import TableSkeleton from "@/component/Skeletons/TableSkeleton";
 
 type RangePickerProps = GetProps<typeof DatePicker.RangePicker>;
 
@@ -17,18 +19,14 @@ interface PaginationMeta {
   totalPages: number;
 }
 
-interface AIReport {
-  topStrengths: string[];
-  topWeaknesses: string[];
-  overallImprovementSuggestions: string[];
-}
-
 // Tab key → API status value mapping
 const TAB_STATUS_MAP: Record<string, string | undefined> = {
   all: undefined,
   scheduled: "scheduled",
   completed: "completed",
-  rejected: "cancelled",
+  rejected: "rejected",
+  hired: "hired",
+  ended: "ended",
 };
 
 const JobApplicationsTable = () => {
@@ -37,11 +35,6 @@ const JobApplicationsTable = () => {
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-
-  // AI Report modal state
-  const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<AIReport | null>(null);
-  const [selectedJobTitle, setSelectedJobTitle] = useState("");
 
   const PAGE_SIZE = 5;
 
@@ -179,6 +172,8 @@ const JobApplicationsTable = () => {
       type: interview.job?.workMode || "N/A",
       date: formatDate(interview.scheduledDate),
       status: interview.status,
+      totalApplicants: interview.totalApplicants ?? 0,
+      rank: typeof interview.rank === 'number' ? interview.rank : null,
       report: interview.report || null,
       _raw: interview,
     }));
@@ -188,13 +183,38 @@ const JobApplicationsTable = () => {
       string,
       { color: string; background: string; border?: string; text?: string }
     > = {
-      scheduled: { color: "#096dd9", background: "#e6f7ff", text: "Scheduled" }, // blue
-      completed: { color: "#391085", background: "#f3e6ff", text: "Completed" }, // purple
-      cancelled: { color: "#a8071a", background: "#fff1f0", text: "Rejected" }, // red
-      pending: { color: "#ad8b00", background: "#fffbe6", text: "Pending" }, // yellow
+      scheduled: {
+        color: "var(--status-scheduled-text)",
+        background: "var(--status-scheduled-bg)",
+        text: "Scheduled",
+      },
+      completed: {
+        color: "var(--status-completed-text)",
+        background: "var(--status-completed-bg)",
+        text: "Completed",
+      },
+      rejected: {
+        color: "var(--status-rejected-text)",
+        background: "var(--status-rejected-bg)",
+        text: "Rejected",
+      },
+      hired: {
+        color: "var(--status-hired-text)",
+        background: "var(--status-hired-bg)",
+        text: "Hired",
+      },
+      ended: {
+        color: "var(--status-ended-text)",
+        background: "var(--status-ended-bg)",
+        text: "Ended",
+      },
     };
 
-    const config = statusConfig[status] || { color: "#666", background: "#f0f0f0", text: status };
+    const config = statusConfig[status] || {
+      color: "var(--status-default-text)",
+      background: "var(--status-default-bg)",
+      text: status,
+    };
 
     return (
       <Tag
@@ -209,12 +229,6 @@ const JobApplicationsTable = () => {
         {config.text}
       </Tag>
     );
-  };
-
-  const openReportModal = (report: AIReport, jobTitle: string) => {
-    setSelectedReport(report);
-    setSelectedJobTitle(jobTitle);
-    setReportModalOpen(true);
   };
 
   const columns = [
@@ -251,7 +265,7 @@ const JobApplicationsTable = () => {
       render: (type: string) => <span className="capitalize">{type}</span>,
     },
     {
-      title: "Date",
+      title: "Scheduled Date",
       dataIndex: "date",
       key: "date",
     },
@@ -262,17 +276,39 @@ const JobApplicationsTable = () => {
       render: (status: string) => getStatusTag(status),
     },
     {
+      title: "Your Rank",
+      dataIndex: "totalApplicants",
+      key: "applicants",
+      render: (_: unknown, record: ReturnType<typeof getTableData>[number]) => {
+        const total = record.totalApplicants ?? record._raw?.totalApplicants ?? 0;
+        const rank = record.rank ?? record._raw?.rank ?? null;
+        const isJobClosed = record._raw?.job?.status === "closed";
+        return (
+          <div className="text-sm text-gray-700">
+            {isJobClosed && rank !== null && rank !== undefined ? (
+              <>
+                <span className="font-semibold text-gray-900">{rank}</span>
+                <span className="text-xs text-gray-500"> &nbsp;(Total Applicants {total})</span>
+              </>
+            ) : (
+              <span className="text-xs text-gray-500">(Rank pending)</span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
       title: "Actions",
       key: "actions",
       render: (_: unknown, record: ReturnType<typeof getTableData>[number]) => (
         <div className="flex gap-2 flex-wrap">
           {record.report ? (
-            <a
-              className="text-purple-600 hover:text-purple-700 text-sm whitespace-nowrap"
-              onClick={() => openReportModal(record.report as AIReport, record.title)}
+            <Link
+              href={`/candidate/job-analytics/${record.key}`}
+              className="text-purple-600 hover:text-purple-700 text-sm whitespace-nowrap inline-flex items-center gap-1"
             >
-              <EyeFilled /> AI Report
-            </a>
+              <EyeFilled /> View Report
+            </Link>
           ) : (
             <span className="text-gray-400 text-sm">No Actions</span>
           )}
@@ -285,7 +321,9 @@ const JobApplicationsTable = () => {
     { key: "all", label: "All jobs" },
     { key: "scheduled", label: "Scheduled" },
     { key: "completed", label: "Completed" },
+    { key: "hired", label: "Hired" },
     { key: "rejected", label: "Rejected" },
+    { key: "ended", label: "Ended" },
   ];
 
   const tableData = getTableData();
@@ -296,7 +334,7 @@ const JobApplicationsTable = () => {
         <h1 className="text-2xl font-bold text-gray-900">Your Job Applications</h1>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow-sm w-full">
+      <div className="bg-white card p-4 rounded-lg shadow-sm w-full">
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
@@ -314,98 +352,32 @@ const JobApplicationsTable = () => {
           </div>
         </div>
 
-        <Table
-          columns={columns}
-          dataSource={tableData}
-          loading={loading}
-          pagination={{
-            current: currentPage,
-            total: meta?.total ?? tableData.length,
-            pageSize: PAGE_SIZE,
-            showSizeChanger: false,
-            onChange: (page) => setCurrentPage(page),
-            className: "flex justify-end",
-            itemRender: (page, type, originalElement) => {
-              if (type === "jump-prev" || type === "jump-next")
-                return <span className="px-2">...</span>;
-              return originalElement;
-            },
-          }}
-          className="border border-gray-200 rounded-lg overflow-x-auto"
-        />
+        {
+          loading ? (
+            <TableSkeleton />
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={tableData}
+              pagination={{
+                current: currentPage,
+                total: meta?.total ?? tableData.length,
+                pageSize: PAGE_SIZE,
+                showSizeChanger: false,
+                onChange: (page) => setCurrentPage(page),
+                className: "flex justify-end",
+                itemRender: (page, type, originalElement) => {
+                  if (type === "jump-prev" || type === "jump-next")
+                    return <span className="px-2">...</span>;
+                  return originalElement;
+                },
+              }}
+              className="border border-gray-200 rounded-lg overflow-x-auto chat-list-scroll"
+            />
+          )
+        }
       </div>
 
-      {/* AI Report Modal */}
-      <Modal
-        open={reportModalOpen}
-        onCancel={() => setReportModalOpen(false)}
-        footer={null}
-        width={680}
-        title={
-          <div className="flex items-center gap-2">
-            <span className="text-purple-600 text-lg">✦</span>
-            <span className="text-base font-semibold text-gray-900">
-              AI Interview Report
-            </span>
-            {selectedJobTitle && (
-              <span className="text-sm font-normal text-gray-500">
-                — {selectedJobTitle}
-              </span>
-            )}
-          </div>
-        }
-      >
-        {selectedReport && (
-          <div className="flex flex-col gap-5 pt-2">
-
-            {/* Strengths */}
-            <div className="rounded-lg border border-green-100 bg-green-50 p-4">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-green-700 mb-3">
-                <span className="text-base">💪</span> Top Strengths
-              </h3>
-              <ul className="flex flex-col gap-2">
-                {selectedReport.topStrengths.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-green-400" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Weaknesses */}
-            <div className="rounded-lg border border-red-100 bg-red-50 p-4">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-red-700 mb-3">
-                <span className="text-base">⚠️</span> Top Weaknesses
-              </h3>
-              <ul className="flex flex-col gap-2">
-                {selectedReport.topWeaknesses.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-400" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Improvement Suggestions */}
-            <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-blue-700 mb-3">
-                <span className="text-base">🚀</span> Improvement Suggestions
-              </h3>
-              <ul className="flex flex-col gap-2">
-                {selectedReport.overallImprovementSuggestions.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-400" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-          </div>
-        )}
-      </Modal>
       {/* Job Detail Modal */}
       <Modal
         open={jobModalOpen}

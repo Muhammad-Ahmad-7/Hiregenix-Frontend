@@ -22,6 +22,7 @@ import { ExperienceLevel, WorkMode } from "@/constants/enums";
 import { generateJobDataUsingAIApi } from "@/app/api/company/jobs.api";
 import { SparklesIcon } from "lucide-react";
 import toast from "react-hot-toast";
+import { pakistanCities, requirementsOptions, skillsOptions } from "@/constants/job";
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -36,10 +37,8 @@ interface CreateJobFormValues {
   requirements: string[];
   workMode: string;
   city: string;
-  country: string;
   minSalary: number;
   maxSalary: number;
-  currency: string;
   deadline: Dayjs;
   status: "open" | "closed";
 }
@@ -81,59 +80,11 @@ export default function CreateJob() {
     { label: "Senior", value: "senior" },
   ];
 
-  const statuses = [
-    { label: "Open", value: "open" },
-    { label: "Closed", value: "closed" },
-  ];
-
-  const skillsOptions = [
-    { label: "JavaScript", value: "JavaScript" },
-    { label: "TypeScript", value: "TypeScript" },
-    { label: "React", value: "React" },
-    { label: "Node.js", value: "Node.js" },
-    { label: "Python", value: "Python" },
-    { label: "Java", value: "Java" },
-    { label: "Appium", value: "Appium" },
-    { label: "Postman", value: "Postman" },
-    { label: "JIRA", value: "JIRA" },
-    { label: "TestRail", value: "TestRail" },
-    { label: "SQL", value: "SQL" },
-    { label: "MongoDB", value: "MongoDB" },
-    { label: "AWS", value: "AWS" },
-    { label: "Docker", value: "Docker" },
-    { label: "Git", value: "Git" },
-  ];
-
-  const requirementsOptions = [
-    {
-      label: "Bachelor's degree in Computer Science or related field",
-      value: "Bachelor's degree in Computer Science or related field",
-    },
-    { label: "1-3 years of experience", value: "1-3 years of experience" },
-    { label: "3-5 years of experience", value: "3-5 years of experience" },
-    { label: "5+ years of experience", value: "5+ years of experience" },
-    { label: "Strong problem-solving skills", value: "Strong problem-solving skills" },
-    { label: "Excellent communication skills", value: "Excellent communication skills" },
-    {
-      label: "Ability to work in a team environment",
-      value: "Ability to work in a team environment",
-    },
-    {
-      label: "Experience with Agile methodologies",
-      value: "Experience with Agile methodologies",
-    },
-    { label: "Knowledge of mobile testing", value: "Knowledge of mobile testing" },
-    {
-      label: "Experience with bug tracking tools",
-      value: "Experience with bug tracking tools",
-    },
-    {
-      label: "Self-motivated and detail-oriented",
-      value: "Self-motivated and detail-oriented",
-    },
-  ];
-
   const onFinish = async (values: CreateJobFormValues) => {
+    if (values.minSalary > values.maxSalary) {
+      toast.error("Min salary cannot be greater than max salary.");
+      return;
+    }
     const jobData: JobPostingCompany = {
       title: values.title,
       role: values.role,
@@ -143,14 +94,14 @@ export default function CreateJob() {
       requiredSkills: values.skills || [],
       requirements: values.requirements || [],
       workMode: values.workMode as WorkMode,
-      location: { city: values.city, country: values.country },
+      location: { city: values.city, country: "Pakistan" }, // Country is hardcoded for now
       salaryRange: {
         min: Number(values.minSalary),
         max: Number(values.maxSalary),
-        currency: values.currency,
+        currency: "PKR", // Currency is hardcoded for now
       },
       deadline: values.deadline?.toDate?.().toISOString() || "",
-      status: values.status,
+      status: "open", // Defaulting to open, can be changed later if needed
     };
 
     try {
@@ -219,7 +170,7 @@ export default function CreateJob() {
   }: {
     type: "description" | "requirements" | "interviewGuideline";
   }) => (
-    <Tooltip title={!canAutoFill ? "Complete required fields first" : "Auto-fill using AI"}>
+    <Tooltip title={!canAutoFill ? "Complete the above fields first" : "Auto-fill using AI"}>
       <Button
         onClick={() => generateJobData(type)}
         loading={aiLoading[type]}
@@ -233,40 +184,43 @@ export default function CreateJob() {
   );
 
   return (
-    <Col xs={24} md={16} className="p-4 lg:px-16 lg:py-8">
+    <Col xs={24} md={20} lg={16} className="p-4 lg:px-16 lg:py-8 mx-auto">
       <div className="flex items-center justify-between !mb-6">
         <Title level={2} className="!mb-0">
           Create New Job
         </Title>
       </div>
 
-      {/* 
-        KEY FIX: Removed `disabled` from <Form> entirely.
-        Disabling the whole form was blocking manual typing whenever
-        any aiLoading key got stuck or was briefly true.
-        Individual fields are disabled below only when needed.
-      */}
       <Form
         form={form}
         layout="vertical"
         onFinish={onFinish}
         autoComplete="off"
+        requiredMark="optional"
       >
-        {/* Row 1: Title & Role */}
-        <Row gutter={16}>
-          <Col span={12}>
+        {/* Row 1: Title & Role - Stacks on mobile (24), side-by-side on tablet+ (12) */}
+        <Row gutter={[16, 0]}>
+          <Col xs={24} sm={12}>
             <Form.Item
               name="title"
-              label="Job Title"
+              label={
+                <span>
+                  Job Title <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Job title is required" }]}
             >
               <Input placeholder="e.g. Mobile App Tester" disabled={loading} />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col xs={24} sm={12}>
             <Form.Item
               name="role"
-              label="Job Role"
+              label={
+                <span>
+                  Job Role <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Job role is required" }]}
             >
               <Input placeholder="e.g. QA Engineer" disabled={loading} />
@@ -275,11 +229,15 @@ export default function CreateJob() {
         </Row>
 
         {/* Row 2: Experience Level & Status */}
-        <Row gutter={16}>
-          <Col span={12}>
+        <Row gutter={[16, 0]}>
+          <Col xs={24} sm={12}>
             <Form.Item
               name="experienceLevel"
-              label="Experience Level"
+              label={
+                <span>
+                  Experience Level <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Experience level is required" }]}
             >
               <Select
@@ -289,27 +247,14 @@ export default function CreateJob() {
               />
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item
-              name="status"
-              label="Status"
-              rules={[{ required: true, message: "Status is required" }]}
-            >
-              <Select
-                placeholder="Select job status"
-                options={statuses}
-                disabled={loading}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 3: Work Mode & Deadline */}
-        <Row gutter={16}>
-          <Col span={12}>
+          <Col xs={24} sm={12}>
             <Form.Item
               name="workMode"
-              label="Work Mode"
+              label={
+                <span>
+                  Work Mode <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Work mode is required" }]}
             >
               <Select
@@ -319,10 +264,18 @@ export default function CreateJob() {
               />
             </Form.Item>
           </Col>
-          <Col span={12}>
+        </Row>
+
+        {/* Row 3: City & Deadline */}
+        <Row gutter={[16, 0]}>
+          <Col xs={24} sm={12}>
             <Form.Item
               name="deadline"
-              label="Application Deadline"
+              label={
+                <span>
+                  Application Deadline <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "Deadline is required" }]}
             >
               <DatePicker
@@ -332,37 +285,40 @@ export default function CreateJob() {
               />
             </Form.Item>
           </Col>
-        </Row>
-
-        {/* Row 4: City & Country */}
-        <Row gutter={16}>
-          <Col span={12}>
+          <Col xs={24} sm={12}>
             <Form.Item
               name="city"
-              label="City"
+              label={
+                <span>
+                  City <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "City is required" }]}
             >
-              <Input placeholder="City" disabled={loading} />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="country"
-              label="Country"
-              rules={[{ required: true, message: "Country is required" }]}
-            >
-              <Input placeholder="Country" disabled={loading} />
+              <Select
+                showSearch
+                placeholder="Select city"
+                options={pakistanCities}
+                disabled={loading}
+                filterOption={(input, option) =>
+                  option ? option.label.toLowerCase().includes(input.toLowerCase()) : false
+                }
+              />
             </Form.Item>
           </Col>
         </Row>
 
-        {/* Row 5: Salary */}
-        <Row gutter={16}>
-          <Col span={8}>
+        {/* Row 5: Salary - Stacks on mobile, 3 columns on tablet/desktop */}
+        <Row gutter={[16, 0]}>
+          <Col xs={24} md={12}>
             <Form.Item
               name="minSalary"
-              label="Min Salary"
-              rules={[{ required: true, message: "Min salary is required" }]}
+              label={
+                <span>
+                  Min Salary (PKR) <span className="text-red-500">*</span>
+                </span>
+              }
+              rules={[{ required: true, message: "Min salary is required" }, { type: "number", min: 0, message: "Min salary must be a positive number" }]}
             >
               <InputNumber
                 placeholder="80000"
@@ -372,11 +328,15 @@ export default function CreateJob() {
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} md={12}>
             <Form.Item
               name="maxSalary"
-              label="Max Salary"
-              rules={[{ required: true, message: "Max salary is required" }]}
+              label={
+                <span>
+                  Max Salary (PKR) <span className="text-red-500">*</span>
+                </span>
+              }
+              rules={[{ required: true, message: "Max salary is required" }, { type: "number", min: 0, message: "Max salary must be a positive number" }]}
             >
               <InputNumber
                 placeholder="130000"
@@ -386,33 +346,22 @@ export default function CreateJob() {
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
-            <Form.Item
-              name="currency"
-              label="Currency"
-              rules={[{ required: true, message: "Currency is required" }]}
-            >
-              <Input placeholder="PKR" disabled={loading} />
-            </Form.Item>
-          </Col>
         </Row>
 
-        {/* Skills */}
-        <Row gutter={16}>
+        {/* Skills, Description, etc. (Full width) */}
+        <Row>
           <Col span={24}>
             <Form.Item
               name="skills"
               label={
                 <span>
-                  Skills{" "}
-                  <span style={{ color: "rgba(0,0,0,.45)" }}>(up to 5)</span>
+                  Required Skills <span className="text-red-500">*</span>
                 </span>
               }
               rules={[{ required: true, message: "At least one skill is required" }]}
             >
               <Select
                 mode="tags"
-                maxCount={5}
                 style={{ width: "100%" }}
                 placeholder="Type or select skills"
                 options={skillsOptions}
@@ -422,48 +371,61 @@ export default function CreateJob() {
           </Col>
         </Row>
 
-        {/* Description */}
-        <div className="mt-2 mb-2 flex justify-end">
-          <AutoFillButton type="description" />
-        </div>
-        <Form.Item
-          name="description"
-          label="Job Description"
-          rules={[{ required: true, message: "Job description is required" }]}
-        >
-          {/* KEY FIX: TextArea instead of Input — lets users type freely */}
-          <TextArea
-            rows={5}
-            placeholder="Describe the role..."
-            disabled={loading || aiLoading.description}
-          />
-        </Form.Item>
+        {/* AI Assisted Sections */}
+        <div className="space-y-6">
+          <div>
+            <div className="mb-2 flex justify-end">
+              <AutoFillButton type="description" />
+            </div>
+            <Form.Item
+              name="description"
+              label={
+                <span>
+                  Job Description <span className="text-red-500">*</span>
+                </span>
+              }
+              rules={[{ required: true, message: "Job description is required" }]}
+            >
+              <TextArea
+                rows={5}
+                placeholder="Describe the role..."
+                disabled={loading || aiLoading.description}
+              />
+            </Form.Item>
+          </div>
 
-        {/* Interview Guideline */}
-        <div className="mt-2 mb-2 flex justify-end">
-          <AutoFillButton type="interviewGuideline" />
-        </div>
-        <Form.Item
-          name="interviewGuideline"
-          label="Interview Guideline"
-          rules={[{ required: true, message: "Interview guideline is required" }]}
-        >
-          <TextArea
-            rows={5}
-            placeholder="Explain what the interviewer should focus on..."
-            disabled={loading || aiLoading.interviewGuideline}
-          />
-        </Form.Item>
+          <div>
+            <div className="mb-2 flex justify-end">
+              <AutoFillButton type="interviewGuideline" />
+            </div>
+            <Form.Item
+              name="interviewGuideline"
+              label={
+                <span>
+                  Interview Guideline <span className="text-red-500">*</span>
+                </span>
+              }
+              rules={[{ required: true, message: "Interview guideline is required" }]}
+            >
+              <TextArea
+                rows={5}
+                placeholder="Explain what the interviewer should focus on..."
+                disabled={loading || aiLoading.interviewGuideline}
+              />
+            </Form.Item>
+          </div>
 
-        {/* Requirements */}
-        <div className="mt-2 mb-2 flex justify-end">
-          <AutoFillButton type="requirements" />
-        </div>
-        <Row gutter={16}>
-          <Col span={24}>
+          <div>
+            <div className="mb-2 flex justify-end">
+              <AutoFillButton type="requirements" />
+            </div>
             <Form.Item
               name="requirements"
-              label="Requirements"
+              label={
+                <span>
+                  Requirements <span className="text-red-500">*</span>
+                </span>
+              }
               rules={[{ required: true, message: "At least one requirement is required" }]}
             >
               <Select
@@ -474,29 +436,24 @@ export default function CreateJob() {
                 disabled={loading || aiLoading.requirements}
               />
             </Form.Item>
-          </Col>
-        </Row>
+          </div>
+        </div>
 
-        {/* Submit */}
-        <div className="mt-6 flex justify-start">
+        {/* Submit Section */}
+        <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
           <UiButton
             htmlType="submit"
             type="primary"
-            block
             size="large"
             loading={loading}
             disabled={loading || isAnyAiLoading}
-            className="!rounded-xl !w-40"
+            className="!rounded-xl !w-full sm:!w-40"
           >
             {loading ? "Creating..." : "Create Job"}
           </UiButton>
-        </div>
 
-        {loading && (
-          <div className="flex justify-center items-center mt-6">
-            <Spin />
-          </div>
-        )}
+          {loading && <Spin className="ml-4" />}
+        </div>
       </Form>
     </Col>
   );

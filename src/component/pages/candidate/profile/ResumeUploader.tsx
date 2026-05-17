@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { Typography, Upload, message, Space } from "antd";
+import { Typography, Upload, Space } from "antd";
 import { UploadOutlined, PaperClipOutlined } from "@ant-design/icons";
 import UiButton from "@/component/common/CustomButton";
 import { uploadResumeApi } from "@/app/api/candidate/profile.api";
 import { UploadChangeParam, UploadFile } from "antd/es/upload";
+import toast from "react-hot-toast";
 
 const { Title, Text } = Typography;
 
@@ -28,7 +29,7 @@ export default function ResumeUploader() {
 
   const handleUpload = async () => {
     if (!file) {
-      message.warning("Please select a file before uploading!");
+      toast.error("Please select a file before uploading!");
       return;
     }
 
@@ -39,10 +40,10 @@ export default function ResumeUploader() {
       setUploading(true);
       const res = await uploadResumeApi(formData); // your API call
       console.log("✅ Upload response:", res);
-      message.success("Resume uploaded successfully!");
+      toast.success("Resume uploaded successfully!");
     } catch (error) {
       console.error("❌ Upload failed:", error);
-      message.error("Failed to upload resume");
+      toast.error("Failed to upload resume");
     } finally {
       setUploading(false);
     }

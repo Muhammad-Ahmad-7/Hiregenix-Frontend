@@ -2,12 +2,14 @@
 import type { Dispatch, SetStateAction } from "react";
 
 type SmallReplyCardProps = {
+  setReplyingTo?: () => void,
   setSelectReplyId: Dispatch<SetStateAction<string | null>>;
   messageId: string;
   text?: string;
 };
 
 export default function SmallReplyCard({
+  setReplyingTo,
   setSelectReplyId,
   text = "Wo Tu Nahi jay ga",
   messageId,
@@ -32,11 +34,15 @@ export default function SmallReplyCard({
       </div>
 
       {/* Close icon */}
+
       <span
         onClick={(e) => {
           e.stopPropagation();
           console.log("delelelele");
           setSelectReplyId(null);
+          if (setReplyingTo) {
+            setReplyingTo();
+          }
         }}
         className="text-gray-500 px-3 pt-2 text-sm self-start"
       >

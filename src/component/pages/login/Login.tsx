@@ -1,19 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
-import { loginApi } from "@/app/api/auth.api"; // or signInApi if that’s correct
+import { googleAuth, loginApi } from "@/app/api/auth.api"; // or signInApi if that’s correct
 import UiButton from "@/component/common/CustomButton";
 import EmailIcon from "@/icons/socials/EmailIcon";
-import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
-import { Col, Input, Typography, message } from "antd";
+import { EyeInvisibleOutlined, EyeTwoTone, GoogleCircleFilled } from "@ant-design/icons";
+import { Button, Col, Input, Typography } from "antd";
 import Link from "next/link";
 import { storeToken } from "@/utils/token";
 import { useRouter } from "next/navigation";
 import { AxiosError } from "axios";
+import toast from "react-hot-toast";
+import { useGoogleLogin } from "@react-oauth/google";
 
 const { Title, Text } = Typography;
 
-export default function LoginScreen() {
+export default function LoginScreen({ role }: { role: "company" | "candidate" }) {
   const [email, setEmail] = useState("abdullahusman5630@gmail.com");
   const [password, setPassword] = useState("A123456@i");
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,7 @@ export default function LoginScreen() {
     role: "candidate" | "company";
   }) => {
     if (isProfileCompleted) {
-      router.replace(`${role}/dashboard`);
+      router.replace(`/${role}/dashboard`);
     } else {
       router.replace(`/profile-completion/${role}`);
     }
@@ -47,6 +49,9 @@ export default function LoginScreen() {
         storeToken(res.data.accessToken);
         const role = res.data.user.role;
         const isProfileCompleted = res.data.user.isProfileCompleted;
+        toast.success(res.message || "Sign in successful!");
+        setEmail("");
+        setPassword("");
         if (role == "candidate") {
           handleRedirections({ isProfileCompleted, role });
         } else if (role == "company") {
@@ -56,7 +61,7 @@ export default function LoginScreen() {
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
       console.error(error);
-      message.error(error?.message || "Sign in failed");
+      toast.error(error?.message || "Sign in failed");
     } finally {
       //   setEmail("");
       //   setPassword("");
@@ -64,33 +69,84 @@ export default function LoginScreen() {
     }
   };
 
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const responseGoogle = async (authResult: any) => {
+    console.log("Auth Result", authResult)
+    try {
+      if (authResult['code']) {
+        const res = await googleAuth(authResult.code, role); // or "company" based on your logic
+        if (!res || res.status !== "Success") {
+          toast.error('Something went wrong')
+          return
+        }
+        if (!res.data) {
+          toast.error('Invalid Google auth response')
+          return
+        }
+        const { accessToken, user, new: _new } = res.data
+
+        if (_new) {
+          // handleSubscribe(user.email)
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+
+        localStorage.setItem("token", accessToken)
+        toast.success(`Welcome ${_new ? '' : "back"} ${user.role}!`)
+
+        // router.push(`/dashboard/${user.role == "user" ? "user" : "admin"}`)
+        if (user.role === "candidate") {
+          router.push(`/candidate/dashboard`)
+        } else {
+          router.push(`/company/dashboard`)
+        }
+      } else {
+        throw new Error('Invalid Google auth response')
+      }
+    } catch (e) {
+      console.error('Error during Google Login:', e)
+      toast.error('Google login failed')
+    }
+  }
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: responseGoogle,
+    onError: responseGoogle,
+    flow: 'auth-code',
+  })
+
   return (
     <Col
       xs={24}
       md={12}
-      className="!flex !flex-col !justify-center !items-center p-4 lg:p-32"
+      className="auth-panel flex flex-col justify-center items-center min-h-screen p-6 lg:p-12 overflow-y-auto"
     >
       {/* Logo */}
-      <div className="flex w-full">
-        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-lg border border-gray-200 mb-4">
+      <div className="flex w-full mb-4">
+        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-lg border border-gray-200">
           <EmailIcon />
         </div>
       </div>
 
       {/* Form */}
-      <div className="w-full">
-        <Title level={1} className="!mb-2">
-          Sign in with mail
+      <div className="w-full max-w-md">
+        <Title level={1} className="!mb-1">
+          Sign in with email
         </Title>
-        <Text type="secondary">Let’s get started with your job process</Text>
+        <Text type="secondary">
+          Let&apos;s get started with your job process
+        </Text>
 
-        <div className="mt-8 gap-2 flex flex-col">
+        {/* Inputs */}
+        <div className="mt-6 flex flex-col gap-3">
           <Input
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="!rounded-xl"
           />
+
           <Input.Password
             className="!rounded-xl"
             placeholder="Password"
@@ -100,12 +156,16 @@ export default function LoginScreen() {
               visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
             }
           />
-          <div className="w-full flex justify-end">
-            <UiButton type="link">Forgot Password?</UiButton>
+
+          <div className="flex justify-end">
+            <UiButton type="link" className="!p-0" onClick={() => router.push('/auth/forget-password')}>
+              Forgot Password?
+            </UiButton>
           </div>
         </div>
 
-        <div className="mt-4 gap-2 flex flex-col items-center">
+        {/* Actions */}
+        <div className="mt-4 flex flex-col gap-3 w-full">
           <UiButton
             type="primary"
             onClick={handleSignIn}
@@ -116,9 +176,31 @@ export default function LoginScreen() {
           >
             Sign In
           </UiButton>
-          <div className="flex justify-center mt-2">
-            <Text className="font-normal">
-              Don’t have an account? <Link href="/auth/sign-up">Sign Up</Link>
+
+          {/* Divider */}
+          <div className="flex items-center w-full">
+            <div className="flex-grow h-px bg-gray-200" />
+            <span className="mx-2 text-gray-400 text-sm">OR</span>
+            <div className="flex-grow h-px bg-gray-200" />
+          </div>
+
+          {/* Google Button */}
+          <Button
+            icon={<GoogleCircleFilled />}
+            onClick={() => googleLogin()}
+            block
+            size="large"
+            type="default"
+            className="!rounded-xl flex items-center justify-center border-gray-300 hover:!border-gray-400"
+          >
+            Continue with Google
+          </Button>
+
+          {/* Footer */}
+          <div className="text-center mt-1">
+            <Text>
+              Don&apos;t have an account?{" "}
+              <Link href={`/auth/sign-up?role=${role}`}>Sign Up</Link>
             </Text>
           </div>
         </div>

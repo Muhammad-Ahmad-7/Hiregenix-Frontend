@@ -9,7 +9,6 @@ import {
   Col,
   Dropdown,
   Divider,
-  Spin,
   Select,
   Input,
   Modal,
@@ -26,12 +25,13 @@ import {
   CloseOutlined,
   HeartOutlined,
   HeartFilled,
-  ShareAltOutlined,
-  WarningOutlined,
+  // ShareAltOutlined,
+  // WarningOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 
 import UiButton from "@/component/common/CustomButton";
+import JobDetailSkeleton from "@/component/Skeletons/JobDetailSkeleton";
 import IconWrapper from "@/icons/IconWrapper";
 
 import {
@@ -48,9 +48,30 @@ import dayjs, { Dayjs } from "dayjs";
 import { scheduleInterviewApi } from "@/app/api/candidate/interview.api";
 import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const { Title, Paragraph } = Typography;
 const { Search } = Input;
+
+const renderJobListSkeleton = () => (
+  <div className="px-6 py-5 space-y-5">
+    {Array.from({ length: 6 }).map((_, index) => (
+      <div key={index} className="flex w-full items-start gap-4">
+        <div className="h-16 w-16 rounded-lg bg-gray-200 animate-pulse" />
+        <div className="flex-1 min-w-0 space-y-3">
+          <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse" />
+          <div className="h-3 w-1/2 bg-gray-200 rounded animate-pulse" />
+          <div className="flex flex-wrap gap-2">
+            <div className="h-5 w-20 rounded-full bg-gray-200 animate-pulse" />
+            <div className="h-5 w-24 rounded-full bg-gray-200 animate-pulse" />
+            <div className="h-5 w-28 rounded-full bg-gray-200 animate-pulse" />
+          </div>
+          <div className="h-3 w-1/3 bg-gray-200 rounded animate-pulse" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 // ─── Shared job detail content ───────────────────────────────────────────────
 function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
@@ -65,8 +86,8 @@ function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
         <div className="my-4 items-center flex">
           <IconWrapper
-            icon={<BuildFilled className="!text-[#1890FF]" />}
-            bgColorIcon="white"
+            icon={<BuildFilled className="job-portal-icon" />}
+            bgColorIcon="var(--surface)"
           />
           <div className="ml-4">
             <div className="text-sm text-gray-400">Posted</div>
@@ -78,8 +99,8 @@ function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
 
         <div className="my-4 items-center flex">
           <IconWrapper
-            icon={<NotificationFilled className="!text-[#1890FF]" />}
-            bgColorIcon="white"
+            icon={<NotificationFilled className="job-portal-icon" />}
+            bgColorIcon="var(--surface)"
           />
           <div className="ml-4">
             <div className="text-sm text-gray-400">Deadline</div>
@@ -93,8 +114,8 @@ function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
 
         <div className="my-4 items-center flex">
           <IconWrapper
-            icon={<CalendarFilled className="!text-[#1890FF]" />}
-            bgColorIcon="white"
+            icon={<CalendarFilled className="job-portal-icon" />}
+            bgColorIcon="var(--surface)"
           />
           <div className="ml-4">
             <div className="text-sm text-gray-400">Work Mode</div>
@@ -104,8 +125,8 @@ function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
 
         <div className="my-4 items-center flex">
           <IconWrapper
-            icon={<EnvironmentOutlined className="!text-[#1890FF]" />}
-            bgColorIcon="white"
+            icon={<EnvironmentOutlined className="job-portal-icon" />}
+            bgColorIcon="var(--surface)"
           />
           <div className="ml-4">
             <div className="text-sm text-gray-400">Location</div>
@@ -117,8 +138,8 @@ function JobDetailContent({ selectedJob }: { selectedJob: JobResponse }) {
 
         <div className="my-4 items-center flex">
           <IconWrapper
-            icon={<LaptopOutlined className="!text-[#1890FF]" />}
-            bgColorIcon="white"
+            icon={<LaptopOutlined className="job-portal-icon" />}
+            bgColorIcon="var(--surface)"
           />
           <div className="ml-4">
             <div className="text-sm text-gray-400">Experience</div>
@@ -200,6 +221,13 @@ export default function JobDashboard() {
   const [experienceFilter, setExperienceFilter] = useState<string[]>([]);
   const [countryFilter, setCountryFilter] = useState<string | undefined>();
 
+  const [filteredSavedJobsList, setFilteredSavedJobsList] = useState<
+    SavedJobs[]
+  >([]);
+  const [filteredRecommendedJobList, setFilteredRecommendedJobList] = useState<
+    RecommendedJob[]
+  >([]);
+
   const listRef = useRef<HTMLDivElement>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
 
@@ -261,7 +289,7 @@ export default function JobDashboard() {
       setSavingJobId(null);
     }
   };
-
+  const router = useRouter()
   // ---------------------------------------------
   // Handle Dropdown Menu Actions
   // ---------------------------------------------
@@ -270,18 +298,18 @@ export default function JobDashboard() {
       case "save":
         handleSaveJob(jobId);
         break;
-      case "share":
-        navigator.clipboard.writeText(window.location.href);
-        toast.success("Job link copied to clipboard");
-        break;
-      case "report":
-        toast.success("Report functionality coming soon");
-        break;
+      // case "share":
+      //   navigator.clipboard.writeText(window.location.href);
+      //   toast.success("Job link copied to clipboard");
+      //   break;
+      // case "report":
+      //   toast.success("Report functionality coming soon");
+      //   break;
       case "view_profile": {
         const companyId =
           selectedJob?.companyId?._id || selectedJob?.company?._id;
         if (companyId) {
-          window.open(`http://localhost:3000/auth/view/${companyId}`, "_blank");
+          router.push(`http://localhost:3000/candidate/view-profile/${companyId}`);
         }
         break;
       }
@@ -303,14 +331,14 @@ export default function JobDashboard() {
           <HeartOutlined />
         ),
       },
-      { label: "Share", key: "share", icon: <ShareAltOutlined /> },
+      // { label: "Share", key: "share", icon: <ShareAltOutlined /> },
       { type: "divider" as const },
-      {
-        label: "Report",
-        key: "report",
-        icon: <WarningOutlined />,
-        danger: true,
-      },
+      // {
+      //   label: "Report",
+      //   key: "report",
+      //   icon: <WarningOutlined />,
+      //   danger: true,
+      // },
       { label: "View Profile", key: "view_profile", icon: <UserOutlined /> },
     ];
   };
@@ -401,10 +429,10 @@ export default function JobDashboard() {
       filtered = filtered.filter(
         (job) =>
           job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          job.companyId.companyName
-            .toLowerCase()
+          job.companyId?.companyName
+            ?.toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
-          job.role.toLowerCase().includes(searchQuery.toLowerCase()),
+          job.role?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
     if (workModeFilter.length > 0) {
@@ -428,6 +456,79 @@ export default function JobDashboard() {
     }
     setFilteredJobList(filtered);
   }, [jobList, searchQuery, workModeFilter, experienceFilter, countryFilter]);
+
+  // Filter Saved Jobs
+  useEffect(() => {
+    let filtered = [...savedJobsList];
+    if (searchQuery) {
+      filtered = filtered.filter((savedJob) => {
+        const job = savedJob.jobId;
+        return (
+          job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          job.company?.companyName
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          job.role?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      });
+    }
+    if (workModeFilter.length > 0) {
+      filtered = filtered.filter(
+        (savedJob) =>
+          savedJob.jobId.workMode &&
+          workModeFilter.includes(savedJob.jobId.workMode.toLowerCase()),
+      );
+    }
+    if (experienceFilter.length > 0) {
+      filtered = filtered.filter(
+        (savedJob) =>
+          savedJob.jobId.experienceLevel &&
+          experienceFilter.includes(
+            savedJob.jobId.experienceLevel.toLowerCase(),
+          ),
+      );
+    }
+    if (countryFilter) {
+      filtered = filtered.filter(
+        (savedJob) =>
+          savedJob.jobId.location?.country?.toLowerCase() ===
+          countryFilter.toLowerCase(),
+      );
+    }
+    setFilteredSavedJobsList(filtered);
+  }, [
+    savedJobsList,
+    searchQuery,
+    workModeFilter,
+    experienceFilter,
+    countryFilter,
+  ]);
+
+  // Filter Recommended Jobs
+  useEffect(() => {
+    let filtered = [...recommendedJobList];
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (item) =>
+          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.companyName?.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+    }
+    if (workModeFilter.length > 0) {
+      filtered = filtered.filter(
+        (item) =>
+          item.workMode && workModeFilter.includes(item.workMode.toLowerCase()),
+      );
+    }
+    if (experienceFilter.length > 0) {
+      filtered = filtered.filter(
+        (item) =>
+          item.experienceLevel &&
+          experienceFilter.includes(item.experienceLevel.toLowerCase()),
+      );
+    }
+    setFilteredRecommendedJobList(filtered);
+  }, [recommendedJobList, searchQuery, workModeFilter, experienceFilter]);
 
   // ---------------------------------------------
   // Initial fetch
@@ -489,8 +590,10 @@ export default function JobDashboard() {
 
   const handleSchedule = async () => {
     if (selectedDate && selectedJob) {
-      const isoString = new Date(selectedDate.toISOString()).toLocaleDateString('en-CA');
-      console.log("ISO STRING", isoString)
+      const isoString = new Date(selectedDate.toISOString()).toLocaleDateString(
+        "en-CA",
+      );
+      console.log("ISO STRING", isoString);
       setLoadingButton(true);
       const res = await scheduleInterviewApi({
         jobId: selectedJob._id,
@@ -549,36 +652,21 @@ export default function JobDashboard() {
   // JSX UI
   // ---------------------------------------------
   return (
-    <div className="bg-gray-50 h-[calc(100vh-100px)] overflow-hidden relative">
+    <div className="h-[calc(100vh-100px)] overflow-hidden relative">
       {/* ── Two-column layout ───────────────────────────────────────────── */}
       <div className="flex gap-4 h-full">
         {/* ── LEFT: Sidebar ─────────────────────────────────────────────── */}
-        <div className="flex flex-col bg-white rounded-2xl overflow-hidden w-full lg:w-[420px] lg:flex-shrink-0 h-full">
+        <div className="flex flex-col card bg-white overflow-hidden w-full lg:w-[420px] lg:flex-shrink-0 h-full">
           {/* Filters — never scrolls */}
           <div className="flex-shrink-0 p-4">
             <Row gutter={[8, 8]}>
-              <Col xs={24} md={18}>
+              <Col xs={24} md={24}>
                 <Search
                   placeholder="Search jobs, companies, roles..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   prefix={<SearchOutlined />}
                   allowClear
-                />
-              </Col>
-              <Col xs={24} md={6}>
-                <Select
-                  placeholder="Country"
-                  allowClear
-                  style={{ width: "100%" }}
-                  value={countryFilter}
-                  onChange={setCountryFilter}
-                  options={[
-                    { label: "USA", value: "USA" },
-                    { label: "UK", value: "UK" },
-                    { label: "Germany", value: "Germany" },
-                    { label: "Japan", value: "Japan" },
-                  ]}
                 />
               </Col>
             </Row>
@@ -623,11 +711,10 @@ export default function JobDashboard() {
 
               <Col xs={12}>
                 <UiButton
-                  className={`w-full ${
-                    activeTab === "saved"
-                      ? "!text-blue-600 !bg-blue-50"
-                      : "!text-gray-400"
-                  }`}
+                  className={`w-full ${activeTab === "saved"
+                    ? "!text-blue-600 !bg-blue-50"
+                    : "!text-gray-400"
+                    }`}
                   onClick={() => setActiveTab("saved")}
                 >
                   Saved ({savedJobsList.length})
@@ -635,11 +722,10 @@ export default function JobDashboard() {
               </Col>
               <Col xs={12}>
                 <UiButton
-                  className={`w-full ${
-                    activeTab === "recommended"
-                      ? "!text-blue-600 !bg-blue-50"
-                      : "!text-gray-400"
-                  }`}
+                  className={`w-full ${activeTab === "recommended"
+                    ? "!text-blue-600 !bg-blue-50"
+                    : "!text-gray-400"
+                    }`}
                   onClick={() => setActiveTab("recommended")}
                 >
                   Recommended
@@ -647,11 +733,10 @@ export default function JobDashboard() {
               </Col>
               <Col xs={24}>
                 <UiButton
-                  className={`w-full ${
-                    activeTab === "all"
-                      ? "!text-blue-600 !bg-blue-50"
-                      : "!text-gray-400"
-                  }`}
+                  className={`w-full ${activeTab === "all"
+                    ? "!text-blue-600 !bg-blue-50"
+                    : "!text-gray-400"
+                    }`}
                   onClick={() => setActiveTab("all")}
                 >
                   All Jobs ({filteredJobList.length})
@@ -661,142 +746,149 @@ export default function JobDashboard() {
           </div>
 
           {/* Job list — scrolls independently */}
-          <div ref={listRef} className="flex-1 overflow-y-auto">
+          <div ref={listRef} className="flex-1 overflow-y-auto job-portal-scroll">
             {activeTab === "all" ? (
               <>
-                <List
-                  itemLayout="horizontal"
-                  dataSource={filteredJobList}
-                  renderItem={(item) => (
-                    <List.Item
-                      className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${
-                        selectedJob?._id === item._id
+                {loading ? (
+                  renderJobListSkeleton()
+                ) : (
+                  <List
+                    itemLayout="horizontal"
+                    dataSource={filteredJobList}
+                    renderItem={(item) => (
+                      <List.Item
+                        className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${selectedJob?._id === item._id
                           ? "bg-blue-50 border-l-4 border-l-blue-500"
                           : "border-l-4 border-l-transparent"
-                      }`}
-                      onClick={() => {
-                        setSelectedJob(item);
-                        setIsDetailOpen(true);
-                      }}
-                    >
-                      <div className="flex w-full items-start gap-4 p-1">
-                        {/* Left: Company Logo */}
-                        <div className="relative flex-shrink-0">
-                          <Avatar
-                            src={item.company?.logoUrl}
-                            shape="square"
-                            size={64}
-                            className="rounded-lg border border-gray-100 shadow-sm"
-                          />
-                          {item.isSaved && (
-                            <div className="absolute -bottom-1 -right-1 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full shadow-sm text-amber-600">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                                className="w-3.5 h-3.5"
-                              >
-                                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.924-2.438 7.11-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Middle: Main Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <h3 className="text-lg font-bold text-gray-900 truncate pr-4">
-                              {item.title}
-                            </h3>
-                            {item.isApplied && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>
-                                Applied
-                              </span>
+                          }`}
+                        onClick={() => {
+                          setSelectedJob(item);
+                          setIsDetailOpen(true);
+                        }}
+                      >
+                        <div className="flex w-full items-start gap-4 p-1">
+                          {/* Left: Company Logo */}
+                          <div className="relative flex-shrink-0">
+                            <Avatar
+                              src={item.company?.logoUrl}
+                              shape="square"
+                              size={64}
+                              className="rounded-lg border border-gray-100 shadow-sm"
+                            />
+                            {item.isSaved && (
+                              <div className="absolute -bottom-1 -right-1 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full shadow-sm text-amber-600">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
+                                  className="w-3.5 h-3.5"
+                                >
+                                  <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.924-2.438 7.11-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                                </svg>
+                              </div>
                             )}
                           </div>
 
-                          <div className="flex items-center text-gray-600 mb-3 italic">
-                            <span className="font-medium text-blue-600 not-italic">
-                              {item.company?.companyName}
-                            </span>
-                            <span className="mx-2 text-gray-300">•</span>
-                            <span className="text-sm">
-                              {item.location?.city}, {item.location?.country}
-                            </span>
-                          </div>
+                          {/* Middle: Main Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <h3 className="text-lg font-bold text-gray-900 truncate pr-4">
+                                {item.title}
+                              </h3>
+                              {item.isApplied && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>
+                                  Applied
+                                </span>
+                              )}
+                            </div>
 
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            <Tag className="m-0 border-none bg-blue-50 text-blue-700 font-medium px-2 rounded">
-                              {item.workMode}
-                            </Tag>
-                            <Tag className="m-0 border-none bg-purple-50 text-purple-700 font-medium px-2 rounded capitalize">
-                              {item.experienceLevel}
-                            </Tag>
-                            <Tag className="m-0 border-none bg-orange-50 text-orange-700 font-medium px-2 rounded">
-                              {item.salaryRange?.currency}{" "}
-                              {item.salaryRange?.min.toLocaleString()} -{" "}
-                              {item.salaryRange?.max.toLocaleString()}
-                            </Tag>
-                          </div>
-
-                          {/* Quick Stats/Summary Footer */}
-                          <div className="flex items-center justify-between text-xs text-gray-400 mt-4">
-                            <div className="flex gap-4">
-                              <span>
-                                Posted:{" "}
-                                {new Date(item.createdAt).toLocaleDateString()}
+                            <div className="flex items-center text-gray-600 mb-3 italic">
+                              <span className="font-medium text-blue-600 not-italic">
+                                {item.company?.companyName}
                               </span>
-                              <span>
-                                Deadline:{" "}
-                                {new Date(item.deadline).toLocaleDateString()}
+                              <span className="mx-2 text-gray-300">•</span>
+                              <span className="text-sm">
+                                {item.location?.city}, {item.location?.country}
                               </span>
                             </div>
-                            <div className="font-medium text-blue-500">
-                              View Details →
+
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              <Tag className="m-0 border-none bg-blue-50 text-blue-700 font-medium px-2 rounded">
+                                {item.workMode}
+                              </Tag>
+                              <Tag className="m-0 border-none bg-purple-50 text-purple-700 font-medium px-2 rounded capitalize">
+                                {item.experienceLevel}
+                              </Tag>
+                              <Tag className="m-0 border-none bg-orange-50 text-orange-700 font-medium px-2 rounded">
+                                {item.salaryRange?.currency}{" "}
+                                {item.salaryRange?.min.toLocaleString()} -{" "}
+                                {item.salaryRange?.max.toLocaleString()}
+                              </Tag>
+                            </div>
+
+                            {/* Quick Stats/Summary Footer */}
+                            <div className="flex items-center justify-between text-xs text-gray-400 mt-4">
+                              <div className="flex gap-4">
+                                <span>
+                                  Posted:{" "}
+                                  {new Date(item.createdAt).toLocaleDateString()}
+                                </span>
+                                <span>
+                                  Deadline:{" "}
+                                  {new Date(item.deadline).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <div className="font-medium text-blue-500">
+                                View Details →
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </List.Item>
-                  )}
-                />
-                {loading && (
-                  <div className="p-5 text-center">
-                    <Spin />
-                  </div>
+                      </List.Item>
+                    )}
+                  />
                 )}
-                <div ref={observerTarget} className="h-8" />
-                {!hasMore && jobList.length > 0 && (
-                  <div className="p-5 text-center text-gray-400">
-                    No more jobs
-                  </div>
+                {!loading && (
+                  <>
+                    <div ref={observerTarget} className="h-8" />
+                    {!hasMore && jobList.length > 0 && (
+                      <div className="p-5 text-center text-gray-400">
+                        No more jobs
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             ) : activeTab === "saved" ? (
               <>
                 {loading ? (
-                  <div className="p-5 text-center">
-                    <Spin />
-                  </div>
-                ) : savedJobsList.length === 0 ? (
+                  renderJobListSkeleton()
+                ) : filteredSavedJobsList.length === 0 ? (
                   <div className="py-10 px-5 text-center">
                     <div className="text-gray-400 text-lg mb-2">
-                      No saved jobs yet
+                      {savedJobsList.length === 0
+                        ? "No saved jobs yet"
+                        : "No saved jobs match your search"}
                     </div>
                     <div className="text-gray-400 text-sm">
-                      Start saving jobs to view them here
+                      {savedJobsList.length === 0
+                        ? "Start saving jobs to view them here"
+                        : "Try adjusting your filters"}
                     </div>
                   </div>
                 ) : (
                   <List
                     itemLayout="horizontal"
-                    dataSource={savedJobsList}
+                    dataSource={filteredSavedJobsList}
                     renderItem={(savedJob) => {
                       const job = savedJob.jobId;
                       return (
                         <List.Item
-                          className="cursor-pointer hover:bg-gray-100 transition"
+                          className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${selectedJob?._id === job._id
+                            ? "bg-blue-50 border-l-4 border-l-blue-500"
+                            : "border-l-4 border-l-transparent"
+                            }`}
                           onClick={() => {
                             const fullJob = convertToJobInterface(job);
                             fullJob.isSaved = true;
@@ -804,41 +896,87 @@ export default function JobDashboard() {
                             setIsDetailOpen(true);
                           }}
                         >
-                          <List.Item.Meta
-                            avatar={
-                              <div className="px-4">
-                                <div className="relative">
-                                  <Avatar size={50} icon={<BuildFilled />} />
-                                  <HeartFilled
-                                    style={{
-                                      position: "absolute",
-                                      top: -5,
-                                      right: -5,
-                                      color: "#ff4d4f",
-                                      fontSize: 16,
-                                    }}
-                                  />
-                                </div>
-                                <div className="mt-2">
-                                  <div className="text-blue-600 font-semibold">
-                                    {job.title}
-                                  </div>
-                                  <div className="text-gray-500 text-sm">
-                                    Saved{" "}
+                          <div className="flex w-full items-start gap-4 p-1">
+                            {/* Left: Company Logo */}
+                            <div className="relative flex-shrink-0">
+                              <Avatar
+                                src={job.company?.logoUrl}
+                                shape="square"
+                                size={64}
+                                className="rounded-lg border border-gray-100 shadow-sm"
+                              />
+                              <div className="absolute -bottom-1 -right-1 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full shadow-sm text-amber-600">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
+                                  className="w-3.5 h-3.5"
+                                >
+                                  <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.924-2.438 7.11-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                                </svg>
+                              </div>
+                            </div>
+
+                            {/* Middle: Main Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className="text-lg font-bold text-gray-900 truncate pr-4">
+                                  {job.title}
+                                </h3>
+                                {job.isApplied && (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>
+                                    Applied
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center text-gray-600 mb-3 italic">
+                                <span className="font-medium text-blue-600 not-italic">
+                                  {job.company?.companyName}
+                                </span>
+                                <span className="mx-2 text-gray-300">•</span>
+                                <span className="text-sm">
+                                  {job.location?.city}, {job.location?.country}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <Tag className="m-0 border-none bg-blue-50 text-blue-700 font-medium px-2 rounded">
+                                  {job.workMode}
+                                </Tag>
+                                <Tag className="m-0 border-none bg-purple-50 text-purple-700 font-medium px-2 rounded capitalize">
+                                  {job.experienceLevel}
+                                </Tag>
+                                <Tag className="m-0 border-none bg-orange-50 text-orange-700 font-medium px-2 rounded">
+                                  {job.salaryRange?.currency}{" "}
+                                  {job.salaryRange?.min.toLocaleString()} -{" "}
+                                  {job.salaryRange?.max.toLocaleString()}
+                                </Tag>
+                              </div>
+
+                              {/* Quick Stats/Summary Footer */}
+                              <div className="flex items-center justify-between text-xs text-gray-400 mt-4">
+                                <div className="flex gap-4">
+                                  <span>
+                                    Posted:{" "}
                                     {new Date(
-                                      savedJob.createdAt,
+                                      job.createdAt,
                                     ).toLocaleDateString()}
-                                  </div>
-                                  <div className="flex gap-2 mt-1">
-                                    <Tag color="blue">{job.workMode}</Tag>
-                                    <Tag color="green">
-                                      {job.experienceLevel}
-                                    </Tag>
-                                  </div>
+                                  </span>
+                                  <span>
+                                    Deadline:{" "}
+                                    {new Date(
+                                      job.deadline,
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <div className="font-medium text-blue-500">
+                                  View Details →
                                 </div>
                               </div>
-                            }
-                          />
+                            </div>
+                          </div>
                         </List.Item>
                       );
                     }}
@@ -848,60 +986,122 @@ export default function JobDashboard() {
             ) : (
               <>
                 {loading ? (
-                  <div className="p-5 text-center">
-                    <Spin />
-                  </div>
-                ) : recommendedJobList.length === 0 ? (
+                  renderJobListSkeleton()
+                ) : filteredRecommendedJobList.length === 0 ? (
                   <div className="py-10 px-5 text-center">
                     <div className="text-gray-400 text-lg mb-2">
-                      No recommendations yet
+                      {recommendedJobList.length === 0
+                        ? "No recommendations yet"
+                        : "No recommendations match your search"}
                     </div>
                     <div className="text-gray-400 text-sm">
-                      We will recommend jobs based on your profile
+                      {recommendedJobList.length === 0
+                        ? "We will recommend jobs based on your profile"
+                        : "Try adjusting your filters"}
                     </div>
                   </div>
                 ) : (
                   <List
                     itemLayout="horizontal"
-                    dataSource={recommendedJobList}
-                    renderItem={(item) => (
-                      <List.Item
-                        className="cursor-pointer hover:bg-gray-100 transition"
-                        onClick={() => {
-                          const fullJob = jobList.find(
-                            (j) => j._id === item.jobId,
-                          );
-                          if (fullJob) {
-                            setSelectedJob(fullJob);
-                            setIsDetailOpen(true);
-                          }
-                        }}
-                      >
-                        <List.Item.Meta
-                          avatar={
-                            <div className="px-4">
-                              <Avatar src={item.companyLogo} size={50} />
-                              <div className="mt-2">
-                                <div className="text-blue-600 font-semibold">
+                    dataSource={filteredRecommendedJobList}
+                    renderItem={(item) => {
+                      const fullJob = jobList.find((j) => j._id === item.jobId);
+                      return (
+                        <List.Item
+                          className={`cursor-pointer hover:bg-blue-50/30 transition-all border-b border-gray-100 px-6 py-5 ${selectedJob?._id === item.jobId
+                            ? "bg-blue-50 border-l-4 border-l-blue-500"
+                            : "border-l-4 border-l-transparent"
+                            }`}
+                          onClick={() => {
+                            if (fullJob) {
+                              setSelectedJob(fullJob);
+                              setIsDetailOpen(true);
+                            }
+                          }}
+                        >
+                          <div className="flex w-full items-start gap-4 p-1">
+                            {/* Left: Company Logo */}
+                            <div className="relative flex-shrink-0">
+                              <Avatar
+                                src={item.companyLogo}
+                                shape="square"
+                                size={64}
+                                className="rounded-lg border border-gray-100 shadow-sm"
+                              />
+                            </div>
+
+                            {/* Middle: Main Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className="text-lg font-bold text-gray-900 truncate pr-4">
                                   {item.title}
-                                </div>
-                                <div className="text-gray-500 text-sm">
+                                </h3>
+                                {fullJob?.isApplied && (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>
+                                    Applied
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center text-gray-600 mb-3 italic">
+                                <span className="font-medium text-blue-600 not-italic">
                                   {item.companyName}
+                                </span>
+                                <span className="mx-2 text-gray-300">•</span>
+                                <span className="text-sm">
+                                  {fullJob?.location?.city},{" "}
+                                  {fullJob?.location?.country}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <Tag className="m-0 border-none bg-blue-50 text-blue-700 font-medium px-2 rounded">
+                                  {item.workMode}
+                                </Tag>
+                                {item.experienceLevel && (
+                                  <Tag className="m-0 border-none bg-purple-50 text-purple-700 font-medium px-2 rounded capitalize">
+                                    {item.experienceLevel}
+                                  </Tag>
+                                )}
+                                {fullJob?.salaryRange && (
+                                  <Tag className="m-0 border-none bg-orange-50 text-orange-700 font-medium px-2 rounded">
+                                    {fullJob.salaryRange.currency}{" "}
+                                    {fullJob.salaryRange.min.toLocaleString()} -{" "}
+                                    {fullJob.salaryRange.max.toLocaleString()}
+                                  </Tag>
+                                )}
+                              </div>
+
+                              {/* Quick Stats/Summary Footer */}
+                              <div className="flex items-center justify-between text-xs text-gray-400 mt-4">
+                                <div className="flex gap-4">
+                                  <span>
+                                    Posted:{" "}
+                                    {fullJob
+                                      ? new Date(
+                                        fullJob.createdAt,
+                                      ).toLocaleDateString()
+                                      : "N/A"}
+                                  </span>
+                                  <span>
+                                    Deadline:{" "}
+                                    {fullJob
+                                      ? new Date(
+                                        fullJob.deadline,
+                                      ).toLocaleDateString()
+                                      : "N/A"}
+                                  </span>
                                 </div>
-                                <div className="flex gap-2 mt-1">
-                                  <Tag color="blue">{item.workMode}</Tag>
-                                  {item.experienceLevel && (
-                                    <Tag color="green">
-                                      {item.experienceLevel}
-                                    </Tag>
-                                  )}
+                                <div className="font-medium text-blue-500">
+                                  View Details →
                                 </div>
                               </div>
                             </div>
-                          }
-                        />
-                      </List.Item>
-                    )}
+                          </div>
+                        </List.Item>
+                      );
+                    }}
                   />
                 )}
               </>
@@ -911,7 +1111,7 @@ export default function JobDashboard() {
         {/* end sidebar */}
 
         {/* ── RIGHT: Detail panel — desktop only ────────────────────────── */}
-        <div className="hidden lg:flex flex-col flex-1 h-full bg-white rounded-2xl shadow-md overflow-hidden">
+        <div className="hidden card lg:flex flex-col flex-1 h-full bg-white rounded-2xl shadow-md overflow-hidden job-portal-scroll">
           {selectedJob ? (
             <>
               {/* Header — stays put */}
@@ -1007,9 +1207,7 @@ export default function JobDashboard() {
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <Spin size="large" />
-            </div>
+            <JobDetailSkeleton />
           )}
         </div>
         {/* end desktop detail panel */}
@@ -1023,19 +1221,17 @@ export default function JobDashboard() {
 
       {/* Backdrop */}
       <div
-        className={`lg:hidden fixed inset-0 z-40 bg-black transition-opacity duration-300 ${
-          isDetailOpen
-            ? "opacity-50 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        }`}
+        className={`lg:hidden fixed inset-0 z-40 bg-black transition-opacity duration-300 ${isDetailOpen
+          ? "opacity-50 pointer-events-auto"
+          : "opacity-0 pointer-events-none"
+          }`}
         onClick={() => setIsDetailOpen(false)}
       />
 
       {/* Slide-up sheet */}
       <div
-        className={`lg:hidden fixed bottom-0 left-0 mx-auto right-0 z-50 flex flex-col bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 w-[90%] max-[400px]:w-[99%] ease-out ${
-          isDetailOpen ? "translate-y-0" : "translate-y-full"
-        }`}
+        className={`lg:hidden job-portal-scroll fixed bottom-0 left-0 mx-auto right-0 z-50 flex flex-col bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 w-[90%] max-[400px]:w-[99%] ease-out ${isDetailOpen ? "translate-y-0" : "translate-y-full"
+          }`}
         style={{ height: "90vh" }}
       >
         {/* Handle bar + close button */}
@@ -1050,7 +1246,7 @@ export default function JobDashboard() {
           </button>
         </div>
 
-        {selectedJob && (
+        {selectedJob ? (
           <>
             {/* Sheet header — stays put */}
             <div className="flex-shrink-0 px-5 pb-3 border-b border-gray-100">
@@ -1143,6 +1339,8 @@ export default function JobDashboard() {
               <JobDetailContent selectedJob={selectedJob} />
             </div>
           </>
+        ) : (
+          <JobDetailSkeleton className="flex-1" />
         )}
       </div>
       {/* end mobile drawer */}

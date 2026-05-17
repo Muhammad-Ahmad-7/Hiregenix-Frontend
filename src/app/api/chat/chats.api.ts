@@ -51,3 +51,10 @@ export const getAllMessages2 = async ({
     showToaster: false,
   });
 };
+
+export const createChatApi = async (participantId: string) => {
+  return safeApiCall<{ chat: IChat }>({
+    apiCall: () => api.post(`/chat/with/${participantId}`),
+    showToaster: true,
+  });
+};

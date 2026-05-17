@@ -1,19 +1,36 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
-import { Input, Avatar, Badge, Dropdown, Button } from "antd";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  Input,
+  Avatar,
+  Badge,
+  Button,
+  Skeleton,
+  Modal,
+  List,
+} from "antd";
 import {
   SearchOutlined,
-  DownOutlined,
   MoreOutlined,
   ArrowLeftOutlined,
-  MenuOutlined,
   FileTextOutlined,
   FileImageOutlined,
 } from "@ant-design/icons";
-import { getAllChats, getAllMessages } from "@/app/api/chat/chats.api";
+import {
+  createChatApi,
+  getAllChats,
+  getAllMessages,
+} from "@/app/api/chat/chats.api";
 import { formatChatTime } from "@/utils/dateFormation";
 import {
   setChats,
+  setLoading as setChatsLoading,
   updateLastMessageStatus,
   updateOnlineStatus,
   updateUnreadCount,
@@ -24,11 +41,18 @@ import { Reorder } from "framer-motion";
 import { socket } from "@/socket";
 import EmptyChatState from "@/component/chats/EmptyChatState";
 import {
-  IChat,
-  IMessage,
-} from "@/constants/Interfaces/Types/Chat.interface";
+  getAllCompaniesApi,
+  type CompanyListItem,
+} from "@/app/api/company/companies.api";
+import {
+  getAllCandidatesApi,
+  type CandidateListItem,
+} from "@/app/api/candidate/candidates.api";
+import { IChat, IMessage } from "@/constants/Interfaces/Types/Chat.interface";
 import {
   addMessage,
+  clearMessages,
+  prependMessages,
   setMessages,
   updateAllMessagesStatusToDelivered,
   updateAllMessagesStatusToSeen,
@@ -41,6 +65,7 @@ import Message from "./Message";
 import LoadingMessage from "./LoadingMessage";
 import { isDocumentUrl } from "@/utils/isDocumentUrl";
 import { isImageUrl } from "@/utils/isImageUrl";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const getDateKey = (dateStr: string) =>
   new Date(dateStr).toISOString().split("T")[0];
@@ -54,12 +79,26 @@ const getDateLabel = (isoDate: string) =>
   });
 
 const MessagingInterface = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [selectedChatP, setSelectedChatP] = useState<IChat | null>(null);
   const [messageText, setMessageText] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [page, setPage] = useState(2);
+  const [isMessagesLoading, setIsMessagesLoading] = useState(false);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [canLoadOlder, setCanLoadOlder] = useState(false);
+  const [directoryModalOpen, setDirectoryModalOpen] = useState(false);
+  const [directoryLoading, setDirectoryLoading] = useState(false);
+  const [companies, setCompanies] = useState<CompanyListItem[] | null>(null);
+  const [candidates, setCandidates] = useState<CandidateListItem[] | null>(
+    null,
+  );
+  const [directorySearch, setDirectorySearch] = useState("");
+  const [chatSearch, setChatSearch] = useState("");
   const { profile } = useSelector((state: RootState) => state.user);
+  const currentUserId = profile?.userId?._id ?? profile?._id ?? null;
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<
     string | null
@@ -75,6 +114,7 @@ const MessagingInterface = () => {
 
   const dateRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const isLoadingOldMessages = useRef(false);
+  const hasHandledDeepLinkRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastScrollTop = useRef(0);
@@ -154,21 +194,39 @@ const MessagingInterface = () => {
 
       // Pagination: load older messages when scrolled to top
       if (container.scrollTop <= 0 && selectedChat) {
+        if (isLoadingOldMessages.current || isLoadingOlder || !canLoadOlder) {
+          return;
+        }
         const scrollHeightBefore = container.scrollHeight;
         isLoadingOldMessages.current = true;
+        setIsLoadingOlder(true);
+        const requestChatId = selectedChat;
+        const requestPage = page;
+        const pageSize = 20;
 
         getAllMessages({
           chatId: selectedChat,
           params: { page, limit: 20 },
         }).then((res) => {
+          // Ignore late responses for a previously selected chat/page
+          if (selectedChat !== requestChatId || page !== requestPage) {
+            isLoadingOldMessages.current = false;
+            setIsLoadingOlder(false);
+            return;
+          }
           if (!res?.data) return;
-          dispatch(setMessages(res.data.messages));
+          const olderMessages = res.data.messages ?? [];
+          dispatch(prependMessages(olderMessages));
           setPage((prev) => prev + 1);
+          if (olderMessages.length < pageSize) {
+            setCanLoadOlder(false);
+          }
 
           requestAnimationFrame(() => {
             const scrollDiff = container.scrollHeight - scrollHeightBefore;
             container.scrollTop = scrollDiff;
             isLoadingOldMessages.current = false;
+            setIsLoadingOlder(false);
           });
         });
       }
@@ -176,7 +234,7 @@ const MessagingInterface = () => {
 
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [selectedChat, page,dispatch]);
+  }, [selectedChat, page, dispatch, isLoadingOlder, canLoadOlder]);
 
   // Re-calculate sticky date after messages repaint
   useEffect(() => {
@@ -190,90 +248,128 @@ const MessagingInterface = () => {
       dispatch(updateReaction({ messageId, reaction }));
     });
 
-    socket.on("sendMessage", ({ chatId, msg, msgId, sender, isUserOnline }) => {
-      if (sender !== profile?._id) {
-        if (selectedChat !== chatId) {
-          socket.emit("updateMessageStatus", {
-            messageId: msgId,
-            status: "delivered",
-            chatId,
-            sender,
-            toUser: selectedChatP?.participant._id,
-          });
-          dispatch(updateLastMessageStatus({ status: "delivered", chatId }));
+    socket.on(
+      "sendMessage",
+      ({ chatId, msg, msgId, sender, isUserOnline, replyingTo }) => {
+        if (sender !== currentUserId) {
+          if (selectedChat !== chatId) {
+            socket.emit("updateMessageStatus", {
+              messageId: msgId,
+              status: "delivered",
+              chatId,
+              sender,
+              toUser: selectedChatP?.participant._id,
+            });
+            dispatch(updateLastMessageStatus({ status: "delivered", chatId }));
+          } else {
+            socket.emit("updateMessageStatus", {
+              messageId: msgId,
+              status: "seen",
+              chatId,
+              sender,
+              toUser: selectedChatP?.participant._id,
+            });
+            dispatch(updateLastMessageStatus({ status: "seen", chatId }));
+          }
         } else {
           socket.emit("updateMessageStatus", {
             messageId: msgId,
-            status: "seen",
+            status: isUserOnline ? "delivered" : "sent",
             chatId,
             sender,
             toUser: selectedChatP?.participant._id,
           });
-          dispatch(updateLastMessageStatus({ status: "seen", chatId }));
+          dispatch(
+            updateLastMessageStatus({
+              status: isUserOnline ? "delivered" : "sent",
+              chatId,
+            }),
+          );
         }
-      } else {
-        socket.emit("updateMessageStatus", {
-          messageId: msgId,
-          status: isUserOnline ? "delivered" : "sent",
-          chatId,
-          sender,
-          toUser: selectedChatP?.participant._id,
-        });
+
         dispatch(
-          updateLastMessageStatus({
-            status: isUserOnline ? "delivered" : "sent",
-            chatId,
+          addMessage({
+            message: {
+              _id: msgId,
+              chat: chatId,
+              sender,
+              text: msg,
+              status: "sent",
+              reaction: null,
+              replyingTo:
+                replyingTo && typeof replyingTo === "string"
+                  ? (() => {
+                    const ref = messages.find((m) => m._id === replyingTo);
+                    return ref ? { _id: ref._id, text: ref.text } : null;
+                  })()
+                  : replyingTo && typeof replyingTo === "object"
+                    ? { _id: replyingTo._id, text: replyingTo.text }
+                    : null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            selectedId: selectedChat,
+            userId: currentUserId ?? undefined,
+            isUserOnline,
           }),
         );
-      }
-
-      dispatch(
-        addMessage({
-          message: {
-            _id: msgId,
-            chat: chatId,
-            sender,
-            text: msg,
-            status: "sent",
-            reaction: null,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          selectedId: selectedChat,
-          userId: profile?._id,
-          isUserOnline,
-        }),
-      );
-    });
+      },
+    );
 
     return () => {
       socket.off("sendMessage");
       socket.off("updateReaction");
     };
-  }, [selectedChat, selectedChatP, profile,dispatch]);
+  }, [selectedChat, selectedChatP, currentUserId, dispatch, messages]);
 
   // ── Seen status socket ─────────────────────────────────────────────────────
   useEffect(() => {
-    if (!profile) return;
+    if (!currentUserId) return;
     socket.on("updateAllMessagesStatusToSeen", ({ selectedChat: chatId }) => {
       dispatch(
-        updateAllMessagesStatusToSeen({ chatId, userId: profile.userId._id }),
+        updateAllMessagesStatusToSeen({ chatId, userId: currentUserId }),
       );
       dispatch(updateLastMessageStatus({ status: "seen", chatId }));
     });
-  }, [profile,dispatch]);
+  }, [currentUserId, dispatch]);
 
-  const { chats } = useSelector((state: RootState) => state.chats);
+  const { chats, loading: chatsLoading } = useSelector(
+    (state: RootState) => state.chats,
+  );
+
+  const profileRole = profile?.userId?.role;
+  const isCandidateUser = profileRole === "candidate";
+  const isCompanyUser = profileRole === "company";
+
+  const filteredDirectory = useMemo(() => {
+    const q = directorySearch.trim().toLowerCase();
+    if (isCandidateUser) {
+      if (!companies) return [];
+      if (!q) return companies;
+      return companies.filter((c) => {
+        const name = (c.companyName ?? "").toLowerCase();
+        const email = (c.contactEmail ?? "").toLowerCase();
+        return name.includes(q) || email.includes(q);
+      });
+    }
+
+    if (!candidates) return [];
+    if (!q) return candidates;
+    return candidates.filter((c) => {
+      const name = (c.fullName ?? "").toLowerCase();
+      return name.includes(q);
+    });
+  }, [companies, candidates, directorySearch, isCandidateUser]);
 
   // ── Online/offline socket ──────────────────────────────────────────────────
   useEffect(() => {
     socket.on("iAmOnline", (onlineUserId: string) => {
-      if (!profile) return;
+      if (!currentUserId) return;
       const yeschats = chats?.find((c) => c.participant._id === onlineUserId);
       if (yeschats) {
         dispatch(
           updateAllMessagesStatusToDelivered({
-            userId: profile.userId._id,
+            userId: currentUserId,
             chatId: yeschats._id,
           }),
         );
@@ -299,7 +395,7 @@ const MessagingInterface = () => {
       socket.off("iAmOnline");
       socket.off("iAmOffline");
     };
-  }, [chats, profile,dispatch]);
+  }, [chats, currentUserId, dispatch]);
 
   // ── Message status socket ──────────────────────────────────────────────────
   useEffect(() => {
@@ -309,7 +405,7 @@ const MessagingInterface = () => {
     return () => {
       socket.off("updateMessageStatus");
     };
-  }, [selectedChat,dispatch]);
+  }, [selectedChat, dispatch]);
 
   // ── Auto-scroll to bottom for new messages only ────────────────────────────
   useEffect(() => {
@@ -318,17 +414,105 @@ const MessagingInterface = () => {
     if (selectedChat) {
       dispatch(updateUnreadCount({ chatId: selectedChat, unReadCount: -1 }));
     }
-  }, [messages,dispatch,selectedChat]);
+  }, [messages, dispatch, selectedChat]);
 
   // ── Load all chats on mount ────────────────────────────────────────────────
   useEffect(() => {
+    dispatch(setChatsLoading(true));
     getAllChats()
       .then((res) => {
         if (!res?.data) return;
         dispatch(setChats(res.data.chats));
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => {
+        dispatch(setChatsLoading(false));
+      });
   }, [dispatch]);
+
+  // ── Load companies when modal opens ────────────────────────────────────────
+  useEffect(() => {
+    if (!directoryModalOpen || directoryLoading) return;
+
+    if (isCandidateUser && companies === null) {
+      setDirectoryLoading(true);
+      getAllCompaniesApi()
+        .then((res) => {
+          if (!res?.data) return;
+          setCompanies(res.data.companies ?? []);
+        })
+        .catch(console.error)
+        .finally(() => setDirectoryLoading(false));
+      return;
+    }
+
+    if (isCompanyUser && candidates === null) {
+      setDirectoryLoading(true);
+      getAllCandidatesApi()
+        .then((res) => {
+          if (!res?.data) return;
+          setCandidates(res.data.candidates ?? []);
+        })
+        .catch(console.error)
+        .finally(() => setDirectoryLoading(false));
+    }
+  }, [
+    directoryModalOpen,
+    directoryLoading,
+    isCandidateUser,
+    isCompanyUser,
+    companies,
+    candidates,
+  ]);
+
+  const handleStartChatWithUser = useCallback(
+    async (participantUserId: string) => {
+      if (!participantUserId) return;
+
+      const res = await createChatApi(participantUserId);
+      const chat = res?.data?.chat;
+      if (!chat) return;
+
+      // Refresh sidebar list so the chat appears/sorts correctly
+      dispatch(setChatsLoading(true));
+      getAllChats()
+        .then((r) => {
+          if (!r?.data) return;
+          dispatch(setChats(r.data.chats));
+        })
+        .catch(console.error)
+        .finally(() => dispatch(setChatsLoading(false)));
+
+      setSelectedChatP(chat);
+      setSelectedChat(chat._id);
+      setShowChatList(false);
+      setDirectoryModalOpen(false);
+    },
+    [dispatch],
+  );
+
+  // ── Deep-link support: /company/chat?participantId=USER_ID ────────────────
+  useEffect(() => {
+    const participantId = searchParams.get("participantId");
+    if (!participantId || hasHandledDeepLinkRef.current) return;
+    if (!currentUserId) return;
+    if (participantId === currentUserId) return;
+
+    const existing = chats?.find((c) => c.participant._id === participantId);
+    if (existing) {
+      hasHandledDeepLinkRef.current = true;
+      setSelectedChatP(existing);
+      setSelectedChat(existing._id);
+      setShowChatList(false);
+      router.replace("/company/chat");
+      return;
+    }
+
+    hasHandledDeepLinkRef.current = true;
+    handleStartChatWithUser(participantId)
+      .then(() => router.replace("/company/chat"))
+      .catch(console.error);
+  }, [searchParams, currentUserId, chats, router, handleStartChatWithUser]);
 
   // ── Debug: log all socket events ──────────────────────────────────────────
   useEffect(() => {
@@ -336,7 +520,7 @@ const MessagingInterface = () => {
     return () => {
       socket.offAny();
     };
-  }, [ ]);
+  }, []);
 
   // ── Load messages when a chat is selected ─────────────────────────────────
   useEffect(() => {
@@ -344,18 +528,33 @@ const MessagingInterface = () => {
     dateRefs.current = {};
     setCurrentStickyDate(null);
     setStickyVisible(false);
+    isLoadingOldMessages.current = false;
+    dispatch(clearMessages());
+    setPage(2);
+    setIsMessagesLoading(true);
+    setIsLoadingOlder(false);
+    setCanLoadOlder(false);
 
     socket.emit("private-chat", {
       selectedChat,
-      userId: profile?._id,
+      userId: currentUserId ?? undefined,
       selectedChatP,
     });
 
-    getAllMessages({ chatId: selectedChat }).then((res) => {
-      if (!res?.data) return;
-      dispatch(setMessages(res.data.messages));
-    });
-  }, [selectedChat,profile?._id,selectedChatP,dispatch]);
+    const requestChatId = selectedChat;
+    getAllMessages({ chatId: selectedChat })
+      .then((res) => {
+        if (selectedChat !== requestChatId) return;
+        if (!res?.data) return;
+        const initialMessages = res.data.messages ?? [];
+        dispatch(setMessages(initialMessages));
+        // Don't paginate for small/new chats
+        setCanLoadOlder(initialMessages.length > 10);
+      })
+      .finally(() => {
+        if (selectedChat === requestChatId) setIsMessagesLoading(false);
+      });
+  }, [selectedChat, currentUserId, selectedChatP, dispatch]);
 
   // ── Reply scroll-to ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -372,10 +571,20 @@ const MessagingInterface = () => {
   const handleChatSelect = (chatId: string) => {
     setSelectedChat(chatId);
     setShowChatList(false);
-    setPage(2);
   };
 
-  const handleBackToList = () => setShowChatList(true);
+  const handleBackToList = () => {
+    setShowChatList(true);
+    setSelectedChat(null);
+    setSelectedChatP(null);
+    dispatch(clearMessages());
+    setPage(2);
+    setIsMessagesLoading(false);
+    setIsLoadingOlder(false);
+    dateRefs.current = {};
+    setCurrentStickyDate(null);
+    setStickyVisible(false);
+  };
 
   const handleOverlayClick = () => {
     setReactionPickerMessageId(null);
@@ -398,24 +607,24 @@ const MessagingInterface = () => {
   };
 
   const handleReply = (msg: IMessage) => setReplyingTo(msg);
-
+  const clearReplyTo = () => setReplyingTo(null);
   const sendDocumentMessage = (fileUrl: string) => {
-    if (!profile) return;
+    if (!currentUserId) return;
     socket.emit("sendMessage", {
       chatId: selectedChat,
       msg: fileUrl,
-      sender: profile._id,
+      sender: currentUserId,
       msgId: Date.now().toString(),
       toUser: selectedChatP?.participant._id,
     });
   };
 
   const sendMessage = () => {
-    if (!messageText.trim() || !selectedChat || !profile) return;
+    if (!messageText.trim() || !selectedChat || !currentUserId) return;
     socket.emit("sendMessage", {
       chatId: selectedChat,
       msg: messageText,
-      sender: profile._id,
+      sender: currentUserId,
       msgId: Date.now().toString(),
       toUser: selectedChatP?.participant._id,
       replyingTo: replyingTo?._id,
@@ -429,79 +638,201 @@ const MessagingInterface = () => {
     return true;
   };
 
-  const sortedChats = chats
-    ? [...chats].sort((a, b) => {
+  const sortedChats = useMemo(() => {
+    return chats
+      ? [...chats].sort((a, b) => {
         const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
         const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
         return timeB - timeA;
       })
-    : [];
+      : [];
+  }, [chats]);
+
+  const filteredChats = useMemo(() => {
+    const query = chatSearch.trim().toLowerCase();
+    if (!query) return sortedChats;
+    return sortedChats.filter((chat) => {
+      const name =
+        chat.participant.companyName === undefined
+          ? (chat.participant.fullName ?? "")
+          : (chat.participant.companyName ?? "");
+      return name.toLowerCase().includes(query);
+    });
+  }, [chatSearch, sortedChats]);
 
   if (profile === null) return null;
 
   return (
     <div
-      className="flex h-[calc(100vh-100px)] bg-white"
+      className="flex h-[calc(100vh-100px)] bg-white rounded-xl"
       onClick={handleOverlayClick}
     >
+      <Modal
+        title={isCandidateUser ? "Companies" : "Candidates"}
+        open={directoryModalOpen}
+        onCancel={() => setDirectoryModalOpen(false)}
+        footer={null}
+        centered
+      >
+        <div className="mb-3">
+          <Input
+            value={directorySearch}
+            onChange={(e) => setDirectorySearch(e.target.value)}
+            placeholder={
+              isCandidateUser ? "Search company..." : "Search candidate..."
+            }
+            allowClear
+          />
+        </div>
+
+        {directoryLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton.Avatar active size={40} shape="circle" />
+                <div className="flex-1">
+                  <Skeleton
+                    active
+                    title={{ width: "55%" }}
+                    paragraph={{ rows: 1, width: "80%" }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="max-h-[60vh] overflow-y-auto pr-1">
+            <List
+              dataSource={filteredDirectory}
+              locale={{
+                emptyText: isCandidateUser
+                  ? "No companies found."
+                  : "No candidates found.",
+              }}
+              renderItem={(item: CompanyListItem | CandidateListItem) => (
+                <List.Item
+                  className="!px-0"
+                  actions={[
+                    <Button
+                      key="view"
+                      size="small"
+                      onClick={() =>
+                        router.push(
+                          isCandidateUser
+                            ? `/candidate/view-profile/${item._id}`
+                            : `/company/view-profile/${item._id}`,
+                        )
+                      }
+                    >
+                      View Profile
+                    </Button>,
+                    <Button
+                      key="chat"
+                      size="small"
+                      type="primary"
+                      onClick={() => handleStartChatWithUser(item.userId)}
+                    >
+                      Chat
+                    </Button>,
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={
+                      <Avatar
+                        size={40}
+                        src={
+                          isCandidateUser
+                            ? ((item as CompanyListItem).logoUrl ?? undefined)
+                            : ((item as CandidateListItem).profilePictureUrl ??
+                              undefined)
+                        }
+                      >
+                        {(isCandidateUser
+                          ? (item as CompanyListItem).companyName
+                          : (item as CandidateListItem).fullName || "?"
+                        ).charAt(0)}
+                      </Avatar>
+                    }
+                    title={
+                      <div className="font-medium text-gray-900">
+                        {isCandidateUser
+                          ? (item as CompanyListItem).companyName
+                          : (item as CandidateListItem).fullName}
+                      </div>
+                    }
+                    description={
+                      <div className="text-xs text-gray-500">
+                        {isCandidateUser
+                          ? ((item as CompanyListItem).contactEmail ?? "")
+                          : ""}
+                      </div>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          </div>
+        )}
+      </Modal>
+
       {/* ── Left Sidebar ──────────────────────────────────────────────────── */}
       <div
-        className={`${
-          showChatList ? "flex" : "hidden"
-        } md:flex w-full md:w-[380px] lg:w-[420px] border-r border-gray-200 flex-col`}
+        className={`${showChatList ? "flex" : "hidden"
+          } md:flex w-full md:w-[380px] lg:w-[420px] border-r border-gray-200 flex-col card rounded-l-xl`}
       >
         <div className="p-3 md:p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-semibold text-gray-900">Chats</div>
+            <Button
+              type="link"
+              className="!px-0"
+              onClick={() => setDirectoryModalOpen(true)}
+            >
+              {isCandidateUser ? "All Companies" : "All Candidates"}
+            </Button>
+          </div>
           <div className="flex gap-2">
             <Input
               placeholder="Search name"
               prefix={<SearchOutlined className="text-gray-400" />}
               className="flex-1"
+              value={chatSearch}
+              onChange={(e) => setChatSearch(e.target.value)}
+              allowClear
             />
-            <Dropdown
-              menu={{
-                items: [
-                  { key: "1", label: "All" },
-                  { key: "2", label: "Unread" },
-                  { key: "3", label: "Archived" },
-                ],
-              }}
-            >
-              <Button className="hidden sm:flex">
-                All <DownOutlined />
-              </Button>
-            </Dropdown>
-            <Dropdown
-              menu={{
-                items: [
-                  { key: "1", label: "All" },
-                  { key: "2", label: "Unread" },
-                  { key: "3", label: "Archived" },
-                ],
-              }}
-            >
-              <Button icon={<MenuOutlined />} className="sm:hidden" />
-            </Dropdown>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          {chats == null ? (
-            <div className="p-4 text-center text-gray-500">Loading...</div>
+        <div className="flex-1 overflow-y-auto chat-list-scroll">
+          {chats == null || chatsLoading ? (
+            <div className="p-3 md:p-4 space-y-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <Skeleton.Avatar active size={40} shape="circle" />
+                  <div className="flex-1 min-w-0">
+                    <Skeleton
+                      active
+                      title={{ width: "55%" }}
+                      paragraph={{ rows: 1, width: "90%" }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <Reorder.Group
               axis="y"
-              values={sortedChats}
-              onReorder={() => {}}
+              values={filteredChats}
+              onReorder={() => { }}
               className="flex flex-col"
             >
-              {sortedChats.map((chat) => (
+              {filteredChats.map((chat) => (
                 <Reorder.Item
                   key={chat._id}
                   value={chat}
                   as="div"
-                  className={`flex items-start gap-3 p-3 md:p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    selectedChat === chat._id ? "bg-blue-50" : ""
-                  }`}
+                  className={`flex items-start gap-3 p-3 md:p-4 cursor-pointer hover:bg-blue-50/30 transition-colors ${selectedChat === chat._id ? "bg-blue-50" : ""
+                    }`}
                   onClick={() => {
                     setSelectedChatP(chat);
                     handleChatSelect(chat._id);
@@ -535,12 +866,11 @@ const MessagingInterface = () => {
                           : chat.participant.companyName}
                       </span>
                       <span
-                        className={`text-xs ml-2 flex-shrink-0 ${
-                          chat.unReadCount > 0 &&
-                          chat.lastMessage.sender !== profile._id
-                            ? "text-[#1677ff]"
-                            : "text-gray-500"
-                        }`}
+                        className={`text-xs ml-2 flex-shrink-0 ${chat.unReadCount > 0 &&
+                          chat.lastMessage?.sender !== currentUserId
+                          ? "text-[#1677ff]"
+                          : "text-gray-500"
+                          }`}
                       >
                         {chat.updatedAt && formatChatTime(chat.updatedAt)}
                       </span>
@@ -550,15 +880,15 @@ const MessagingInterface = () => {
                       style={{
                         fontWeight:
                           chat.unReadCount > 0 &&
-                          chat.lastMessage.sender !== profile._id
+                            chat.lastMessage?.sender !== currentUserId
                             ? "bold"
                             : "normal",
                       }}
                     >
                       <div className="truncate">
-                        {chat.lastMessage.sender === profile._id && (
+                        {chat.lastMessage?.sender === currentUserId && (
                           <MessageStatus
-                            status={chat.lastMessage.status ?? "000"}
+                            status={chat.lastMessage?.status ?? "000"}
                           />
                         )}{" "}
                         {isImageUrl(chat.lastMessage?.text) ? (
@@ -578,7 +908,7 @@ const MessagingInterface = () => {
                         )}
                       </div>
                       {chat.unReadCount > 0 &&
-                        chat.lastMessage.sender !== profile._id && (
+                        chat.lastMessage?.sender !== currentUserId && (
                           <Badge
                             color="#1677ff"
                             count={
@@ -598,7 +928,7 @@ const MessagingInterface = () => {
 
       {/* ── Right Side - Chat Window ──────────────────────────────────────── */}
       <div
-        className={`${!showChatList ? "flex" : "hidden"} md:flex flex-1 flex-col`}
+        className={`${!showChatList ? "flex" : "hidden"} md:flex flex-1 flex-col card rounded-r-xl`}
       >
         {selectedChat ? (
           <>
@@ -616,7 +946,7 @@ const MessagingInterface = () => {
                   src={
                     selectedChatP?.participant.logoUrl === undefined
                       ? selectedChatP?.participant.profilePictureUrl ||
-                        undefined
+                      undefined
                       : selectedChatP?.participant.logoUrl || undefined
                   }
                   onError={onImgErrorHandler}
@@ -635,7 +965,7 @@ const MessagingInterface = () => {
             {/* Messages Area */}
             <div
               ref={containerRef}
-              className="flex-1 relative overflow-y-auto p-3 md:p-6 bg-gray-50"
+              className="flex-1 relative overflow-y-auto p-3 md:p-6 bg-gray-50 chat-messages-scroll card"
             >
               {/* ── Animated Sticky Date Pill ──────────────────────────────── */}
               <div className="sticky top-0 flex justify-center z-10 pointer-events-none py-2">
@@ -657,12 +987,38 @@ const MessagingInterface = () => {
                 </div>
               </div>
 
-              {messages.length === 0 && !docLoading ? (
+              {isMessagesLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`flex ${i % 3 === 0 ? "justify-end" : "justify-start"}`}
+                    >
+                      <div className="max-w-[80%] w-[min(520px,80%)]">
+                        <Skeleton
+                          active
+                          title={false}
+                          paragraph={{ rows: 2, width: ["82%", "55%"] }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : messages.length === 0 && !docLoading ? (
                 <div className="text-center text-gray-500 mt-10">
                   No messages yet. Start the conversation!
                 </div>
               ) : (
                 <div className="flex flex-col">
+                  {isLoadingOlder && (
+                    <div className="mb-4">
+                      <Skeleton
+                        active
+                        title={false}
+                        paragraph={{ rows: 1, width: "40%" }}
+                      />
+                    </div>
+                  )}
                   {messages.map((msg, index) => {
                     const currentDateKey = getDateKey(msg.createdAt);
                     const previousDateKey =
@@ -672,7 +1028,7 @@ const MessagingInterface = () => {
                     const showDateDivider = currentDateKey !== previousDateKey;
 
                     return (
-                      <React.Fragment key={msg._id}>
+                      <div key={msg._id}>
                         {showDateDivider && (
                           <div
                             ref={(el) => {
@@ -690,9 +1046,10 @@ const MessagingInterface = () => {
                         <Message
                           selectReplyId={selectReplyId}
                           setSelectReplyId={setSelectReplyId}
+                          setReplyingTo={clearReplyTo}
                           onReply={handleReply}
                           msg={msg}
-                          profile={profile}
+                          currentUserId={currentUserId ?? ""}
                           hoveredMessageId={hoveredMessageId}
                           setHoveredMessageId={setHoveredMessageId}
                           handleReaction={handleReaction}
@@ -700,7 +1057,7 @@ const MessagingInterface = () => {
                           reactionPickerMessageId={reactionPickerMessageId}
                           dispatch={dispatch}
                         />
-                      </React.Fragment>
+                      </div>
                     );
                   })}
 
@@ -713,6 +1070,7 @@ const MessagingInterface = () => {
             <InputBox
               setSelectReplyId={setSelectReplyId}
               replyingTo={replyingTo}
+              setReplyingTo={clearReplyTo}
               selectedChat={selectedChat}
               sendDocumentMessage={sendDocumentMessage}
               messageText={messageText}
@@ -723,7 +1081,15 @@ const MessagingInterface = () => {
             />
           </>
         ) : (
-          <EmptyChatState />
+          <EmptyChatState
+            userType={isCandidateUser ? "candidate" : "company"}
+            directoryLabel={
+              isCandidateUser ? "Search Companies" : "Search Candidates"
+            }
+            onDirectoryOpen={() => {
+              setDirectoryModalOpen(true);
+            }}
+          />
         )}
       </div>
     </div>

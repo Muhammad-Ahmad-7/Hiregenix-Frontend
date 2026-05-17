@@ -60,3 +60,57 @@ interface Window {
         new(): SpeechRecognition;
     };
 }
+
+// class Project(BaseModel):
+//     name: Optional[str] = None
+//     description: Optional[str] = None
+//     link: Optional[str] = None
+//     technologies: List[str] = []
+
+// class Certification(BaseModel):
+//     name: Optional[str] = None
+//     issuer: Optional[str] = None
+//     year: Optional[str] = None
+
+// class Education(BaseModel):
+//     institution: Optional[str] = None
+//     degree: Optional[str] = None
+//     startYear: Optional[str] = None
+//     endYear: Optional[str] = None
+
+
+// class Experience(BaseModel):
+//     company: Optional[str] = None
+//     position: Optional[str] = None
+//     startDate: Optional[str] = None
+//     endDate: Optional[str] = None
+//     description: Optional[str] = None
+interface ExperienceType {
+    company?: string;
+    position?: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+}
+
+
+
+interface Education {
+    institution: string;
+    degree: string;
+    startYear: number;
+    endYear: number;
+}
+
+interface Projects {
+    name?: string;
+    description?: string;
+    link?: string | null;
+    technologies?: string[];
+}
+
+interface Certifications {
+    name?: string;
+    issuer?: string;
+    year?: number;
+}

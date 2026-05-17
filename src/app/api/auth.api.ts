@@ -4,6 +4,7 @@ import {
   AccessToken,
   LoginBody,
   LoginResponse,
+  LoginWithGoogleResponse,
   SignUpBody,
 } from "@/constants/Interfaces/Types/Auth.interface";
 import api, { safeApiCall } from "./base.api";
@@ -40,3 +41,25 @@ export const uploadFileApi = async (formData: FormData) => {
     showToaster: true,
   });
 };
+
+
+export async function googleAuth(code: string, role: string) {
+  return safeApiCall<LoginWithGoogleResponse>({
+    apiCall: () => api.get(`/auth/google?code=${code}&role=${role}`),
+    showToaster: true,
+  });
+}
+
+export async function forgetPassword(email: string) {
+  return safeApiCall<null>({
+    apiCall: () => api.post("/auth/forget-password", { email }),
+    showToaster: true,
+  });
+}
+
+export async function resetPassword({ otp, email, newPassword }: { otp: string, email: string, newPassword: string }) {
+  return safeApiCall<null>({
+    apiCall: () => api.post("/auth/reset-password", { otp, email, newPassword }),
+    showToaster: true,
+  });
+}

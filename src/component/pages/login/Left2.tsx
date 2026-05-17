@@ -11,7 +11,7 @@ export default function Left2() {
     <Col
       xs={24}
       md={12}
-      className="!flex !flex-col !justify-center  p-4 lg:p-32"
+      className="auth-panel !flex !flex-col !justify-center p-4 lg:p-32"
     >
       {/* Text & Buttons */}
       <div className="w-full shadow-none">

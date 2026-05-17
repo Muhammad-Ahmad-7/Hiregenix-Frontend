@@ -8,8 +8,20 @@ export interface LoginResponse extends AccessToken {
     isProfileCompleted: boolean;
   };
 }
+
+export interface LoginWithGoogleResponse {
+  accessToken: string;
+  user: {
+    id: string;
+    email: string;
+    role: Role;
+    isProfileCompleted: boolean;
+  }
+  new: boolean; // Indicates if the user is new or existing
+}
 export interface AccessToken {
   accessToken: string;
+  role: Role;
 }
 
 export interface LoginBody {

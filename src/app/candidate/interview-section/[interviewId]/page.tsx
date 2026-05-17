@@ -1,18 +1,21 @@
 'use client';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { AudioOutlined, StopOutlined } from '@ant-design/icons';
-import { Button, Typography, Progress, Modal, Result } from 'antd';
+import { Button, Typography, Progress, Modal, Result, Input } from 'antd';
 import { redirect, useParams, usePathname, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 import {
     createInterviewQuestionResultApi,
     createInterviewQuestionResultForSkipQuestionApi,
+    endInterviewApi,
+    markInterviewAsInProcessApi,
     getInterviewByIdApi,
 } from '@/app/api/candidate/interview.api';
 import { useInterviewAI } from '@/hooks/useInterviewAI';
 import AIFrameMonitor from '@/component/interview/AIFrameMonitor';
 import VerificationFlow from '@/component/interview/Verifications/VerificationFlow';
+import { faceVerification } from '@/component/interview/Verifications/verificationApi';
 
 // ─── Verification flow (gate) ─────────────────────────────────────────────────
 
@@ -31,6 +34,16 @@ type InterviewStateType = {
     showWaitTimer: boolean;
     hasSpokenCurrent: boolean;
     isUploading: boolean;
+};
+
+type VerificationEvent = {
+    type: 'face_verification' | 'face_missing' | 'multiple_faces';
+    timestamp: number;
+    startedAt?: number;
+    endedAt?: number;
+    durationMs?: number;
+    score?: number;
+    verified?: boolean;
 };
 
 // ─── LiveInterviewPage ────────────────────────────────────────────────────────
@@ -67,9 +80,22 @@ const LiveInterviewPage = () => {
     const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
     const suspicionRef = useRef(0);
     const isSkippingRef = useRef(false);
+    const verificationEventsRef = useRef<Record<number, VerificationEvent[]>>({});
+    const lastFaceVisibleRef = useRef<boolean | null>(null);
+    const lastMultipleFacesRef = useRef<boolean | null>(null);
+    const randomVerifyTimerRef = useRef<number | null>(null);
+    const isRecordingRef = useRef(false);
+    const faceMissingStartRef = useRef<number | null>(null);
+    const multipleFacesStartRef = useRef<number | null>(null);
+    const prevQuestionIndexRef = useRef(0);
+    const aiMetricsRef = useRef<{ faceVisible: boolean; multipleFaces: boolean } | null>(null);
 
     const { aiMetrics } = useInterviewAI(videoRef);
     const { interviewId } = useParams();
+
+    const [showEndInterviewModal, setShowEndInterviewModal] = useState(false);
+    const [confirmEndText, setConfirmEndText] = useState("");
+    const [endingInterview, setEndingInterview] = useState(false);
 
     // ── Camera (interview phase — initialised only after verification) ─────────
     useEffect(() => {
@@ -138,6 +164,132 @@ const LiveInterviewPage = () => {
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [isVerified]);
 
+    // ── Verification event tracking ─────────────────────────────────────────-
+    const addVerificationEvent = useCallback((questionIndex: number, event: VerificationEvent) => {
+        const existing = verificationEventsRef.current[questionIndex] || [];
+        verificationEventsRef.current[questionIndex] = [...existing, event];
+    }, []);
+
+    const finalizeActiveFaceEvents = useCallback((questionIndex: number, endedAt: number) => {
+        if (faceMissingStartRef.current !== null) {
+            addVerificationEvent(questionIndex, {
+                type: 'face_missing',
+                timestamp: faceMissingStartRef.current,
+                startedAt: faceMissingStartRef.current,
+                endedAt,
+                durationMs: Math.max(0, endedAt - faceMissingStartRef.current),
+            });
+            faceMissingStartRef.current = null;
+        }
+        if (multipleFacesStartRef.current !== null) {
+            addVerificationEvent(questionIndex, {
+                type: 'multiple_faces',
+                timestamp: multipleFacesStartRef.current,
+                startedAt: multipleFacesStartRef.current,
+                endedAt,
+                durationMs: Math.max(0, endedAt - multipleFacesStartRef.current),
+            });
+            multipleFacesStartRef.current = null;
+        }
+    }, [addVerificationEvent]);
+
+    useEffect(() => {
+        if (!isVerified || !aiMetrics) return;
+
+        aiMetricsRef.current = {
+            faceVisible: aiMetrics.faceVisible,
+            multipleFaces: aiMetrics.multipleFaces,
+        };
+
+        const now = Date.now();
+        if (aiMetrics.faceVisible === false && lastFaceVisibleRef.current !== false) {
+            faceMissingStartRef.current = now;
+        }
+        if (aiMetrics.faceVisible === true && lastFaceVisibleRef.current === false) {
+            if (faceMissingStartRef.current !== null) {
+                addVerificationEvent(interviewState.currentQuestionIndex, {
+                    type: 'face_missing',
+                    timestamp: faceMissingStartRef.current,
+                    startedAt: faceMissingStartRef.current,
+                    endedAt: now,
+                    durationMs: Math.max(0, now - faceMissingStartRef.current),
+                });
+                faceMissingStartRef.current = null;
+            }
+        }
+
+        if (aiMetrics.multipleFaces === true && lastMultipleFacesRef.current !== true) {
+            multipleFacesStartRef.current = now;
+        }
+        if (aiMetrics.multipleFaces === false && lastMultipleFacesRef.current === true) {
+            if (multipleFacesStartRef.current !== null) {
+                addVerificationEvent(interviewState.currentQuestionIndex, {
+                    type: 'multiple_faces',
+                    timestamp: multipleFacesStartRef.current,
+                    startedAt: multipleFacesStartRef.current,
+                    endedAt: now,
+                    durationMs: Math.max(0, now - multipleFacesStartRef.current),
+                });
+                multipleFacesStartRef.current = null;
+            }
+        }
+
+        lastFaceVisibleRef.current = aiMetrics.faceVisible;
+        lastMultipleFacesRef.current = aiMetrics.multipleFaces;
+    }, [aiMetrics, addVerificationEvent, interviewState.currentQuestionIndex, isVerified]);
+
+    const captureFaceSnapshot = useCallback(() => {
+        const video = videoRef.current;
+        if (!video || video.videoWidth === 0) return null;
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+        ctx.drawImage(video, 0, 0);
+        return canvas.toDataURL('image/jpeg', 0.9);
+    }, []);
+
+    const scheduleRandomVerification = useCallback((questionIndex: number) => {
+        console.log("In scheduling random verification")
+        const delay = Math.floor(8000 + Math.random() * 12000);
+        if (randomVerifyTimerRef.current) {
+            window.clearTimeout(randomVerifyTimerRef.current);
+        }
+        randomVerifyTimerRef.current = window.setTimeout(async () => {
+            if (!isRecordingRef.current) return;
+            const metrics = aiMetricsRef.current;
+            if (!metrics || !metrics.faceVisible || metrics.multipleFaces) {
+                scheduleRandomVerification(questionIndex);
+                return;
+            }
+            console.log("capturing snapshot")
+            const snapshot = captureFaceSnapshot();
+            if (snapshot) {
+                try {
+                    console.log("snapshot captured")
+                    const res = await faceVerification(snapshot);
+                    addVerificationEvent(questionIndex, {
+                        type: 'face_verification',
+                        timestamp: Date.now(),
+                        score: res.score,
+                        verified: res.faceVerified,
+                    });
+                } catch (err) {
+                    console.warn('Face verification failed:', err);
+                }
+            }
+            scheduleRandomVerification(questionIndex);
+        }, delay);
+    }, [addVerificationEvent, captureFaceSnapshot]);
+
+    const stopRandomVerification = useCallback(() => {
+        if (randomVerifyTimerRef.current) {
+            window.clearTimeout(randomVerifyTimerRef.current);
+            randomVerifyTimerRef.current = null;
+        }
+    }, []);
+
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     const stopWaitTimer = useCallback(() => {
@@ -161,11 +313,24 @@ const LiveInterviewPage = () => {
             }
             return prev;
         });
+        // If this was the last question, mark interview as in-process and show end modal
         if (answerReceivedArray.length === interviewState.interviewQuestions.length - 1) {
+            // Attempt to mark interview as in-process on the backend (best-effort)
+            (async () => {
+                try {
+                    const interviewIdString = typeof interviewId === 'string' ? interviewId : interviewId?.[0];
+                    if (interviewIdString) {
+                        await markInterviewAsInProcessApi(interviewIdString);
+                    }
+                } catch (err) {
+                    console.warn('Failed to mark interview as in-process:', err);
+                }
+            })();
+
             // toast.success('You have completed all questions! Thank you for your time.');
             setShowInterviewEndModal(true);
         }
-    }, [stopWaitTimer, answerReceivedArray, interviewState.interviewQuestions]);
+    }, [stopWaitTimer, answerReceivedArray, interviewState.interviewQuestions, interviewId]);
 
     const handleSkipQuestion = useCallback(async () => {
         if (isSkippingRef.current) return;
@@ -179,7 +344,8 @@ const LiveInterviewPage = () => {
             questionId: String(interviewState.currentQuestionIndex + 1),
             questionText: interviewState.currentQuestion,
         });
-
+        // Update the state to reflect the skipped question as "answered" so it doesn't block interview completion
+        setAnswerReceivedArray((prev) => [...prev, interviewState.currentQuestionIndex]);
         moveToNextQuestion();
         isSkippingRef.current = false;
     }, [interviewState.currentQuestionIndex, interviewState.currentQuestion, interviewId, moveToNextQuestion]);
@@ -265,6 +431,8 @@ const LiveInterviewPage = () => {
             recorder.start(1000);
             recorderRef.current = recorder;
             setInterviewState((prev) => ({ ...prev, isRecording: true, timeLeft: 120 }));
+            isRecordingRef.current = true;
+            scheduleRandomVerification(interviewState.currentQuestionIndex);
         } catch (err) {
             console.error('Recording failed:', err);
             toast.error('Failed to start recording');
@@ -273,6 +441,8 @@ const LiveInterviewPage = () => {
 
     const handleStopRecording = useCallback(async () => {
         setInterviewState((prev) => ({ ...prev, isUploading: true }));
+        isRecordingRef.current = false;
+        stopRandomVerification();
 
         if (!recorderRef.current || recorderRef.current.state === 'inactive') {
             console.warn('No active recording');
@@ -293,11 +463,13 @@ const LiveInterviewPage = () => {
         if (!interviewIdString) { toast.error('Interview ID is invalid'); return; }
 
         const file = new File([blob], `recording_${Date.now()}.webm`, { type: 'video/webm' });
+        const verificationEvents = verificationEventsRef.current[interviewState.currentQuestionIndex] || [];
         createInterviewQuestionResultApi({
             interviewId: interviewIdString,
             questionId: String(interviewState.currentQuestionIndex + 1),
             questionText: interviewState.currentQuestion,
             numberOfTabSwitch: suspicionRef.current,
+            verificationEvents,
             file,
         }).then((res) => {
             const status = res?.status === 'Success' ? 'success' : 'error';
@@ -310,11 +482,35 @@ const LiveInterviewPage = () => {
             toast.error('Failed to submit answer');
         });
 
+        delete verificationEventsRef.current[interviewState.currentQuestionIndex];
+
+        // console.log("State", interviewState);
+
         suspicionRef.current = 0;
         setInterviewState((prev) => ({ ...prev, isUploading: false }));
 
         moveToNextQuestion();
-    }, [moveToNextQuestion, interviewState.currentQuestionIndex, interviewId, interviewState.currentQuestion]);
+    }, [moveToNextQuestion, interviewState.currentQuestionIndex, interviewId, interviewState.currentQuestion, stopRandomVerification]);
+
+    useEffect(() => {
+        const now = Date.now();
+        if (prevQuestionIndexRef.current !== interviewState.currentQuestionIndex) {
+            finalizeActiveFaceEvents(prevQuestionIndexRef.current, now);
+            prevQuestionIndexRef.current = interviewState.currentQuestionIndex;
+        }
+        lastFaceVisibleRef.current = null;
+        lastMultipleFacesRef.current = null;
+    }, [finalizeActiveFaceEvents, interviewState.currentQuestionIndex]);
+
+    useEffect(() => {
+        return () => {
+            finalizeActiveFaceEvents(prevQuestionIndexRef.current, Date.now());
+        };
+    }, [finalizeActiveFaceEvents]);
+
+    useEffect(() => {
+        return () => stopRandomVerification();
+    }, [stopRandomVerification]);
 
     // Auto-stop at time limit
     useEffect(() => {
@@ -372,6 +568,14 @@ const LiveInterviewPage = () => {
         `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
     const waitProgress = ((5 - interviewState.waitTimeLeft) / 5) * 100;
+    const totalQuestions = interviewState.interviewQuestions.length || 1;
+    const questionNumber = interviewState.currentQuestionIndex + 1;
+    const interviewProgress = Math.round((questionNumber / totalQuestions) * 100);
+    const statusLabel = interviewState.isRecording
+        ? "Recording"
+        : interviewState.isSpeaking
+            ? "Listening"
+            : "Ready";
 
     // ── RENDER: Verification gate ─────────────────────────────────────────────
     if (!isVerified) {
@@ -382,100 +586,160 @@ const LiveInterviewPage = () => {
             />
         );
     }
-
+    const handleEndInterview = async () => {
+        setEndingInterview(true);
+        const res = await endInterviewApi(typeof interviewId === 'string' ? interviewId : interviewId?.[0] || '')
+        if (!res || res.status === 'Failed') {
+            toast.error(res?.message || 'Failed to end interview.');
+            setEndingInterview(false);
+            return;
+        }
+        setEndingInterview(false);
+        toast.success('Interview ended successfully.');
+        setShowEndInterviewModal(false);
+        redirect('/candidate/interview-section/'); // Redirect to dashboard or another page after ending interview
+    }
     // ── RENDER: Interview ─────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-            <div className="flex flex-col md:flex-row w-full max-w-7xl h-[85vh] bg-white rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden">
-
-                {/* Left: AI Monitor */}
-                <div className="w-full md:w-1/2 h-[40vh] md:h-full">
-                    <AIFrameMonitor
-                        videoRef={videoRef}
-                        isSpeaking={interviewState.isSpeaking}
-                        isRecording={interviewState.isRecording}
-                        currentQuestionIndex={interviewState.currentQuestionIndex}
-                        totalQuestions={interviewState.interviewQuestions.length}
-                        aiMetrics={aiMetrics}
-                    />
-                </div>
-
-                {/* Right: Interaction panel */}
-                <div className="w-full md:w-1/2 h-[60vh] md:h-full flex flex-col p-8 md:p-12 overflow-y-auto">
-
-                    {/* Question */}
-                    <div className="flex-1">
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">
-                            Question context
-                        </p>
-                        <h2 className="text-2xl font-bold text-slate-800 leading-snug">
-                            {interviewState.currentQuestion || 'Loading questions…'}
-                        </h2>
+        <div className="interview-page">
+            <div className="interview-shell">
+                <div className="interview-header">
+                    <div>
+                        <p className="interview-eyebrow">Live interview</p>
+                        <h1 className="interview-title">Focused, AI-guided assessment</h1>
+                        <p className="interview-subtitle">Answer clearly. Keep your video in frame for accurate scoring.</p>
                     </div>
-
-                    {/* Wait timer */}
-                    {interviewState.showWaitTimer && !interviewState.isRecording && (
-                        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mt-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <Text className="text-sm text-yellow-700 font-medium">
-                                    ⏳ Start recording or skip in:
-                                </Text>
-                                <Text className="text-2xl font-bold text-yellow-600">
-                                    {interviewState.waitTimeLeft}s
-                                </Text>
-                            </div>
+                    <div className="interview-header-right">
+                        <div className={`interview-status-pill ${interviewState.isRecording ? "is-recording" : ""}`}>
+                            <span className="interview-status-dot" />
+                            {statusLabel}
+                        </div>
+                        <div className="interview-progress">
+                            <span>Question {questionNumber} / {totalQuestions}</span>
                             <Progress
-                                percent={waitProgress}
-                                strokeColor="#eab308"
-                                trailColor="#fef3c7"
+                                percent={interviewProgress}
                                 showInfo={false}
-                                strokeWidth={8}
+                                strokeColor={
+                                    document.documentElement.getAttribute("data-theme") === "dark"
+                                        ? "#60a5fa"
+                                        : "#1677ff"
+                                }
+                                trailColor={
+                                    document.documentElement.getAttribute("data-theme") === "dark"
+                                        ? "#1f2937"
+                                        : "#e5e7eb"
+                                }
                             />
                         </div>
-                    )}
+                    </div>
+                </div>
 
-                    {/* Recording countdown */}
-                    {interviewState.isRecording && (
-                        <div className="text-center bg-gray-100 rounded-xl p-4 mt-4">
-                            <Text className="text-sm text-gray-500 block mb-1">Time Remaining</Text>
-                            <div
-                                className={`text-5xl font-bold ${interviewState.timeLeft < 30 ? 'text-red-500' : 'text-blue-600'}`}
-                            >
-                                {formatTime(interviewState.timeLeft)}
-                            </div>
+                <div className="interview-body">
+                    {/* Left: AI Monitor */}
+                    <div className="interview-left">
+                        <div className="interview-video-frame">
+                            <AIFrameMonitor
+                                videoRef={videoRef}
+                                isSpeaking={interviewState.isSpeaking}
+                                isRecording={interviewState.isRecording}
+                                currentQuestionIndex={interviewState.currentQuestionIndex}
+                                totalQuestions={interviewState.interviewQuestions.length}
+                                aiMetrics={aiMetrics}
+                            />
                         </div>
-                    )}
+                    </div>
 
-                    {/* Record / Stop button */}
-                    <div className="mt-8">
-                        {!interviewState.isRecording ? (
-                            <Button
-                                type="primary"
-                                size="large"
-                                block
-                                icon={<AudioOutlined />}
-                                onClick={handleStartRecording}
-                                disabled={interviewState.isSpeaking || interviewState.isUploading}
-                                className="h-14 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-                            >
-                                {interviewState.isSpeaking
-                                    ? 'Please wait…'
-                                    : interviewState.isUploading
-                                        ? 'Uploading…'
+                    {/* Right: Interaction panel */}
+                    <div className="interview-right">
+
+                        {/* Question */}
+                        <div className="interview-question">
+                            <p className="interview-question-label">Question</p>
+                            <h2 className="interview-question-text">
+                                {interviewState.currentQuestion || 'Loading questions…'}
+                            </h2>
+                        </div>
+
+                        {/* Wait timer */}
+                        {interviewState.showWaitTimer && !interviewState.isRecording && (
+                            <div className="wait-timer-card mt-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <Text className="wait-timer-label text-sm text-yellow-700 font-medium">
+                                        ⏳ Start recording or skip in:
+                                    </Text>
+                                    <Text className="wait-timer-value text-2xl font-bold text-yellow-600">
+                                        {interviewState.waitTimeLeft}s
+                                    </Text>
+                                </div>
+                                <Progress
+                                    percent={waitProgress}
+                                    strokeColor={
+                                        document.documentElement.getAttribute("data-theme") === "dark"
+                                            ? "#f59e0b"
+                                            : "#eab308"
+                                    }
+                                    trailColor={
+                                        document.documentElement.getAttribute("data-theme") === "dark"
+                                            ? "#3f2f12"
+                                            : "#fef3c7"
+                                    }
+                                    showInfo={false}
+                                    strokeWidth={8}
+                                />
+                            </div>
+                        )}
+
+                        {/* Recording countdown */}
+                        {interviewState.isRecording && (
+                            <div className="recording-timer">
+                                <Text className="recording-label">Time Remaining</Text>
+                                <div
+                                    className={`recording-time ${interviewState.timeLeft < 30 ? 'is-critical' : ''}`}
+                                >
+                                    {formatTime(interviewState.timeLeft)}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Record / Stop button */}
+                        <div className="interview-controls">
+                            {!interviewState.isRecording ? (
+                                <Button
+                                    type="primary"
+                                    size="large"
+                                    block
+                                    icon={<AudioOutlined />}
+                                    onClick={handleStartRecording}
+                                    disabled={interviewState.isSpeaking}
+                                    className="interview-primary-button"
+                                >
+                                    {interviewState.isSpeaking
+                                        ? 'Please wait…'
                                         : 'Start Recording Answer'}
-                            </Button>
-                        ) : (
+                                </Button>
+                            ) : (
+                                <Button
+                                    danger
+                                    size="large"
+                                    block
+                                    icon={<StopOutlined />}
+                                    onClick={handleStopRecording}
+                                    className="interview-primary-button"
+                                >
+                                    Stop & Submit Answer
+                                </Button>
+                            )}
+
                             <Button
                                 danger
                                 size="large"
                                 block
-                                icon={<StopOutlined />}
-                                onClick={handleStopRecording}
-                                className="h-14 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+                                className="interview-secondary-button"
+                                onClick={() => setShowEndInterviewModal(true)}
                             >
-                                Stop & Submit Answer
+                                End Interview
                             </Button>
-                        )}
+                        </div>
                     </div>
                 </div>
 
@@ -497,8 +761,8 @@ const LiveInterviewPage = () => {
                                 title={<span style={{ fontWeight: 700, fontSize: '24px' }}>Interview Completed!</span>}
                                 subTitle={
                                     <div style={{ fontSize: '16px', color: '#595959' }}>
-                                        <p>Thank you for completing your interview. We truly appreciate your time, presence, and patience throughout this process.</p>
-                                        <p><strong>What&apos;s next?</strong> Our team is now reviewing your responses. You will receive an email notification once your evaluation is finalized.</p>
+                                        <Text>Thank you for completing your interview. We truly appreciate your time, presence, and patience throughout this process.</Text>
+                                        <Text><strong>What&apos;s next?</strong> Our team is now reviewing your responses. You will receive an email notification once your evaluation is finalized.</Text>
                                     </div>
                                 }
                                 extra={[
@@ -521,6 +785,57 @@ const LiveInterviewPage = () => {
                         </div>
                     </Modal>
                 )}
+
+                <Modal
+                    open={showEndInterviewModal}
+                    title="End Interview?"
+                    onCancel={() => setShowEndInterviewModal(false)}
+                    footer={null}
+                    centered
+                >
+                    <div className="space-y-3 text-gray-700">
+
+                        <p className="text-red-600 font-semibold">
+                            ⚠️ This action is irreversible
+                        </p>
+
+                        <ul className="list-disc pl-5 space-y-2 text-sm">
+                            <li>You will NOT be able to continue this interview again</li>
+                            <li>Your current progress will be permanently lost</li>
+                            <li>Any unanswered questions will be marked as incomplete</li>
+                            <li>Final Interview AI evaluation will not be generated.</li>
+                        </ul>
+
+                        <p className="text-sm text-gray-600">
+                            Type <b>END</b> to confirm you want to stop the interview.
+                        </p>
+
+                        <Input
+                            value={confirmEndText}
+                            onChange={(e) => setConfirmEndText(e.target.value)}
+                            placeholder="Type END"
+                        />
+
+                        <div className="flex gap-2 mt-4">
+                            <Button
+                                onClick={() => setShowEndInterviewModal(false)}
+                                block
+                            >
+                                Cancel
+                            </Button>
+
+                            <Button
+                                danger
+                                block
+                                loading={endingInterview}
+                                disabled={confirmEndText !== "END"}
+                                onClick={handleEndInterview}
+                            >
+                                Permanently End Interview
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
             </div>
         </div>
     );
