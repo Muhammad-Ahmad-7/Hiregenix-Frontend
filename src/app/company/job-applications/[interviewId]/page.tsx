@@ -78,7 +78,7 @@ const renderList = (items: string[] | undefined) => {
         <ul className="flex flex-col gap-2">
             {items.map((item, index) => (
                 <li key={`${item}-${index}`} className="candidate-report-list-item flex items-start gap-2 text-sm">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-current opacity-60" />
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.7)]" />
                     <span>{item}</span>
                 </li>
             ))}
@@ -371,6 +371,22 @@ export default function CompanyInterviewReportPage({
                                                                                 </div>
                                                                                 <Progress percent={clampPercent(scores?.confidenceScore ?? 0)} showInfo={false} size="small" />
                                                                             </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="grid gap-3 md:grid-cols-2">
+                                                                    <div className="candidate-report-mini-card rounded-2xl p-4">
+                                                                        <Text strong>Fluency Issues</Text>
+                                                                        <div className="candidate-report-text mt-3 text-sm">
+                                                                            {renderList(fluency?.detectedIssues)}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="candidate-report-mini-card rounded-2xl p-4">
+                                                                        <Text strong>Missing Concepts</Text>
+                                                                        <div className="candidate-report-text mt-3 text-sm">
+                                                                            {renderList(question.lLMAnalysis?.insights?.missingConcepts)}
                                                                         </div>
                                                                     </div>
                                                                 </div>

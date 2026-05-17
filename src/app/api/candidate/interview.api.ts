@@ -62,9 +62,23 @@ export const getInterviewByIdApi = async (
 }
 
 export const createInterviewQuestionResultApi = async (
-  { interviewId, questionId, questionText, numberOfTabSwitch, file }:
-    { interviewId: string, questionId: string, questionText: string, numberOfTabSwitch: number, file: File }
+  { interviewId, questionId, questionText, numberOfTabSwitch, file, verificationEvents }:
+    {
+      interviewId: string;
+      questionId: string;
+      questionText: string;
+      numberOfTabSwitch: number;
+      file: File;
+      verificationEvents?: Array<{ type: string; timestamp: number; score?: number; verified?: boolean }>;
+    }
 ) => {
+
+  console.log("DATA", {
+    interviewId,
+    questionId,
+    numberOfTabSwitch,
+    verificationEvents
+  })
 
   // Api Call to generate the signed url
   const signedUrlRes = await safeApiCall<{ data: InterviewVideoUploadSignedUrlApiResponse }>({
@@ -113,6 +127,7 @@ export const createInterviewQuestionResultApi = async (
       questionId,
       questionText,
       numberOfTabSwitch,
+      verificationEvents,
       videoUrl: uploadResult.secure_url,
     }),
   });

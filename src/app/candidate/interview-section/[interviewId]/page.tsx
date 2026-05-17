@@ -15,6 +15,7 @@ import {
 import { useInterviewAI } from '@/hooks/useInterviewAI';
 import AIFrameMonitor from '@/component/interview/AIFrameMonitor';
 import VerificationFlow from '@/component/interview/Verifications/VerificationFlow';
+import { faceVerification } from '@/component/interview/Verifications/verificationApi';
 
 // ─── Verification flow (gate) ─────────────────────────────────────────────────
 
@@ -33,6 +34,16 @@ type InterviewStateType = {
     showWaitTimer: boolean;
     hasSpokenCurrent: boolean;
     isUploading: boolean;
+};
+
+type VerificationEvent = {
+    type: 'face_verification' | 'face_missing' | 'multiple_faces';
+    timestamp: number;
+    startedAt?: number;
+    endedAt?: number;
+    durationMs?: number;
+    score?: number;
+    verified?: boolean;
 };
 
 // ─── LiveInterviewPage ────────────────────────────────────────────────────────
@@ -69,6 +80,15 @@ const LiveInterviewPage = () => {
     const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
     const suspicionRef = useRef(0);
     const isSkippingRef = useRef(false);
+    const verificationEventsRef = useRef<Record<number, VerificationEvent[]>>({});
+    const lastFaceVisibleRef = useRef<boolean | null>(null);
+    const lastMultipleFacesRef = useRef<boolean | null>(null);
+    const randomVerifyTimerRef = useRef<number | null>(null);
+    const isRecordingRef = useRef(false);
+    const faceMissingStartRef = useRef<number | null>(null);
+    const multipleFacesStartRef = useRef<number | null>(null);
+    const prevQuestionIndexRef = useRef(0);
+    const aiMetricsRef = useRef<{ faceVisible: boolean; multipleFaces: boolean } | null>(null);
 
     const { aiMetrics } = useInterviewAI(videoRef);
     const { interviewId } = useParams();
@@ -143,6 +163,132 @@ const LiveInterviewPage = () => {
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [isVerified]);
+
+    // ── Verification event tracking ─────────────────────────────────────────-
+    const addVerificationEvent = useCallback((questionIndex: number, event: VerificationEvent) => {
+        const existing = verificationEventsRef.current[questionIndex] || [];
+        verificationEventsRef.current[questionIndex] = [...existing, event];
+    }, []);
+
+    const finalizeActiveFaceEvents = useCallback((questionIndex: number, endedAt: number) => {
+        if (faceMissingStartRef.current !== null) {
+            addVerificationEvent(questionIndex, {
+                type: 'face_missing',
+                timestamp: faceMissingStartRef.current,
+                startedAt: faceMissingStartRef.current,
+                endedAt,
+                durationMs: Math.max(0, endedAt - faceMissingStartRef.current),
+            });
+            faceMissingStartRef.current = null;
+        }
+        if (multipleFacesStartRef.current !== null) {
+            addVerificationEvent(questionIndex, {
+                type: 'multiple_faces',
+                timestamp: multipleFacesStartRef.current,
+                startedAt: multipleFacesStartRef.current,
+                endedAt,
+                durationMs: Math.max(0, endedAt - multipleFacesStartRef.current),
+            });
+            multipleFacesStartRef.current = null;
+        }
+    }, [addVerificationEvent]);
+
+    useEffect(() => {
+        if (!isVerified || !aiMetrics) return;
+
+        aiMetricsRef.current = {
+            faceVisible: aiMetrics.faceVisible,
+            multipleFaces: aiMetrics.multipleFaces,
+        };
+
+        const now = Date.now();
+        if (aiMetrics.faceVisible === false && lastFaceVisibleRef.current !== false) {
+            faceMissingStartRef.current = now;
+        }
+        if (aiMetrics.faceVisible === true && lastFaceVisibleRef.current === false) {
+            if (faceMissingStartRef.current !== null) {
+                addVerificationEvent(interviewState.currentQuestionIndex, {
+                    type: 'face_missing',
+                    timestamp: faceMissingStartRef.current,
+                    startedAt: faceMissingStartRef.current,
+                    endedAt: now,
+                    durationMs: Math.max(0, now - faceMissingStartRef.current),
+                });
+                faceMissingStartRef.current = null;
+            }
+        }
+
+        if (aiMetrics.multipleFaces === true && lastMultipleFacesRef.current !== true) {
+            multipleFacesStartRef.current = now;
+        }
+        if (aiMetrics.multipleFaces === false && lastMultipleFacesRef.current === true) {
+            if (multipleFacesStartRef.current !== null) {
+                addVerificationEvent(interviewState.currentQuestionIndex, {
+                    type: 'multiple_faces',
+                    timestamp: multipleFacesStartRef.current,
+                    startedAt: multipleFacesStartRef.current,
+                    endedAt: now,
+                    durationMs: Math.max(0, now - multipleFacesStartRef.current),
+                });
+                multipleFacesStartRef.current = null;
+            }
+        }
+
+        lastFaceVisibleRef.current = aiMetrics.faceVisible;
+        lastMultipleFacesRef.current = aiMetrics.multipleFaces;
+    }, [aiMetrics, addVerificationEvent, interviewState.currentQuestionIndex, isVerified]);
+
+    const captureFaceSnapshot = useCallback(() => {
+        const video = videoRef.current;
+        if (!video || video.videoWidth === 0) return null;
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+        ctx.drawImage(video, 0, 0);
+        return canvas.toDataURL('image/jpeg', 0.9);
+    }, []);
+
+    const scheduleRandomVerification = useCallback((questionIndex: number) => {
+        console.log("In scheduling random verification")
+        const delay = Math.floor(8000 + Math.random() * 12000);
+        if (randomVerifyTimerRef.current) {
+            window.clearTimeout(randomVerifyTimerRef.current);
+        }
+        randomVerifyTimerRef.current = window.setTimeout(async () => {
+            if (!isRecordingRef.current) return;
+            const metrics = aiMetricsRef.current;
+            if (!metrics || !metrics.faceVisible || metrics.multipleFaces) {
+                scheduleRandomVerification(questionIndex);
+                return;
+            }
+            console.log("capturing snapshot")
+            const snapshot = captureFaceSnapshot();
+            if (snapshot) {
+                try {
+                    console.log("snapshot captured")
+                    const res = await faceVerification(snapshot);
+                    addVerificationEvent(questionIndex, {
+                        type: 'face_verification',
+                        timestamp: Date.now(),
+                        score: res.score,
+                        verified: res.faceVerified,
+                    });
+                } catch (err) {
+                    console.warn('Face verification failed:', err);
+                }
+            }
+            scheduleRandomVerification(questionIndex);
+        }, delay);
+    }, [addVerificationEvent, captureFaceSnapshot]);
+
+    const stopRandomVerification = useCallback(() => {
+        if (randomVerifyTimerRef.current) {
+            window.clearTimeout(randomVerifyTimerRef.current);
+            randomVerifyTimerRef.current = null;
+        }
+    }, []);
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -285,6 +431,8 @@ const LiveInterviewPage = () => {
             recorder.start(1000);
             recorderRef.current = recorder;
             setInterviewState((prev) => ({ ...prev, isRecording: true, timeLeft: 120 }));
+            isRecordingRef.current = true;
+            scheduleRandomVerification(interviewState.currentQuestionIndex);
         } catch (err) {
             console.error('Recording failed:', err);
             toast.error('Failed to start recording');
@@ -293,6 +441,8 @@ const LiveInterviewPage = () => {
 
     const handleStopRecording = useCallback(async () => {
         setInterviewState((prev) => ({ ...prev, isUploading: true }));
+        isRecordingRef.current = false;
+        stopRandomVerification();
 
         if (!recorderRef.current || recorderRef.current.state === 'inactive') {
             console.warn('No active recording');
@@ -313,11 +463,13 @@ const LiveInterviewPage = () => {
         if (!interviewIdString) { toast.error('Interview ID is invalid'); return; }
 
         const file = new File([blob], `recording_${Date.now()}.webm`, { type: 'video/webm' });
+        const verificationEvents = verificationEventsRef.current[interviewState.currentQuestionIndex] || [];
         createInterviewQuestionResultApi({
             interviewId: interviewIdString,
             questionId: String(interviewState.currentQuestionIndex + 1),
             questionText: interviewState.currentQuestion,
             numberOfTabSwitch: suspicionRef.current,
+            verificationEvents,
             file,
         }).then((res) => {
             const status = res?.status === 'Success' ? 'success' : 'error';
@@ -330,13 +482,35 @@ const LiveInterviewPage = () => {
             toast.error('Failed to submit answer');
         });
 
+        delete verificationEventsRef.current[interviewState.currentQuestionIndex];
+
         // console.log("State", interviewState);
 
         suspicionRef.current = 0;
         setInterviewState((prev) => ({ ...prev, isUploading: false }));
 
         moveToNextQuestion();
-    }, [moveToNextQuestion, interviewState.currentQuestionIndex, interviewId, interviewState.currentQuestion]);
+    }, [moveToNextQuestion, interviewState.currentQuestionIndex, interviewId, interviewState.currentQuestion, stopRandomVerification]);
+
+    useEffect(() => {
+        const now = Date.now();
+        if (prevQuestionIndexRef.current !== interviewState.currentQuestionIndex) {
+            finalizeActiveFaceEvents(prevQuestionIndexRef.current, now);
+            prevQuestionIndexRef.current = interviewState.currentQuestionIndex;
+        }
+        lastFaceVisibleRef.current = null;
+        lastMultipleFacesRef.current = null;
+    }, [finalizeActiveFaceEvents, interviewState.currentQuestionIndex]);
+
+    useEffect(() => {
+        return () => {
+            finalizeActiveFaceEvents(prevQuestionIndexRef.current, Date.now());
+        };
+    }, [finalizeActiveFaceEvents]);
+
+    useEffect(() => {
+        return () => stopRandomVerification();
+    }, [stopRandomVerification]);
 
     // Auto-stop at time limit
     useEffect(() => {
