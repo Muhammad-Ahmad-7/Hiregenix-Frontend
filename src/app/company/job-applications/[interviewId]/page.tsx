@@ -235,7 +235,7 @@ export default function CompanyInterviewReportPage({
                                     </div>
 
                                     <div className="candidate-report-panel rounded-2xl p-4">
-                                        <div className="mb-3 flex items-center gap-2 text-slate-700">
+                                        <div className="mb-3 flex items-center gap-2 text-indigo-500">
                                             <span className="font-semibold">Overall Interview Summary</span>
                                         </div>
                                         <Paragraph className="candidate-report-text !mb-0">
