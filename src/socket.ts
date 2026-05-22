@@ -2,7 +2,7 @@
 import { io } from "socket.io-client";
 import { getToken } from "./utils/token";
 
-export const socket = io("http://localhost:5000", {
+export const socket = io(process.env.NEXT_PUBLIC_BACKEND_WS_URL, {
   auth: {
     token: getToken(),
   },
