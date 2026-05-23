@@ -96,6 +96,40 @@
   scrollbar-width: none;
 }
 
+/* Consistent textarea scrollbars (Chrome, Safari, Edge) */
+.app-textarea-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.app-textarea-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.app-textarea-scroll::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 999px;
+  border: 2px solid #f1f5f9;
+}
+
+/* Consistent textarea scrollbars (Firefox) */
+.app-textarea-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+[data-theme="dark"] .app-textarea-scroll::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .app-textarea-scroll::-webkit-scrollbar-thumb {
+  background: #334155;
+  border: 2px solid #0f172a;
+}
+
+[data-theme="dark"] .app-textarea-scroll {
+  scrollbar-color: #334155 #0f172a;
+}
+
 /* @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;

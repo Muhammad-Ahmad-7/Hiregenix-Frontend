@@ -389,6 +389,7 @@ export default function CreateJob() {
               <TextArea
                 rows={5}
                 placeholder="Describe the role..."
+                className="app-textarea-scroll"
                 disabled={loading || aiLoading.description}
               />
             </Form.Item>
@@ -410,6 +411,7 @@ export default function CreateJob() {
               <TextArea
                 rows={5}
                 placeholder="Explain what the interviewer should focus on..."
+                className="app-textarea-scroll"
                 disabled={loading || aiLoading.interviewGuideline}
               />
             </Form.Item>

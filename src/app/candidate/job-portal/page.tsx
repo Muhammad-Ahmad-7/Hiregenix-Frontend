@@ -309,7 +309,7 @@ export default function JobDashboard() {
         const companyId =
           selectedJob?.companyId?._id || selectedJob?.company?._id;
         if (companyId) {
-          router.push(`http://localhost:3000/candidate/view-profile/${companyId}`);
+          router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/candidate/view-profile/${companyId}`);
         }
         break;
       }
