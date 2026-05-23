@@ -6,8 +6,6 @@ export const socket = io(process.env.NEXT_PUBLIC_BACKEND_WS_URL, {
   auth: {
     token: getToken(),
   },
-  transports: ["websocket"],
-  upgrade: false,
 }); // your backend URL
 
 const originalEmit = socket.emit;
