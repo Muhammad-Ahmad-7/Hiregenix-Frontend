@@ -64,7 +64,7 @@ interface VerificationFlowProps {
 }
 
 const VerificationFlow: React.FC<VerificationFlowProps> = ({ onVerificationComplete, interviewId }) => {
-    const [phase, setPhase] = useState<VerificationPhase>('complete'); // Start at 'complete' for testing, change to 'intro' for production
+    const [phase, setPhase] = useState<VerificationPhase>('intro'); // Start at 'complete' for testing, change to 'intro' for production
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
