@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { Card, Table, Row, Col, Tag } from "antd";
 import {
   ContainerFilled,
@@ -10,15 +11,17 @@ import {
 import StatsCard from "@/component/pages/dashboard/StatsCard";
 import DashboardSkeleton from "@/component/Skeletons/DashboardSkeleton";
 import { useEffect, useRef, useState } from "react";
-import { getCompanyStatsApi } from "@/app/api/company/dashboard.api";
+import api from "@/app/api/base.api";
 import { CompanyDashboardResponse } from "@/constants/Interfaces/Types/Dashboard.interface";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
   const [companyStats, setCompanyStats] =
     useState<CompanyDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(false);
+  const router = useRouter();
 
   const statsRowRef = useRef<HTMLDivElement>(null);
 
@@ -34,19 +37,54 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    getCompanyStatsApi()
-      .then((res) => {
-        if (!res || !res.data) return;
-        setCompanyStats(res.data);
-      })
-      .catch((error) => {
+    let isActive = true;
+
+    const loadDashboard = async () => {
+      setLoading(true);
+
+      try {
+        const response = await api.get("/company/get-dashboard-stats");
+        if (!isActive) return;
+
+        const payload = response.data;
+        if (payload?.status === "Success" && payload.data) {
+          setCompanyStats(payload.data);
+          return;
+        }
+
+        const message = (payload?.message || "").toLowerCase();
+        if (message.includes("not authorized to access this resource")) {
+          router.replace("/auth");
+          return;
+        }
+
+        console.error("Unexpected company dashboard response:", payload);
+      } catch (error) {
+        const errorMessage = axios.isAxiosError(error)
+          ? ((error.response?.data as { message?: string } | undefined)?.message || error.message)
+          : error instanceof Error
+            ? error.message
+            : "";
+
+        if (errorMessage.toLowerCase().includes("not authorized to access this resource")) {
+          router.replace("/auth");
+          return;
+        }
+
         console.error("Error fetching company stats:", error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      isActive = false;
+    };
+  }, [router]);
 
   const isExpiringSoon = (date: Date) => {
     const diffDays = Math.ceil(

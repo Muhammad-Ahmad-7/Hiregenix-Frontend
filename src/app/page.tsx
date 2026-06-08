@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Layout,
-  Menu,
   Button,
   Typography,
   Row,
@@ -16,13 +15,15 @@ import {
   Divider,
   ConfigProvider,
   Collapse,
+  Drawer,
   theme as antdTheme,
 } from "antd";
 import {
   BulbOutlined,
   MoonOutlined,
   LoginOutlined,
-  LogoutOutlined,
+  AppstoreOutlined,
+  MenuOutlined,
   RocketOutlined,
   SafetyCertificateOutlined,
   TeamOutlined,
@@ -36,13 +37,35 @@ import {
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { getToken, removeToken } from "@/utils/token";
+import { getToken } from "@/utils/token";
 import { RootState } from "@/redux/store";
 import { setThemeMode } from "@/redux/slices/themeSlice";
 import { motion } from "framer-motion";
 
 const { Header, Content, Footer } = Layout;
 const { Title, Paragraph, Text } = Typography;
+
+const navItems = [
+  { key: "features", label: "Features" },
+  { key: "workflow", label: "Workflow" },
+  { key: "faq", label: "FAQ" },
+  { key: "footer", label: "Contact" },
+];
+
+const getRoleFromToken = (token: string): "candidate" | "company" | null => {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = JSON.parse(window.atob(normalizedPayload));
+    const role = decoded.role ?? decoded.user?.role ?? decoded.userType;
+
+    return role === "candidate" || role === "company" ? role : null;
+  } catch {
+    return null;
+  }
+};
 
 const features = [
   {
@@ -384,11 +407,18 @@ export default function Home() {
   const router = useRouter();
   const dispatch = useDispatch();
   const themeMode = useSelector((state: RootState) => state.theme.mode);
+  const profile = useSelector((state: RootState) => state.user.profile);
   const [isAuthed, setIsAuthed] = useState(false);
+  const [dashboardPath, setDashboardPath] = useState("/auth");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    setIsAuthed(Boolean(getToken()));
-  }, []);
+    const token = getToken();
+    setIsAuthed(Boolean(token));
+
+    const role = profile?.userType ?? (token ? getRoleFromToken(token) : null);
+    if (role) setDashboardPath(`/${role}/dashboard`);
+  }, [profile]);
 
   const themeConfig = useMemo(
     () => ({
@@ -407,18 +437,17 @@ export default function Home() {
     dispatch(setThemeMode(themeMode === "dark" ? "light" : "dark"));
   };
 
-  const handleLogout = () => {
-    removeToken();
-    setIsAuthed(false);
-    router.push("/auth");
+  const scrollToSection = (sectionId: string) => {
+    setMobileMenuOpen(false);
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
     <ConfigProvider theme={themeConfig}>
-      <Layout style={{ minHeight: "100vh", background: "var(--background)" }}>
+      <Layout className="landing-page-shell" style={{ minHeight: "100vh", background: "var(--background)" }}>
         <Header className="landing-header">
-          <Row align="middle" justify="space-between" gutter={16}>
-            <Space size="middle">
+          <div className="landing-header-inner">
+            <Space size="middle" className="landing-brand">
               <Avatar
                 shape="square"
                 size={36}
@@ -428,35 +457,28 @@ export default function Home() {
               <Title level={4} style={{ margin: 0, color: "var(--text-primary)" }}>
                 HireGenix
               </Title>
-              <Tag color="blue">Enterprise AI Hiring</Tag>
+              <Tag color="blue" className="landing-brand-tag">Enterprise AI Hiring</Tag>
             </Space>
-            <Menu
-              mode="horizontal"
-              selectable={false}
-              className="landing-menu"
-              onClick={({ key }) => {
-                const section = document.getElementById(String(key));
-                if (section) {
-                  section.scrollIntoView({ behavior: "smooth" });
-                }
-              }}
-              items={[
-                { key: "features", label: "Features" },
-                { key: "workflow", label: "Workflow" },
-                { key: "faq", label: "FAQ" },
-                { key: "footer", label: "Contact" },
-              ]}
-            />
-            <Space size="middle">
+            <nav className="landing-desktop-nav" aria-label="Landing page navigation">
+              {navItems.map((item) => (
+                <Button key={item.key} type="text" onClick={() => scrollToSection(item.key)}>
+                  {item.label}
+                </Button>
+              ))}
+            </nav>
+            <Space size="small" className="landing-header-actions">
               <Button
+                className="landing-theme-button"
                 icon={themeMode === "dark" ? <BulbOutlined /> : <MoonOutlined />}
                 onClick={toggleTheme}
               >
-                {themeMode === "dark" ? "Light" : "Dark"}
+                <span className="landing-action-label">
+                  {themeMode === "dark" ? "Light" : "Dark"}
+                </span>
               </Button>
               {isAuthed ? (
-                <Button danger icon={<LogoutOutlined />} onClick={handleLogout}>
-                  Logout
+                <Button type="primary" icon={<AppstoreOutlined />} onClick={() => router.push(dashboardPath)}>
+                  <span className="landing-action-label">Dashboard</span>
                 </Button>
               ) : (
                 <Button
@@ -464,12 +486,54 @@ export default function Home() {
                   icon={<LoginOutlined />}
                   onClick={() => router.push("/auth")}
                 >
-                  Login
+                  <span className="landing-action-label">Login</span>
                 </Button>
               )}
+              <Button
+                className="landing-mobile-menu-button"
+                icon={<MenuOutlined />}
+                aria-label="Open navigation menu"
+                onClick={() => setMobileMenuOpen(true)}
+              />
             </Space>
-          </Row>
+          </div>
         </Header>
+
+        <Drawer
+          title="HireGenix"
+          placement="right"
+          width={Math.min(320, typeof window === "undefined" ? 320 : window.innerWidth)}
+          open={mobileMenuOpen}
+          onClose={() => setMobileMenuOpen(false)}
+          className="landing-mobile-drawer"
+        >
+          <div className="landing-mobile-nav">
+            {navItems.map((item) => (
+              <Button key={item.key} type="text" block onClick={() => scrollToSection(item.key)}>
+                {item.label}
+              </Button>
+            ))}
+            <Divider />
+            <Button
+              block
+              icon={themeMode === "dark" ? <BulbOutlined /> : <MoonOutlined />}
+              onClick={toggleTheme}
+            >
+              Switch to {themeMode === "dark" ? "light" : "dark"} mode
+            </Button>
+            <Button
+              block
+              type="primary"
+              icon={isAuthed ? <AppstoreOutlined /> : <LoginOutlined />}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                router.push(isAuthed ? dashboardPath : "/auth");
+              }}
+            >
+              {isAuthed ? "Open dashboard" : "Login"}
+            </Button>
+          </div>
+        </Drawer>
 
         <Content className="landing-content">
           <section className="landing-hero">

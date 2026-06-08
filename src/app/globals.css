@@ -141,6 +141,12 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(14px, 0.35vw + 13px, 16px);
+  line-height: 1.5;
+}
+
+html {
+  font-size: clamp(14px, 0.35vw + 13px, 16px);
 }
 
 /* Auth pages */
@@ -1107,10 +1113,63 @@ body {
   z-index: 10;
 }
 
-.landing-menu {
-  border-bottom: none;
-  background: transparent;
+.landing-header-inner {
+  width: 100%;
+  max-width: 1440px;
+  height: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+}
+
+.landing-brand {
+  flex-shrink: 0;
+}
+
+.landing-desktop-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  justify-self: center;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.landing-desktop-nav .ant-btn {
   color: var(--text-muted);
+  font-weight: 500;
+}
+
+.landing-desktop-nav .ant-btn:hover {
+  color: var(--accent) !important;
+}
+
+.landing-header-actions {
+  flex-shrink: 0;
+  justify-self: end;
+}
+
+.landing-mobile-menu-button {
+  display: none;
+}
+
+.landing-mobile-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.landing-mobile-nav>.ant-btn {
+  height: 44px;
+  text-align: left;
+}
+
+.landing-mobile-nav>.ant-btn-primary,
+.landing-mobile-nav>.ant-btn-default {
+  text-align: center;
 }
 
 .landing-logo {
@@ -1123,6 +1182,10 @@ body {
   background: radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.08), transparent 45%),
     radial-gradient(circle at 85% 10%, rgba(14, 165, 233, 0.08), transparent 40%),
     var(--background);
+}
+
+.landing-page-shell {
+  overflow-x: clip;
 }
 
 [data-theme="dark"] .landing-content {
@@ -1200,9 +1263,10 @@ body {
 }
 
 .landing-subtitle {
-  font-size: 1rem;
+  font-size: clamp(0.98rem, 0.35vw + 0.9rem, 1.15rem);
   color: var(--text-muted);
   margin: 0;
+  line-height: 1.65;
 }
 
 .landing-metrics {
@@ -1335,6 +1399,7 @@ body {
 .landing-section-subtitle {
   color: var(--text-muted);
   margin: 0;
+  font-size: clamp(0.95rem, 0.3vw + 0.88rem, 1.05rem);
 }
 
 .landing-logo-card {
@@ -1453,6 +1518,12 @@ body {
 
 .landing-footer-copy {
   color: var(--text-muted);
+}
+
+@media (min-width: 1101px) {
+  .landing-header-inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
 }
 
 /* Resume parsing loader */
@@ -1923,4 +1994,80 @@ html {
 /* Landing sections stagger effect */
 .landing-section {
   animation: slideInUp 0.8s ease-out;
+}
+
+@media (max-width: 1100px) {
+  .landing-header {
+    padding: 0 20px;
+  }
+
+  .landing-desktop-nav {
+    display: none;
+  }
+
+  .landing-mobile-menu-button {
+    display: inline-flex;
+  }
+
+  .landing-header-inner {
+    gap: 12px;
+    grid-template-columns: auto 1fr auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-header {
+    height: 60px;
+    padding: 0 12px;
+  }
+
+  .landing-brand {
+    gap: 8px !important;
+    min-width: 0;
+  }
+
+  .landing-brand .ant-typography {
+    font-size: clamp(0.95rem, 2.2vw, 1rem);
+  }
+
+  .landing-brand-tag {
+    display: none;
+  }
+
+  .landing-logo {
+    width: 32px !important;
+    height: 32px !important;
+    line-height: 32px !important;
+  }
+
+  .landing-header-actions {
+    gap: 6px !important;
+  }
+
+  .landing-theme-button,
+  .landing-header-actions>.ant-btn-primary {
+    display: none;
+  }
+
+  .landing-header-actions>.ant-btn {
+    width: 36px;
+    padding-inline: 0;
+  }
+
+  .landing-action-label {
+    display: none;
+  }
+
+  .landing-content {
+    padding: 20px 16px;
+  }
+
+  .landing-subtitle,
+  .landing-section-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .landing-title {
+    font-size: clamp(1.8rem, 8vw, 2.6rem);
+  }
 }

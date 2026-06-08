@@ -82,12 +82,10 @@ const CandidateLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     if (profile) return;
     getCandidateProfileApi()
       .then((res) => {
-        console.log("first", res);
         if (!res || !res.data) {
           redirect("/auth");
         };
         if (res.status === "Success") {
-          console.log("youyouyou", res);
           const valuesWithUserType: CandidateProfileResponse & {
             userType: "candidate";
           } = {

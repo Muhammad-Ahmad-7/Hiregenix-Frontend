@@ -57,7 +57,6 @@ export interface CompleteCandidateProfile {
   githubUrl: string;
   linkedinUrl: string;
   portfolioUrl: string;
-  skills: string[];
   bio: string;
   tagline: string;
 }
@@ -69,6 +68,7 @@ export interface CandidateProfileResponse extends CompleteCandidateProfile {
   isDeleted?: boolean | string;
   aiDescription?: string;
   embeddingSync?: boolean;
+  profilePictureUrl: string;
   qdrantId?: string;
   resumeUrl?: string;
   //   userType?: "candidate";

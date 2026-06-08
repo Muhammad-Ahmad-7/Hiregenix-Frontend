@@ -155,7 +155,7 @@ export default function CreateJob() {
         form.setFieldValue("requirements", d.requirements || []);
       }
 
-      toast.success("✨ Field filled with AI-generated data!");
+      toast.success("Field filled with AI-generated data!");
     } catch (error) {
       console.error("Error generating job data using AI:", error);
       toast.error("Something went wrong while generating job data.");

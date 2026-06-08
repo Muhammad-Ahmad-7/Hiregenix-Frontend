@@ -86,7 +86,7 @@ export const JobApplicationStats: React.FC<JobApplicationStatsProps> = ({
           <div className="p-4 bg-white rounded-2xl shadow-sm card">
             <Statistic
               title="Total applications"
-              value={totalApplications | 0}
+              value={totalApplications || 0}
               valueStyle={{
                 fontSize: "32px",
                 fontWeight: "bold",

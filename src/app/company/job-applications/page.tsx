@@ -61,7 +61,7 @@ export interface StatsData {
   bestMatches: number;
 }
 
-type JobWithStats = Pick<JobResponse, "_id" | "title"> & {
+type JobWithStats = Pick<JobResponse, "_id" | "title" | "role"> & {
   totalInterviews?: number;
   viewCount?: number;
   bestMatchCount?: number;
@@ -255,7 +255,7 @@ export default function ApplicationsPage() {
   // Transform jobs data for stats component
   const jobRoles = applications.map((job) => ({
     value: job._id,
-    label: job.title,
+    label: `${job.title} - ${job.role}`,
     icon: "👨‍💻",
   }));
 
