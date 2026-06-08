@@ -166,18 +166,16 @@ export default function ProfileDashboard() {
     editingItem: ResumeExperience | ResumeEducation | ResumeProject | ResumeCertification | null;
   }>({ open: false, type: null, editingItem: null });
   const [sectionForm] = Form.useForm();
-
   const [userProfile, setUserProfile] = useState<UserProfile>({
-    fullName: "",
-    profilePictureUrl:
-      "https://api.dicebear.com/8.x/avataaars/svg?seed=Ahmad",
-    tagline: "Full Stack Developer | AI Enthusiast",
-    city: "Lahore",
-    country: "Pakistan",
-    bio: "Passionate about building innovative solutions with modern technologies.",
-    githubUrl: "https://github.com/tahaxd77",
-    linkedinUrl: "https://www.linkedin.com/in/muhammad-taha-ayaz",
-    portfolioUrl: "",
+    fullName: profile?.userType === "candidate" ? profile.fullName : "",
+    profilePictureUrl: profile?.userType === "candidate" ? profile.profilePictureUrl : "",
+    tagline: profile?.userType === "candidate" ? profile.tagline : "",
+    city: profile?.userType === "candidate" ? profile.city : "",
+    country: profile?.userType === "candidate" ? profile.country : "",
+    bio: profile?.userType === "candidate" ? profile.bio : "",
+    githubUrl: profile?.userType === "candidate" ? profile.githubUrl : "",
+    linkedinUrl: profile?.userType === "candidate" ? profile.linkedinUrl : "",
+    portfolioUrl: profile?.userType === "candidate" ? profile.portfolioUrl : "",
   });
 
   const isLargeScreen = screens.lg;
@@ -413,7 +411,6 @@ export default function ProfileDashboard() {
         githubUrl: profile.githubUrl,
         linkedinUrl: profile.linkedinUrl,
         portfolioUrl: profile.portfolioUrl,
-        skills: profile.skills || [],
         bio: profile.bio,
         tagline: profile.tagline,
       };
@@ -503,7 +500,9 @@ export default function ProfileDashboard() {
   const handleEditSave = async (values: CandidateProfileResponse): Promise<void> => {
     try {
       setProfileEditing(true);
-      const valuesWithUserType: CandidateProfileResponse & { userType: "candidate" } = { ...values, userType: "candidate" };
+      const valuesWithUserType: CandidateProfileResponse & { userType: "candidate", profilePictureUrl: string } = { ...values, userType: "candidate", profilePictureUrl: userProfile?.profilePictureUrl || "" };
+      console.log("Values of editing modal data", valuesWithUserType);
+      console.log("Profile data", userProfile);
       dispatch(setProfile(valuesWithUserType));
       await updateProfileApi(values);
       setUserProfile((prev) => ({ ...prev, ...values }));
@@ -1026,14 +1025,23 @@ export default function ProfileDashboard() {
 
             {/* Skills */}
             {resumeData?.parsedData.skills && resumeData.parsedData.skills.length > 0 && (
-              <Card title={<Title level={5}>Skills</Title>} className="rounded-xl">
-                <Space wrap size={[8, 8]}>
-                  {resumeData.parsedData.skills.map((skill, index) => (
-                    <Tag key={`${skill}-${index}`} color="blue" className="rounded-full px-3 py-1">
-                      {skill}
-                    </Tag>
-                  ))}
-                </Space>
+              <Card title={<Title level={5}>Skills</Title>} className="rounded-xl" style={{ overflow: "hidden" }}>
+                <div className="flex flex-wrap gap-2">
+                  {resumeData.parsedData.skills.map((skill: string, index: number) => {
+                    const MAX_LENGTH = 28;
+                    const truncated = skill.length > MAX_LENGTH ? skill.slice(0, MAX_LENGTH).trimEnd() + "…" : skill;
+                    return (
+                      <Tag
+                        key={index}
+                        color="blue"
+                        className="rounded-full !m-0 text-sm px-3 py-0.5"
+                        title={skill} // shows full text on hover as tooltip
+                      >
+                        {truncated}
+                      </Tag>
+                    );
+                  })}
+                </div>
               </Card>
             )}
 

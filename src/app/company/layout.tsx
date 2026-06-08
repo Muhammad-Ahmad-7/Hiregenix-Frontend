@@ -3,6 +3,7 @@
 import React, { ReactNode, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Layout, Menu, ConfigProvider, Button, theme as antdTheme } from "antd";
+import axios from "axios";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -102,6 +103,17 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       })
       .catch((err) => {
         console.log("Error fetching profile:", err);
+        const errorMessage = axios.isAxiosError(err)
+          ? (err.response?.data as { message?: string } | undefined)?.message || err.message
+          : err instanceof Error
+            ? err.message
+            : "";
+
+        if (errorMessage.toLowerCase().includes("not authorized to access this resource")) {
+          router.replace("/auth");
+          return;
+        }
+
         router.push("/auth/sign-up");
       })
       .finally(() => { });

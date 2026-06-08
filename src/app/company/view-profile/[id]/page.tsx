@@ -240,32 +240,7 @@ export default function CandidateProfileView() {
           </Text>
         </div>
 
-        <div className="flex justify-between items-start">
-          <Text strong className="!w-[35%]">Skills</Text>
-          <Space wrap className="!flex justify-end">
-            {(
-              isCandidateProfile(profile)
-                ? profile?.skills || resumeData?.parsedData.skills || []
-                : resumeData?.parsedData.skills || []
-            )
-              .slice(0, 8)
-              .map((skill: string, index: number) => (
-                <Tag key={index} className="rounded-full" color="blue">{skill}</Tag>
-              ))}
-            {(
-              isCandidateProfile(profile)
-                ? profile?.skills?.length || resumeData?.parsedData.skills?.length || 0
-                : resumeData?.parsedData.skills?.length || 0
-            ) > 8 && (
-                <Tag className="rounded-full">
-                  +{Math.max(
-                    resumeData?.parsedData.skills?.length || 0,
-                    isCandidateProfile(profile) ? profile?.skills?.length || 0 : 0
-                  ) - 8}
-                </Tag>
-              )}
-          </Space>
-        </div>
+
 
         <Divider className="!my-3" />
 
@@ -332,8 +307,12 @@ export default function CandidateProfileView() {
     <div style={{ minHeight: "100vh" }}>
       <Row gutter={[24, 24]}>
         {/* ── Sidebar ──────────────────────────────────────────────────────── */}
-        <Col xs={24} md={24} lg={9}>
-          {isLargeScreen ? <Affix offsetTop={80}>{SidebarCard}</Affix> : SidebarCard}
+        <Col xs={24} md={24} lg={9} style={{ position: "relative", zIndex: 10 }}>
+          {isLargeScreen ? (
+            <Affix offsetTop={80} style={{ position: "relative", zIndex: 10 }}>
+              {SidebarCard}
+            </Affix>
+          ) : SidebarCard}
         </Col>
 
         {/* ── Main content ─────────────────────────────────────────────────── */}
@@ -407,6 +386,28 @@ export default function CandidateProfileView() {
                     </div>
                   ))}
                 </Space>
+              </Card>
+            )}
+
+            {/* ── Skills ──────────────────────────────────────────────────────── */}
+            {resumeData?.parsedData.skills && resumeData.parsedData.skills.length > 0 && (
+              <Card title={<Title level={5}>Skills</Title>} className="rounded-xl" style={{ overflow: "hidden" }}>
+                <div className="flex flex-wrap gap-2">
+                  {resumeData.parsedData.skills.map((skill: string, index: number) => {
+                    const MAX_LENGTH = 28;
+                    const truncated = skill.length > MAX_LENGTH ? skill.slice(0, MAX_LENGTH).trimEnd() + "…" : skill;
+                    return (
+                      <Tag
+                        key={index}
+                        color="blue"
+                        className="rounded-full !m-0 text-sm px-3 py-0.5"
+                        title={skill} // shows full text on hover as tooltip
+                      >
+                        {truncated}
+                      </Tag>
+                    );
+                  })}
+                </div>
               </Card>
             )}
 

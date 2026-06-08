@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Card, Table, Button, Row, Col, Tag } from "antd";
+import { Card, Table, Row, Col, Tag } from "antd";
 import {
   ContainerFilled,
   StarFilled,
@@ -346,12 +346,12 @@ export default function Dashboard() {
                         </p>
                       </div>
                     </div>
-                    <Button
-                      type="primary"
-                      size="small"
+                    <Link
+                      href={'/candidate/interview-section'}
+                      className="text-xs font-medium text-blue-600 hover:underline bg-blue-50 px-2 py-1 rounded"
                     >
                       Join
-                    </Button>
+                    </Link>
                   </div>
                 ))}
               </div>
