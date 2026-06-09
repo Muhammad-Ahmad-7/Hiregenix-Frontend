@@ -97,6 +97,10 @@ import React from "react";
 import { LabelInput } from "../../../common";
 import UiButton from "../../../common/CustomButton";
 import LeftArrow from "@/icons/LeftArrow";
+import {
+  linkedInUrlValidator,
+  portfolioUrlValidator,
+} from "@/utils/urlValidator";
 
 // Define proper types for form values
 export interface CompanyStep2FormValues {
@@ -141,8 +145,11 @@ export default function CompanyStep2Form({
             rules={[
               {
                 type: "url",
-                message: "Provide Link ",
+                message: "Provide Link",
               },
+              {
+                validator: linkedInUrlValidator,
+              }
             ]}
           />
         </Col>
@@ -157,6 +164,9 @@ export default function CompanyStep2Form({
                 type: "url",
                 message: "Provide Link ",
               },
+              {
+                validator: portfolioUrlValidator,
+              }
             ]}
           />
         </Col>

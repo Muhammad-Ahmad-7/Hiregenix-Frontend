@@ -9,7 +9,6 @@ import api, { safeApiCall } from "../base.api";
 export const completeCompanyProfileApi = async (
   body: CompleteCompanyProfile
 ) => {
-  console.log("body", body);
   return safeApiCall<{ company: CompanyResponse }>({
     apiCall: () => api.post("/company/complete-profile", body),
     showToaster: true,

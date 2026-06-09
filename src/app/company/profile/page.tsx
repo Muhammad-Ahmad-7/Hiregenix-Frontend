@@ -15,7 +15,6 @@ import {
   Input,
   Select,
   Button,
-  message,
   Upload,
   Tooltip,
 } from "antd";
@@ -89,7 +88,7 @@ export default function CompanyProfile() {
         }
       } catch (error) {
         console.error("Failed to fetch company profile:", error);
-        message.error("Failed to load company profile");
+        toast.error("Failed to load company profile");
       } finally {
         setLoading(false);
       }
@@ -133,10 +132,10 @@ export default function CompanyProfile() {
           }),
         );
       }
-      message.success("Knowledge base uploaded. Indexing will start shortly.");
+      toast.success("Knowledge base uploaded. Indexing will start shortly.");
     } catch (e) {
       console.error(e);
-      message.error("Failed to upload knowledge base PDF.");
+      toast.error("Failed to upload knowledge base PDF.");
     } finally {
       setKbUploading(false);
     }
@@ -329,7 +328,7 @@ export default function CompanyProfile() {
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       {(companyProfile as unknown as any)?.knowledgeBasePdfUrl
                         ? "✓ PDF uploaded"
-                        : "Upload PDF for AI"}
+                        : "Upload PDF for AI chatbot to answer questions about your company"}
                     </Typography.Paragraph>
                     <Upload
                       accept="application/pdf"

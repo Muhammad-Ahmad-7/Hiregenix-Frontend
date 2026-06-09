@@ -25,11 +25,12 @@ export interface CompleteCompanyProfile {
   website: string;
 
   description: string;
-  contactEmail: string;
+  contactEmail?: string;
   linkedInUrl: string;
   techStack: string[];
 
   hiringStatus: HiringStatus;
+  knowledgeBaseUrl?: string;
 }
 
 export interface CompanyResponse extends CompleteCompanyProfile {

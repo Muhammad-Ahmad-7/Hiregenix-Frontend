@@ -8,7 +8,6 @@ import {
   Button,
   Dropdown,
   Card,
-  message,
   Modal,
   Form,
   Row,
@@ -114,7 +113,7 @@ const MyJobsTable: React.FC = () => {
         }
       }
     } catch {
-      message.error("Failed to fetch open jobs");
+      toast.error("Failed to fetch open jobs");
     } finally {
       dispatch(setLoading(false));
     }
@@ -138,7 +137,7 @@ const MyJobsTable: React.FC = () => {
         }
       }
     } catch {
-      message.error("Failed to fetch closed jobs");
+      toast.error("Failed to fetch closed jobs");
     } finally {
       dispatch(setLoading(false));
     }

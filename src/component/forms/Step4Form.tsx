@@ -1,5 +1,5 @@
 import { Col, Flex, Form, Modal, Typography, Checkbox } from "antd";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import UiButton from "../common/CustomButton";
 import LeftArrow from "@/icons/LeftArrow";
 
@@ -23,11 +23,24 @@ type Step4FormProps = {
   initialValues?: Partial<Step4FormValues>;
 };
 
-export default function Step4Form({
-  onNext,
-  onBack,
-}: Step4FormProps) {
+function useIsCompany(): boolean {
+  const [isCompany, setIsCompany] = useState(false);
+
+  useEffect(() => {
+    // Reads the segment right after /profile-completion/
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    const idx = parts.indexOf("profile-completion");
+    if (idx !== -1 && parts[idx + 1] === "company") {
+      setIsCompany(true);
+    }
+  }, []);
+
+  return isCompany;
+}
+
+export default function Step4Form({ onNext, onBack }: Step4FormProps) {
   const [form] = Form.useForm<Step4FormValues>();
+  const isCompany = useIsCompany();
 
   const [checkboxState, setCheckboxState] = useState<CheckboxState>({
     extractData: false,
@@ -37,9 +50,11 @@ export default function Step4Form({
 
   const [modalType, setModalType] = useState<"data" | "terms" | null>(null);
 
-  const onFinish = (values: Step4FormValues) => {
-    onNext(values);
-  };
+  const extractLabel = isCompany
+    ? "Allow extraction of job posting and company data"
+    : "Allow extraction of resume data";
+
+  const onFinish = (values: Step4FormValues) => onNext(values);
 
   return (
     <>
@@ -51,14 +66,11 @@ export default function Step4Form({
             checked={checkboxState.extractData}
             onChange={(e) => {
               const checked = e.target.checked;
-              setCheckboxState((prev) => ({
-                ...prev,
-                extractData: checked,
-              }));
+              setCheckboxState((prev) => ({ ...prev, extractData: checked }));
               form.setFieldValue("extractData", checked ? ["yes"] : []);
             }}
           >
-            Allow extraction of resume data
+            {extractLabel}
           </Checkbox>
 
           {/* Data Policy */}
@@ -66,10 +78,7 @@ export default function Step4Form({
             checked={checkboxState.dataPolicy}
             onChange={(e) => {
               const checked = e.target.checked;
-              setCheckboxState((prev) => ({
-                ...prev,
-                dataPolicy: checked,
-              }));
+              setCheckboxState((prev) => ({ ...prev, dataPolicy: checked }));
               form.setFieldValue("dataPolicy", checked ? ["yes"] : []);
             }}
           >
@@ -77,7 +86,7 @@ export default function Step4Form({
             <span
               className="text-blue-600 cursor-pointer"
               onClick={(e) => {
-                e.stopPropagation(); // 🔥 prevents checkbox toggle
+                e.stopPropagation();
                 setModalType("data");
               }}
             >
@@ -90,10 +99,7 @@ export default function Step4Form({
             checked={checkboxState.terms}
             onChange={(e) => {
               const checked = e.target.checked;
-              setCheckboxState((prev) => ({
-                ...prev,
-                terms: checked,
-              }));
+              setCheckboxState((prev) => ({ ...prev, terms: checked }));
               form.setFieldValue("terms", checked ? ["yes"] : []);
             }}
           >
@@ -101,7 +107,7 @@ export default function Step4Form({
             <span
               className="text-blue-600 cursor-pointer"
               onClick={(e) => {
-                e.stopPropagation(); // 🔥 prevents checkbox toggle
+                e.stopPropagation();
                 setModalType("terms");
               }}
             >
@@ -116,10 +122,8 @@ export default function Step4Form({
               <LeftArrow />
             </UiButton>
           </Col>
-
           <Col span={6}>
             <UiButton
-              className=""
               htmlType="submit"
               type="primary"
               block
@@ -135,7 +139,6 @@ export default function Step4Form({
         </Flex>
       </Form>
 
-      {/* MODAL */}
       <Modal
         open={!!modalType}
         onCancel={() => setModalType(null)}
@@ -147,38 +150,39 @@ export default function Step4Form({
         width={700}
       >
         <div className="max-h-[400px] overflow-y-auto pr-2">
-          {modalType === "data" && <DataPolicy />}
-          {modalType === "terms" && <Terms />}
+          {modalType === "data" && (
+            isCompany ? <CompanyDataPolicy /> : <CandidateDataPolicy />
+          )}
+          {modalType === "terms" && (
+            isCompany ? <CompanyTerms /> : <CandidateTerms />
+          )}
         </div>
       </Modal>
     </>
   );
 }
 
-function DataPolicy() {
+// ─── Candidate Policies ────────────────────────────────────────────────────────
+
+function CandidateDataPolicy() {
   return (
     <>
       <Title level={4}>Data Policy</Title>
-
       <Paragraph>
         We collect personal data such as name, email, and resume information to
         provide AI-powered recruitment services.
       </Paragraph>
-
       <Paragraph>
         Your data is processed to extract skills, experience, and match job
         opportunities.
       </Paragraph>
-
       <Paragraph>
         We do not sell your data. Data may be shared with recruiters using the
         platform.
       </Paragraph>
-
       <Paragraph>
         While we apply security measures, no system is completely secure.
       </Paragraph>
-
       <Paragraph>
         You may request deletion or access to your data at any time.
       </Paragraph>
@@ -186,31 +190,80 @@ function DataPolicy() {
   );
 }
 
-function Terms() {
+function CandidateTerms() {
   return (
     <>
       <Title level={4}>Terms & Conditions</Title>
-
       <Paragraph>
         By using HireGenix, you agree to provide accurate information and not
         misuse the platform.
       </Paragraph>
-
       <Paragraph>
         AI results are not guaranteed to be accurate. All hiring decisions are
         your responsibility.
       </Paragraph>
+      <Paragraph>You are responsible for your account and uploaded data.</Paragraph>
+      <Paragraph>We are not liable for decisions made using this platform.</Paragraph>
+      <Paragraph>We may suspend accounts that violate terms.</Paragraph>
+    </>
+  );
+}
 
+// ─── Company Policies ──────────────────────────────────────────────────────────
+
+function CompanyDataPolicy() {
+  return (
+    <>
+      <Title level={4}>Data Policy — Company</Title>
       <Paragraph>
-        You are responsible for your account and uploaded data.
+        We collect company information such as name, industry, contact details,
+        and job postings to power AI-driven recruitment workflows.
       </Paragraph>
-
       <Paragraph>
-        We are not liable for decisions made using this platform.
+        Job posting data is processed to match candidates and generate shortlists.
+        Company profile data may be shown to candidates during the application
+        process.
       </Paragraph>
-
       <Paragraph>
-        We may suspend accounts that violate terms.
+        We do not sell your company data to third parties. Data is used solely
+        within the HireGenix platform.
+      </Paragraph>
+      <Paragraph>
+        You are responsible for ensuring the job descriptions and requirements
+        you upload comply with applicable employment laws and do not discriminate
+        unlawfully.
+      </Paragraph>
+      <Paragraph>
+        You may request deletion or export of your company data at any time by
+        contacting support.
+      </Paragraph>
+    </>
+  );
+}
+
+function CompanyTerms() {
+  return (
+    <>
+      <Title level={4}>Terms & Conditions — Company</Title>
+      <Paragraph>
+        By using HireGenix as a company, you agree to post only genuine job
+        openings and to use candidate data solely for recruitment purposes.
+      </Paragraph>
+      <Paragraph>
+        AI-generated candidate rankings and interview reports are advisory only.
+        All final hiring decisions remain your sole responsibility.
+      </Paragraph>
+      <Paragraph>
+        You are responsible for your company account, all sub-users you invite,
+        and any data uploaded under your organisation.
+      </Paragraph>
+      <Paragraph>
+        HireGenix is not liable for hiring outcomes, losses, or disputes arising
+        from use of the platform.
+      </Paragraph>
+      <Paragraph>
+        Accounts found to misuse candidate data or violate platform policies will
+        be suspended or permanently banned.
       </Paragraph>
     </>
   );

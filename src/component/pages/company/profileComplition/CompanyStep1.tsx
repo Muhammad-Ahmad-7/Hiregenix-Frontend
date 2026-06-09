@@ -18,17 +18,17 @@ type CompanyProfile = CompleteCompanyProfile;
 export default function CompanyStep1() {
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile>({
     companyName: "",
-    country: "",
+    country: "Pakistan",
     city: "",
     foundedYear: new Date().getFullYear(),
     ntnNumber: "",
-    contactEmail: "",
     logoUrl: "https://example.com/uploads/onyx-logo.png",
     website: "",
     linkedInUrl: "",
     description: "",
     techStack: [],
     hiringStatus: "actively_hiring",
+    knowledgeBaseUrl: "",
   });
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -47,7 +47,9 @@ export default function CompanyStep1() {
     };
     setLoading(true);
     try {
-      const res = await completeCompanyProfileApi(finalProfile);
+      console.log("final company data", finalProfile);
+      const finalData = { ...finalProfile, foundedYear: Number(finalProfile.foundedYear) }
+      const res = await completeCompanyProfileApi(finalData);
       if (res?.status === "Success") {
         toast.success("Company profile completed successfully!");
         router.push("/company/profile");
@@ -72,8 +74,8 @@ export default function CompanyStep1() {
               city: companyProfile.city,
               foundedYear: companyProfile.foundedYear,
               ntnNumber: companyProfile.ntnNumber,
-              contactEmail: companyProfile.contactEmail,
               logoUrl: companyProfile.logoUrl,
+              knowledgeBaseUrl: companyProfile.knowledgeBaseUrl,
             }}
           />
         );
