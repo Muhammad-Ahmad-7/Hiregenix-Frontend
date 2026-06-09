@@ -5,6 +5,7 @@ import UiButton from "../../../common/CustomButton";
 import LeftArrow from "@/icons/LeftArrow";
 import LabelTextArea from "../../../common/LabelTextArea";
 import type { SelectProps } from "antd";
+import { skillsOptions } from "@/constants/job";
 
 // Define proper types for form values
 export interface CompanyStep3FormValues {
@@ -18,16 +19,6 @@ type CompanyStep3FormProps = {
   onBack: () => void;
   initialValues?: Partial<CompanyStep3FormValues>;
 };
-
-// Generate options for tech stack select
-const options: SelectProps["options"] = [];
-
-for (let i = 10; i < 36; i++) {
-  options.push({
-    value: i.toString(36) + i,
-    label: i.toString(36) + i,
-  });
-}
 
 export default function CompanyStep3Form({
   onNext,
@@ -60,16 +51,15 @@ export default function CompanyStep3Form({
             label={
               <span>
                 Tech Stack{" "}
-                <span style={{ color: "rgba(0,0,0,.45)" }}>(up to 5)</span>
+                <span style={{ color: "rgba(0,0,0,.45)" }}>(You work with)</span>
               </span>
             }
-            maxCount={5}
             name="techStack"
             mode="tags"
             style={{ width: "100%" }}
             placeholder="Tags Mode"
             onChange={handleChange}
-            options={options}
+            options={skillsOptions}
           />
         </Col>
 

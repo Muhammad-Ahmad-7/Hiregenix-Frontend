@@ -35,6 +35,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { chatBotQueryApi } from "@/app/api/chatbot/chatbot.api";
 import { getCompanyProfileWithIdApi } from "@/app/api/general/general.api";
+import MarkdownMessage from "@/component/MarkdownMessage";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -762,7 +763,10 @@ function ChatPanel({
                       }
                   }
                 >
-                  {msg.content}
+                  {msg.role === "bot"
+                    ? <MarkdownMessage content={msg.content} />
+                    : msg.content
+                  }
                 </div>
                 <Text className="!text-[9px] !text-gray-400 px-1">{formatTime(msg.timestamp)}</Text>
               </div>

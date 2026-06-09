@@ -226,15 +226,17 @@
 // }
 "use client";
 
-import { Col, Form, Row, Typography, Upload, Avatar } from "antd";
+import { Col, Form, Row, Typography, Upload, Avatar, Button } from "antd";
 import React, { useState } from "react";
 import PlusIcon from "@/icons/PlusIcon";
 import { LabelInput, LabelSelect } from "@/component/common";
 import UiButton from "@/component/common/CustomButton";
 import { uploadFileApi } from "@/app/api/auth.api";
-import { LoadingOutlined } from "@ant-design/icons";
+import { LoadingOutlined, UploadOutlined } from "@ant-design/icons";
 import { AxiosError } from "axios";
 import toast from "react-hot-toast";
+import { pakistanCities } from "@/constants/job";
+import { uploadCompanyKnowledgeBasePdfApi } from "@/app/api/company/knowledgeBase.api";
 
 const { Text } = Typography;
 
@@ -245,8 +247,9 @@ export interface CompanyStep1FormValues {
   city: string;
   foundedYear: number;
   ntnNumber: string;
-  contactEmail: string;
+  contactEmail?: string;
   logoUrl: string;
+  knowledgeBaseUrl: string;
 }
 
 type CompanyStep1FormProps = {
@@ -261,21 +264,14 @@ export default function CompanyStep1Form({
   const [form] = Form.useForm<CompanyStep1FormValues>();
   const [uploading, setUploading] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [kbUploading, setKbUploading] = useState(false);
+  const [pdfUploaded, setPdfUploaded] = useState({
+    success: false,
+    url: "",
+  });
 
   const countryOptions = [
-    { label: "USA", value: "USA" },
-    { label: "UK", value: "UK" },
     { label: "Pakistan", value: "Pakistan" },
-    { label: "India", value: "India" },
-    { label: "Canada", value: "Canada" },
-  ];
-
-  const cityOptions = [
-    { label: "Lahore", value: "Lahore" },
-    { label: "Karachi", value: "Karachi" },
-    { label: "Islamabad", value: "Islamabad" },
-    { label: "New York", value: "New York" },
-    { label: "London", value: "London" },
   ];
 
   // 📤 Handle company logo upload
@@ -337,6 +333,11 @@ export default function CompanyStep1Form({
       return;
     }
 
+    if (!pdfUploaded.success) {
+      toast.error("Please upload your company knowledge base PDF");
+      return;
+    }
+
     const formattedValues: CompanyStep1FormValues = {
       ...values,
       logoUrl: logoUrl,
@@ -345,6 +346,26 @@ export default function CompanyStep1Form({
     console.log("✅ Company Step 1 Values:", formattedValues);
     onNext(formattedValues);
   };
+  const handleKbUpload = async (file: File) => {
+    setKbUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await uploadCompanyKnowledgeBasePdfApi(fd);
+      const pdfUrl = res?.data?.pdfUrl;
+      if (pdfUrl) {
+        form.setFieldValue("knowledgeBaseUrl", pdfUrl);
+        toast.success("Knowledge base uploaded. Indexing will start shortly.");
+        setPdfUploaded({ success: true, url: pdfUrl });
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to upload knowledge base PDF.");
+    } finally {
+      setKbUploading(false);
+    }
+  };
+
 
   return (
     <Form
@@ -385,7 +406,7 @@ export default function CompanyStep1Form({
               label="City"
               placeholder="City"
               required
-              options={cityOptions}
+              options={pakistanCities}
             />
           </Col>
         </Row>
@@ -397,6 +418,7 @@ export default function CompanyStep1Form({
               label="Founded Year"
               placeholder="e.g., 1990"
               name="foundedYear"
+              max={new Date().getFullYear()}
               required
             />
           </Col>
@@ -409,15 +431,6 @@ export default function CompanyStep1Form({
             />
           </Col>
         </Row>
-
-        <Col span={24}>
-          <LabelInput
-            label="Contact Email"
-            name="contactEmail"
-            required
-            placeholder="Enter your contact email"
-          />
-        </Col>
 
         {/* Logo Upload */}
         <div className="flex justify-between items-center w-full mt-4 mb-6">
@@ -439,6 +452,57 @@ export default function CompanyStep1Form({
                 <PlusIcon />
               )}
             </div>
+          </Upload>
+        </div>
+
+
+        <div className="flex justify-between items-center w-full mt-4 mb-6">
+          <div className="flex flex-col">
+            <Text className="font-semibold">
+              Upload Company Knowledge Base <span className="text-red-500">*</span>
+            </Text>
+            <Text type="secondary">5MB Limit (PDF only)</Text>
+          </div>
+
+          {/* <Upload {...uploadProps}>
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer transition-all">
+              {uploading ? (
+                <LoadingOutlined className="text-2xl text-blue-500" />
+              ) : logoUrl !== null ? (
+                // <PlusIcon />
+                <Avatar size={60} src={logoUrl} />
+              ) : (
+                <PlusIcon />
+              )}
+            </div>
+          </Upload> */}
+
+          <Upload
+            accept="application/pdf"
+            showUploadList={false}
+            beforeUpload={(file) => {
+              handleKbUpload(file as unknown as File);
+              return false;
+            }}
+          >
+            {
+              pdfUploaded.success ? (
+                <div className="flex items-center gap-2 px-4 py-2 rounded bg-green-100 text-green-600">
+                  <UploadOutlined />
+                  PDF Uploaded
+                </div>
+              ) : (
+                <Button
+                  icon={<UploadOutlined />}
+                  loading={kbUploading}
+                  disabled={kbUploading}
+                  block
+                  type="primary"
+                >
+                  {kbUploading ? "Uploading..." : "Upload PDF"}
+                </Button>
+              )
+            }
           </Upload>
         </div>
       </div>

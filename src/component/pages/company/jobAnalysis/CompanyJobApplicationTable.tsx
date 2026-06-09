@@ -29,6 +29,7 @@ import {
 } from "@/redux/slices/company/companyJobSlice";
 import { RootState } from "@/redux/store";
 import { JobResponse } from "@/constants/Interfaces/Types/Jobs.interface";
+import toast from "react-hot-toast";
 
 const { Title } = Typography;
 
@@ -64,7 +65,7 @@ const MyJobsTable = () => {
       }
     } catch (err) {
       console.error(err);
-      message.error("Failed to fetch open jobs");
+      toast.error("Failed to fetch open jobs");
     } finally {
       dispatch(setLoading(false));
     }
@@ -89,7 +90,7 @@ const MyJobsTable = () => {
       }
     } catch (err) {
       console.error(err);
-      message.error("Failed to fetch closed jobs");
+      toast.error("Failed to fetch closed jobs");
     } finally {
       dispatch(setLoading(false));
     }
@@ -287,12 +288,12 @@ const MyJobsTable = () => {
             ((activeTab === "open"
               ? openMeta?.totalPages
               : closedMeta?.totalPages) ?? 0) && (
-            <div className="flex justify-center mt-4">
-              <Button onClick={loadMoreJobs} type="dashed">
-                Load More
-              </Button>
-            </div>
-          )}
+              <div className="flex justify-center mt-4">
+                <Button onClick={loadMoreJobs} type="dashed">
+                  Load More
+                </Button>
+              </div>
+            )}
         </>
       )}
     </Card>
