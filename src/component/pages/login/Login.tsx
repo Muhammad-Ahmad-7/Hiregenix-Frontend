@@ -37,6 +37,24 @@ export default function LoginScreen({ role }: { role: "company" | "candidate" })
     try {
       setLoading(true);
 
+      if (!email || !password) {
+        toast.error("Please fill in all fields");
+        setLoading(false);
+        return;
+      }
+
+      if (email.includes("@") == false) {
+        toast.error("Please enter a valid email address");
+        setLoading(false);
+        return;
+      }
+
+      if (password.length < 8) {
+        toast.error("Password must be at least 8 characters long");
+        setLoading(false);
+        return;
+      }
+
       const res = await loginApi({
         email,
         password,

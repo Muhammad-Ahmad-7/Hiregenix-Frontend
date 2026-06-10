@@ -28,7 +28,7 @@ export default function CompanyStep1() {
     description: "",
     techStack: [],
     hiringStatus: "actively_hiring",
-    knowledgeBaseUrl: "",
+    knowledgeBasePdfUrl: "",
   });
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -75,7 +75,7 @@ export default function CompanyStep1() {
               foundedYear: companyProfile.foundedYear,
               ntnNumber: companyProfile.ntnNumber,
               logoUrl: companyProfile.logoUrl,
-              knowledgeBaseUrl: companyProfile.knowledgeBaseUrl,
+              knowledgeBasePdfUrl: companyProfile.knowledgeBasePdfUrl,
             }}
           />
         );

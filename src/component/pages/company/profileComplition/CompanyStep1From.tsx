@@ -249,7 +249,7 @@ export interface CompanyStep1FormValues {
   ntnNumber: string;
   contactEmail?: string;
   logoUrl: string;
-  knowledgeBaseUrl: string;
+  knowledgeBasePdfUrl: string;
 }
 
 type CompanyStep1FormProps = {
@@ -354,7 +354,7 @@ export default function CompanyStep1Form({
       const res = await uploadCompanyKnowledgeBasePdfApi(fd);
       const pdfUrl = res?.data?.pdfUrl;
       if (pdfUrl) {
-        form.setFieldValue("knowledgeBaseUrl", pdfUrl);
+        form.setFieldValue("knowledgeBasePdfUrl", pdfUrl);
         toast.success("Knowledge base uploaded. Indexing will start shortly.");
         setPdfUploaded({ success: true, url: pdfUrl });
       }

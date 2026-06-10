@@ -6,7 +6,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 // Add discriminator to your types
 type CandidateProfile = CandidateProfileResponse & { userType: "candidate" };
-type CompanyProfile = CompanyResponse & { userType: "company" };
+type CompanyProfile = CompanyResponse & { userType: "company", };
 type UserProfile = CandidateProfile | CompanyProfile;
 
 interface UserState {
