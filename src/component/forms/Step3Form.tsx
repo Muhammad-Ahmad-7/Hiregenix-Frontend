@@ -70,11 +70,12 @@ export default function Step3Form({
         <Col span={24}>
           <LabelTextArea
             name="bio"
-            label="Bio"
+            label="Bio (max 500 characters)"
             placeholder="Write about yourself..."
             required
             autoSize={{ minRows: 3, maxRows: 5 }}
             itemProps={{ tooltip: "(optional)" }}
+            maxLength={500}
           />
         </Col>
         <Col span={24}>
