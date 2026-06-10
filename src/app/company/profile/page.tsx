@@ -315,12 +315,13 @@ export default function CompanyProfile() {
                     </div>
                     <div>
                       {" "}
-                      <Tooltip title="Edit Profile">
+                      <Tooltip title={"Edit Profile"} placement="top">
                         <Button
                           type="text"
                           icon={<EditOutlined />}
                           size="large"
                           onClick={handleEditClick}
+                          disabled={(profile?.userType === "company" && !profile.logoUrl) || (profile?.userType === "company" && !profile.knowledgeBasePdfUrl)}
                           className="!text-blue-600 hover:!bg-blue-50"
                         />
                       </Tooltip>

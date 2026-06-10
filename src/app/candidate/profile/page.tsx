@@ -1211,7 +1211,7 @@ export default function ProfileDashboard() {
               <Form.Item label="City" name="city" rules={[{ required: true }]}><Input placeholder="Your city" /></Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Country" name="country" rules={[{ required: true }]}><Input placeholder="Your country" /></Form.Item>
+              <Form.Item label="Country" name="country" rules={[{ required: true }]}><Input placeholder="Your country" disabled={!!profile?.country} /></Form.Item>
             </Col>
           </Row>
           <Form.Item label="Bio" name="bio" rules={[{ required: true }]}>

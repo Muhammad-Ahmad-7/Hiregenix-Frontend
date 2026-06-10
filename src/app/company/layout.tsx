@@ -88,7 +88,10 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     if (profile) return;
     getCompanyProfileApi()
       .then((res) => {
-        if (!res || !res.data) return;
+        if (!res || !res.data) {
+          router.replace("/auth");
+          return;
+        };
         if (res.status === "Success") {
           console.log("Dispatch", res.data.company);
           if (!res || !res.data || !res.data.company) return;
@@ -102,6 +105,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         }
       })
       .catch((err) => {
+        console.log("error aa gya")
         console.log("Error fetching profile:", err);
         const errorMessage = axios.isAxiosError(err)
           ? (err.response?.data as { message?: string } | undefined)?.message || err.message
@@ -114,7 +118,7 @@ const AdminLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           return;
         }
 
-        router.push("/auth/sign-up");
+        router.push("/auth");
       })
       .finally(() => { });
   }, [profile, dispatch, router]);
