@@ -30,7 +30,7 @@ export interface CompleteCompanyProfile {
   techStack: string[];
 
   hiringStatus: HiringStatus;
-  knowledgeBaseUrl?: string;
+  knowledgeBasePdfUrl?: string;
 }
 
 export interface CompanyResponse extends CompleteCompanyProfile {

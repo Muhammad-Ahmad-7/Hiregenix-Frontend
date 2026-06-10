@@ -15,6 +15,8 @@ import api from "@/app/api/base.api";
 import { CompanyDashboardResponse } from "@/constants/Interfaces/Types/Dashboard.interface";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { RootState } from "@/redux/store";
+import { useSelector } from "react-redux";
 
 export default function Dashboard() {
   const [companyStats, setCompanyStats] =
@@ -22,6 +24,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(false);
   const router = useRouter();
+
+  const { profile } = useSelector((state: RootState) => state.user);
+
 
   const statsRowRef = useRef<HTMLDivElement>(null);
 
@@ -85,6 +90,26 @@ export default function Dashboard() {
       isActive = false;
     };
   }, [router]);
+
+  // show a message if company profile is not completed yet.
+  if (!profile?.isProfileCompleted) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold mb-4">
+            Complete Your Company Profile
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Please complete your company profile to access the dashboard and start
+            posting jobs.
+          </p>
+          <Link href="/company/profile" className="ant-btn ant-btn-primary">
+            Complete Profile
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   const isExpiringSoon = (date: Date) => {
     const diffDays = Math.ceil(

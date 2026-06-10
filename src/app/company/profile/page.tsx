@@ -17,6 +17,7 @@ import {
   Button,
   Upload,
   Tooltip,
+  UploadProps,
 } from "antd";
 import {
   EditOutlined,
@@ -42,23 +43,12 @@ import {
 import { uploadCompanyKnowledgeBasePdfApi } from "@/app/api/company/knowledgeBase.api";
 import toast from "react-hot-toast";
 import CompanyProfileSkeleton from "@/component/Skeletons/CompanyProfileSkeleton";
+import { skillsOptions } from "@/constants/job";
+import { linkedInUrlValidator, portfolioUrlValidator } from "@/utils/urlValidator";
+import { uploadFileApi } from "@/app/api/auth.api";
 
 const { Text } = Typography;
 const { TextArea } = Input;
-
-// Tech stack options
-const techStackOptions = [
-  { label: "React", value: "React" },
-  { label: "Node.js", value: "Node.js" },
-  { label: "Python", value: "Python" },
-  { label: "Java", value: "Java" },
-  { label: "TypeScript", value: "TypeScript" },
-  { label: "MongoDB", value: "MongoDB" },
-  { label: "PostgreSQL", value: "PostgreSQL" },
-  { label: "AWS", value: "AWS" },
-  { label: "Docker", value: "Docker" },
-  { label: "Kubernetes", value: "Kubernetes" },
-];
 
 export default function CompanyProfile() {
   const dispatch = useDispatch();
@@ -68,6 +58,7 @@ export default function CompanyProfile() {
   const [kbUploading, setKbUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const { profile } = useSelector((state: RootState) => state.user);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   type CompanyProfile = CompanyResponse & { userType: "company" };
   const companyProfile =
@@ -147,7 +138,6 @@ export default function CompanyProfile() {
     form.setFieldsValue({
       companyName: companyProfile?.companyName || "",
       city: companyProfile?.city || "",
-      country: companyProfile?.country || "",
       foundedYear: Number(companyProfile?.foundedYear) || "",
       ntnNumber: companyProfile?.ntnNumber || "",
       contactEmail: companyProfile?.contactEmail || "",
@@ -168,7 +158,28 @@ export default function CompanyProfile() {
       const updatedProfile: any = {
         ...companyProfile,
         ...values,
+        isProfileComplete: true, // Mark profile as complete after editing
+        country: "Pakistan", // Set default country as Pakistan
+        foundedYear: values.foundedYear ? Number(values.foundedYear) : undefined, // Ensure foundedYear is a number
+
       };
+
+      console.log("Updated profile", updatedProfile)
+
+      if (profile?.userType === "company" && !profile.logoUrl) {
+        toast.error("Please upload a company logo before saving changes.");
+        setSaveLoading(false);
+        return;
+      }
+
+      console.log("PROFILE", profile)
+      if (profile?.userType === "company" && !profile.knowledgeBasePdfUrl) {
+        toast.error("Please upload a knowledge base PDF before saving changes.");
+        setSaveLoading(false);
+        return;
+      }
+
+      console.log("update profile", updatedProfile);
 
       // Update Redux state locally
       dispatch(setProfile(updatedProfile));
@@ -184,6 +195,63 @@ export default function CompanyProfile() {
     } finally {
       setSaveLoading(false);
     }
+  };
+
+  const handleAvatarUpload = async (file: File): Promise<void> => {
+
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await uploadFileApi(formData);
+      const logoUrl = response?.data?.url;
+
+      if (!logoUrl) {
+        toast.error("Failed to upload logo.");
+        return;
+      }
+
+      dispatch(
+        setProfile({
+          ...profile,
+          userType: "company",
+          logoUrl,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any),
+      );
+
+      toast.success("Logo updated successfully!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update logo");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const avatarUploadProps: UploadProps = {
+    beforeUpload: (file: File) => {
+      const isImage =
+        file.type === "image/jpeg" ||
+        file.type === "image/png" ||
+        file.type === "image/svg+xml";
+      if (!isImage) {
+        toast.error("You can only upload JPEG, PNG, or SVG files!");
+        return false;
+      }
+
+      const isLt5M = file.size / 1024 / 1024 < 5;
+      if (!isLt5M) {
+        toast.error("Image must be smaller than 5MB!");
+        return false;
+      }
+
+      setAvatarUploading(true);
+      handleAvatarUpload(file);
+      return false;
+    },
+    showUploadList: false,
   };
 
   return (
@@ -203,7 +271,7 @@ export default function CompanyProfile() {
                 >
                   {/* Header */}
                   <div className="flex justify-between items-start">
-                    <div className="flex gap-2 items-center">
+                    <div className="flex flex-col items-center gap-2">
                       <Avatar
                         size={80}
                         src={companyProfile?.logoUrl}
@@ -214,6 +282,18 @@ export default function CompanyProfile() {
                       >
                         {companyProfile?.companyName?.charAt(0) || "C"}
                       </Avatar>
+                      <Upload {...avatarUploadProps} accept="image/*">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<UploadOutlined />}
+                          loading={avatarUploading}
+                          disabled={avatarUploading}
+                          className="!px-0"
+                        >
+                          Change Photo
+                        </Button>
+                      </Upload>
                       {/* Company Info */}
                       <div>
                         <Typography.Title level={4} className="!mb-1">
@@ -507,7 +587,7 @@ export default function CompanyProfile() {
           </Form.Item>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item
                 label="City"
                 name="city"
@@ -516,7 +596,7 @@ export default function CompanyProfile() {
                 <Input placeholder="City" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            {/* <Col span={12}>
               <Form.Item
                 label="Country"
                 name="country"
@@ -524,13 +604,13 @@ export default function CompanyProfile() {
               >
                 <Input placeholder="Country" />
               </Form.Item>
-            </Col>
+            </Col> */}
           </Row>
 
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Founded Year" name="foundedYear">
-                <Input placeholder="e.g., 2020" type="number" />
+                <Input placeholder="e.g., 2020" type="number" max={new Date().getFullYear()} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -539,17 +619,6 @@ export default function CompanyProfile() {
               </Form.Item>
             </Col>
           </Row>
-
-          <Form.Item
-            label="Contact Email"
-            name="contactEmail"
-            rules={[
-              { required: true, message: "Please enter contact email" },
-              { type: "email", message: "Please enter valid email" },
-            ]}
-          >
-            <Input placeholder="contact@company.com" />
-          </Form.Item>
 
           <Form.Item
             label="Company Description"
@@ -579,7 +648,7 @@ export default function CompanyProfile() {
               mode="tags"
               style={{ width: "100%" }}
               placeholder="Add or select technologies"
-              options={techStackOptions}
+              options={skillsOptions}
               maxTagCount={10}
             />
           </Form.Item>
@@ -587,7 +656,7 @@ export default function CompanyProfile() {
           <Form.Item
             label="Website URL"
             name="website"
-            rules={[{ type: "url", message: "Please enter a valid URL" }]}
+            rules={[{ type: "url", message: "Please enter a valid URL" }, { required: true, message: "Please enter website URL or leave it blank" }, { validator: portfolioUrlValidator }]}
           >
             <Input
               placeholder="https://yourcompany.com"
@@ -598,7 +667,7 @@ export default function CompanyProfile() {
           <Form.Item
             label="LinkedIn URL"
             name="linkedInUrl"
-            rules={[{ type: "url", message: "Please enter a valid URL" }]}
+            rules={[{ type: "url", message: "Please enter a valid URL" }, { required: true, message: "Please enter LinkedIn URL or leave it blank" }, { validator: linkedInUrlValidator }]}
           >
             <Input
               placeholder="https://linkedin.com/company/yourcompany"
