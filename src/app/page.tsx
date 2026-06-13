@@ -2,55 +2,272 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Layout,
+  Avatar,
   Button,
-  Typography,
-  Row,
-  Col,
   Card,
+  Col,
+  Collapse,
+  ConfigProvider,
+  Divider,
+  Drawer,
+  Layout,
+  Row,
   Space,
   Tag,
-  Steps,
-  Avatar,
-  Divider,
-  ConfigProvider,
-  Collapse,
-  Drawer,
+  Typography,
   theme as antdTheme,
 } from "antd";
 import {
-  BulbOutlined,
-  MoonOutlined,
-  LoginOutlined,
   AppstoreOutlined,
+  ArrowUpOutlined,
+  BarChartOutlined,
+  BarsOutlined,
+  BulbOutlined,
+  CalendarOutlined,
+  CheckCircleOutlined,
+  CloudOutlined,
+  FileTextOutlined,
+  GlobalOutlined,
+  LoginOutlined,
+  MailOutlined,
   MenuOutlined,
+  MessageOutlined,
+  MoonOutlined,
   RocketOutlined,
   SafetyCertificateOutlined,
   TeamOutlined,
   ThunderboltOutlined,
-  CheckCircleOutlined,
   UserOutlined,
-  CloudOutlined,
-  GlobalOutlined,
-  BarChartOutlined,
-  CalendarOutlined,
 } from "@ant-design/icons";
+import { motion } from "framer-motion";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { getToken } from "@/utils/token";
 import { RootState } from "@/redux/store";
 import { setThemeMode } from "@/redux/slices/themeSlice";
-import { motion } from "framer-motion";
+import { getToken } from "@/utils/token";
 
 const { Header, Content, Footer } = Layout;
 const { Title, Paragraph, Text } = Typography;
 
 const navItems = [
   { key: "features", label: "Features" },
+  { key: "platform", label: "Platform" },
   { key: "workflow", label: "Workflow" },
   { key: "faq", label: "FAQ" },
-  { key: "footer", label: "Contact" },
 ];
+
+const features = [
+  {
+    title: "AI Interview Intelligence",
+    description: "Structured interviews, answer analysis, skill signals, and clear scorecards in one flow.",
+    icon: <ThunderboltOutlined />,
+  },
+  {
+    title: "Verified Candidate Profiles",
+    description: "Resume parsing, identity checks, profile completion, and trust signals for serious hiring.",
+    icon: <SafetyCertificateOutlined />,
+  },
+  {
+    title: "Smart Role Matching",
+    description: "Match candidates with roles using skills, experience, intent, and job requirements.",
+    icon: <RocketOutlined />,
+  },
+  {
+    title: "Hiring Team Collaboration",
+    description: "Keep recruiters, companies, and decision makers aligned with shared pipeline context.",
+    icon: <TeamOutlined />,
+  },
+  {
+    title: "Recruitment Analytics",
+    description: "Track candidate quality, pipeline movement, interview performance, and hiring velocity.",
+    icon: <BarChartOutlined />,
+  },
+  {
+    title: "Automated Interview Flow",
+    description: "Reduce manual scheduling, reminders, repeated screening, and scattered feedback loops.",
+    icon: <CalendarOutlined />,
+  },
+];
+
+const platformCards = [
+  {
+    title: "For Companies",
+    description: "Post roles, shortlist relevant candidates, run AI-assisted interviews, and compare scorecards.",
+    icon: <TeamOutlined />,
+    eyebrow: "Hiring workspace",
+    points: [
+      "Create and manage role-based pipelines",
+      "Publish jobs with structured requirements",
+      "Shortlist AI-matched candidate profiles",
+      "Automate interview scheduling and screening",
+      "Review interview reports and scorecards",
+      "Track applications, interviews, and hiring progress",
+    ],
+  },
+  {
+    title: "For Candidates",
+    description: "Build a verified profile, discover suitable roles, complete interviews, and track progress.",
+    icon: <UserOutlined />,
+    eyebrow: "Career workspace",
+    points: [
+      "Build a complete and verified professional profile",
+      "Parse resumes into structured skills and experience",
+      "Discover jobs matched to your background",
+      "Apply and monitor every application in one place",
+      "Complete secure AI-assisted interviews",
+      "Review interview status and job analytics",
+    ],
+  },
+];
+
+const workflow = [
+  {
+    title: "Create your workspace",
+    description: "Set up a candidate profile or company hiring account.",
+    icon: <UserOutlined />,
+  },
+  {
+    title: "Build trusted context",
+    description: "Add skills and resumes, or define company and role requirements.",
+    icon: <SafetyCertificateOutlined />,
+  },
+  {
+    title: "Publish or discover",
+    description: "Companies publish roles while candidates explore matched opportunities.",
+    icon: <GlobalOutlined />,
+  },
+  {
+    title: "AI matching",
+    description: "HireGenix connects requirements, experience, skills, and intent.",
+    icon: <ThunderboltOutlined />,
+  },
+  {
+    title: "Apply and shortlist",
+    description: "Candidates apply quickly and companies prioritize relevant profiles.",
+    icon: <CheckCircleOutlined />,
+  },
+  {
+    title: "Structured interviews",
+    description: "Run consistent AI-assisted interviews with identity verification.",
+    icon: <CalendarOutlined />,
+  },
+  {
+    title: "Evaluate signals",
+    description: "Review scorecards, strengths, gaps, and role-fit analytics.",
+    icon: <BarChartOutlined />,
+  },
+  {
+    title: "Make the decision",
+    description: "Compare candidates, collaborate, and close the hiring loop.",
+    icon: <RocketOutlined />,
+  },
+];
+
+const faqItems = [
+  {
+    key: "1",
+    label: "How does HireGenix reduce hiring time?",
+    children:
+      "It removes repeated manual screening by combining resume parsing, smart matching, structured AI interviews, and clear scorecards.",
+  },
+  {
+    key: "2",
+    label: "Is HireGenix only for companies?",
+    children:
+      "No. It supports both sides: companies manage hiring pipelines, while candidates build verified profiles and apply to suitable roles.",
+  },
+  {
+    key: "3",
+    label: "Can it support campus or bulk hiring?",
+    children:
+      "Yes. The workflow is designed for repeatable screening, interview automation, and candidate comparison at scale.",
+  },
+  {
+    key: "4",
+    label: "What makes it different from a normal job portal?",
+    children:
+      "A normal job portal mostly lists jobs. HireGenix adds AI evaluation, interview reports, matching, analytics, and collaboration.",
+  },
+  {
+    key: "5",
+    label: "How does AI-assisted interviewing work?",
+    children:
+      "HireGenix runs structured interviews based on the role, evaluates relevant answer signals, and produces a consistent report for review. Final hiring decisions always remain with the company.",
+  },
+  {
+    key: "6",
+    label: "Can candidates track their applications and interviews?",
+    children:
+      "Yes. Candidates can monitor applied jobs, active opportunities, upcoming interviews, and completed interview analytics from their dashboard.",
+  },
+  {
+    key: "7",
+    label: "Can companies manage multiple jobs at the same time?",
+    children:
+      "Yes. Company teams can publish and monitor multiple roles, review recent applications, shortlist candidates, and track interview progress from one workspace.",
+  },
+  {
+    key: "8",
+    label: "Does HireGenix support verified candidate profiles?",
+    children:
+      "Yes. Profiles combine structured resume information, completed profile details, skills, and identity or interview verification signals to give companies clearer context.",
+  },
+];
+
+const stats = [
+  { value: "8.5k+", label: "Verified candidates" },
+  { value: "1.2k+", label: "Active roles" },
+  { value: "92%", label: "Interview signal accuracy" },
+  { value: "14d", label: "Average time-to-hire" },
+];
+
+const dashboardData = {
+  candidate: {
+    label: "Candidate",
+    title: "Candidate Dashboard",
+    path: "candidate/dashboard",
+    menu: ["Insights", "Profile", "Job Portal", "Chat", "Job Analytics", "Interviews"],
+    menuIcons: [<BarsOutlined key="insights" />, <UserOutlined key="profile" />, <FileTextOutlined key="portal" />, <MessageOutlined key="chat" />, <MailOutlined key="analytics" />, <CalendarOutlined key="interviews" />],
+    stats: [
+      { label: "Applied Jobs", value: "24" },
+      { label: "Resume Score", value: "86" },
+      { label: "Matched Jobs", value: "18" },
+      { label: "Active Jobs", value: "7" },
+    ],
+    tableTitle: "Recent Applied Jobs",
+    columns: ["Position", "Mode", "Status", "Due"],
+    rows: [
+      ["Frontend Engineer", "Remote", "Scheduled", "Jun 18"],
+      ["Product Designer", "Hybrid", "Completed", "Jun 21"],
+      ["React Developer", "On-site", "Applied", "Jun 25"],
+    ],
+    sideTitle: "Today's interviews",
+    sideRows: ["Frontend Engineer · 10:30 AM", "Product Designer · 2:00 PM"],
+  },
+  company: {
+    label: "Company",
+    title: "Company Dashboard",
+    path: "company/dashboard",
+    menu: ["Insights", "Profile", "Job Portal", "Chat", "Job Analytics", "Applications"],
+    menuIcons: [<BarsOutlined key="insights" />, <UserOutlined key="profile" />, <FileTextOutlined key="portal" />, <MessageOutlined key="chat" />, <MailOutlined key="analytics" />, <AppstoreOutlined key="applications" />],
+    stats: [
+      { label: "Total Jobs", value: "32" },
+      { label: "Active Jobs", value: "11" },
+      { label: "Applications", value: "148" },
+      { label: "Interviews", value: "26" },
+    ],
+    tableTitle: "Active Jobs",
+    columns: ["Role", "Mode", "Applicants", "Due"],
+    rows: [
+      ["Senior Frontend Engineer", "Remote", "38", "Jun 20"],
+      ["Product Designer", "Hybrid", "24", "Jun 24"],
+      ["Backend Engineer", "On-site", "31", "Jun 28"],
+    ],
+    sideTitle: "Recent applications",
+    sideRows: ["Ayesha Khan · Frontend", "Hassan Ali · Backend", "Zara Iqbal · Product"],
+  },
+};
 
 const getRoleFromToken = (token: string): "candidate" | "company" | null => {
   try {
@@ -67,341 +284,116 @@ const getRoleFromToken = (token: string): "candidate" | "company" | null => {
   }
 };
 
-const features = [
-  {
-    title: "AI Interview Insights",
-    description:
-      "Structured interviews, real-time scoring, and bias-aware recommendations.",
-    icon: <ThunderboltOutlined />,
-  },
-  {
-    title: "Verified Talent",
-    description:
-      "Identity checks, profile completion, and trust signals built in.",
-    icon: <SafetyCertificateOutlined />,
-  },
-  {
-    title: "Smart Matching",
-    description:
-      "Role-based recommendations for candidates and recruiters in seconds.",
-    icon: <RocketOutlined />,
-  },
-  {
-    title: "Collaborative Hiring",
-    description:
-      "Shared pipelines, notes, and decisions for modern hiring teams.",
-    icon: <TeamOutlined />,
-  },
-  {
-    title: "Analytics Dashboard",
-    description:
-      "Track conversion, interview health, and hiring velocity at a glance.",
-    icon: <BarChartOutlined />,
-  },
-  {
-    title: "Interview Automation",
-    description:
-      "Scheduling, reminders, and feedback loops without manual coordination.",
-    icon: <CalendarOutlined />,
-  },
-];
+const fadeUp = {
+  hidden: { opacity: 0, y: 22 },
+  visible: { opacity: 1, y: 0 },
+};
 
-const workflow = [
-  {
-    title: "Create your profile",
-    description:
-      "Sign up and build a verified profile with skills, experience, and hiring goals."
-  },
-  {
-    title: "Add or discover opportunities",
-    description:
-      "Candidates explore jobs tailored to them, while companies post roles and define requirements."
-  },
-  {
-    title: "Smart matching",
-    description:
-      "The system connects the right candidates with the right jobs using skill and intent-based matching."
-  },
-  {
-    title: "Apply or shortlist instantly",
-    description:
-      "Candidates apply in one click, and companies can instantly shortlist the most relevant profiles."
-  },
-  {
-    title: "AI-assisted interviews",
-    description:
-      "Structured interviews with guided questions and real-time evaluation support."
-  },
-  {
-    title: "Clear evaluation reports",
-    description:
-      "Get simple, structured scorecards that highlight strengths, gaps, and fit for the role."
-  },
-  {
-    title: "Faster hiring decisions",
-    description:
-      "Collaborate, compare candidates, and make confident hiring decisions without delays."
-  }
-];
-
-const faqItems = [
-  {
-    key: "1",
-    label: "How does HireGenix improve hiring speed?",
-    children:
-      "Automations, smart matching, and interview insights cut decision time and reduce back-and-forth.",
-  },
-  {
-    key: "2",
-    label: "Is candidate data secure?",
-    children:
-      "Yes. Data is encrypted in transit and at rest, with role-based access controls.",
-  },
-  {
-    key: "3",
-    label: "Can I use HireGenix for campus or bulk hiring?",
-    children:
-      "Absolutely. Use pipelines, analytics, and interview templates to scale hiring programs.",
-  },
-  {
-    key: "4",
-    label: "Does the platform work for both candidates and companies?",
-    children:
-      "Yes. HireGenix is designed for candidates, recruiters, and hiring teams in one system.",
-  },
-];
-
-const stats = [
-  { label: "Active Roles", value: 1200, suffix: "+" },
-  { label: "Verified Candidates", value: 8500, suffix: "+" },
-  { label: "Avg. Time-to-Hire", value: 14, suffix: " days" },
-  { label: "Interview Accuracy", value: 92, suffix: "%" },
-];
-
-const reviews = [
-  {
-    name: "Amaan Raza",
-    role: "HR Lead, NovaLabs",
-    quote: "HireGenix turned our screening into a crisp, data-driven flow.",
-  },
-  {
-    name: "Hira Khan",
-    role: "Talent Ops, PeakHire",
-    quote: "We ship offers faster and the scorecards are always consistent.",
-  },
-  {
-    name: "Sameer Ali",
-    role: "Recruiter, CloudBridge",
-    quote: "The AI matching saved us hours per role. The pipeline stays clean.",
-  },
-  {
-    name: "Zainab Mir",
-    role: "People Partner, CoreStack",
-    quote: "A polished hiring experience for candidates and managers alike.",
-  },
-  {
-    name: "Muneeb Arif",
-    role: "Founder, Apex Talent",
-    quote: "We finally have a clear view of who is ready for interview.",
-  },
-];
-
-const reviewLoop = [...reviews, ...reviews];
-
-const dashboardJobs = [
-  { role: "Senior Frontend", status: "Open", tone: "success", candidates: "18" },
-  { role: "Product Designer", status: "Screening", tone: "info", candidates: "9" },
-  { role: "Data Analyst", status: "On hold", tone: "warning", candidates: "6" },
-];
-
-const dashboardApplications = [
-  { name: "Ayesha Khan", role: "Frontend", stage: "Interview" },
-  { name: "Hassan Ali", role: "Product", stage: "Screening" },
-  { name: "Zara Iqbal", role: "Data", stage: "Offer" },
-];
-
-// Dashboard Snapshot Component
-const DashboardSnapshot = ({ themeMode }: { themeMode: string }) => {
-  const isDark = themeMode === "dark";
+function ProductPreview() {
+  const [previewRole, setPreviewRole] = useState<keyof typeof dashboardData>("candidate");
+  const preview = dashboardData[previewRole];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, delay: 0.2 }}
+      className="hg-product-preview"
+      initial={{ opacity: 0, y: 28, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.75, delay: 0.25 }}
     >
-      <Card
-        className="landing-dashboard-snapshot"
-        bordered={false}
-        style={{
-          background: isDark ? "#0f172a" : "#ffffff",
-          border: `1px solid ${isDark ? "#1f2937" : "#e5e7eb"}`,
-          borderRadius: "16px",
-          overflow: "hidden",
-          boxShadow: isDark
-            ? "0 20px 60px rgba(0, 0, 0, 0.4)"
-            : "0 20px 60px rgba(0, 0, 0, 0.08)",
-        }}
-      >
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.4 }}
-        >
-          {/* Dashboard Header */}
-          <div style={{ padding: "20px", borderBottom: `1px solid ${isDark ? "#1f2937" : "#e5e7eb"}` }}>
-            <Row align="middle" justify="space-between">
-              <Col>
-                <Title level={5} style={{ margin: 0, color: "var(--text-primary)" }}>
-                  Hiring Dashboard
-                </Title>
-              </Col>
-              <Col>
-                <Space size={8}>
-                  <Tag color="blue">Today</Tag>
-                  <Tag>All Roles</Tag>
-                </Space>
-              </Col>
-            </Row>
+      <div className="hg-window-bar">
+        <div className="hg-window-dots"><span /><span /><span /></div>
+        <Text>hiregenix.dev/{preview.path}</Text>
+        <div className="hg-preview-switch" aria-label="Dashboard preview">
+          {(Object.keys(dashboardData) as Array<keyof typeof dashboardData>).map((role) => (
+            <button
+              type="button"
+              key={role}
+              className={previewRole === role ? "is-active" : ""}
+              onClick={() => setPreviewRole(role)}
+            >
+              {dashboardData[role].label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="hg-dashboard-frame">
+        <aside className="hg-preview-sidebar">
+          <div className="hg-preview-sidebar-title">HG</div>
+          <div className="hg-preview-menu">
+            {preview.menu.map((item, index) => (
+              <div className={index === 0 ? "is-active" : ""} key={item} title={item}>
+                {preview.menuIcons[index]}
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        <div className="hg-preview-workspace">
+          <div className="hg-preview-header">
+            <MenuOutlined />
+            <strong>{preview.title}</strong>
+            <span />
           </div>
 
-          {/* Dashboard Content */}
-          <div style={{ padding: "20px" }}>
-            <Row gutter={[16, 16]}>
-              {/* Key Metrics */}
-              <Col xs={24}>
-                <Row gutter={[12, 12]}>
-                  <Col xs={24} sm={12}>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.5 }}
-                    >
-                      <Card size="small" bordered={false} style={{ background: isDark ? "#111827" : "#f9fafb" }}>
-                        <Space direction="vertical" size={4}>
-                          <Text style={{ fontSize: "12px", color: "var(--text-muted)" }}>Open Roles</Text>
-                          <div style={{ fontSize: "20px", fontWeight: "bold", color: "var(--accent)" }}>
-                            24
-                          </div>
-                        </Space>
-                      </Card>
-                    </motion.div>
-                  </Col>
-                  <Col xs={24} sm={12}>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.55 }}
-                    >
-                      <Card size="small" bordered={false} style={{ background: isDark ? "#111827" : "#f9fafb" }}>
-                        <Space direction="vertical" size={4}>
-                          <Text style={{ fontSize: "12px", color: "var(--text-muted)" }}>Applications</Text>
-                          <div style={{ fontSize: "20px", fontWeight: "bold", color: "#22c55e" }}>
-                            156
-                          </div>
-                        </Space>
-                      </Card>
-                    </motion.div>
-                  </Col>
-                  <Col xs={24} sm={12}>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.6 }}
-                    >
-                      <Card size="small" bordered={false} style={{ background: isDark ? "#111827" : "#f9fafb" }}>
-                        <Space direction="vertical" size={4}>
-                          <Text style={{ fontSize: "12px", color: "var(--text-muted)" }}>Interviews</Text>
-                          <div style={{ fontSize: "20px", fontWeight: "bold", color: "#f59e0b" }}>
-                            12
-                          </div>
-                        </Space>
-                      </Card>
-                    </motion.div>
-                  </Col>
-                  <Col xs={24} sm={12}>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.65 }}
-                    >
-                      <Card size="small" bordered={false} style={{ background: isDark ? "#111827" : "#f9fafb" }}>
-                        <Space direction="vertical" size={4}>
-                          <Text style={{ fontSize: "12px", color: "var(--text-muted)" }}>Offers</Text>
-                          <div style={{ fontSize: "20px", fontWeight: "bold", color: "#8b5cf6" }}>
-                            3
-                          </div>
-                        </Space>
-                      </Card>
-                    </motion.div>
-                  </Col>
-                </Row>
-              </Col>
+          <div className="hg-preview-content">
+            <div className="hg-preview-stats">
+              {preview.stats.map((stat, index) => (
+                <div className="hg-preview-stat" key={stat.label}>
+                  <div className="hg-preview-stat-top">
+                    <span className="hg-preview-stat-icon">{index % 2 === 0 ? <FileTextOutlined /> : <BarChartOutlined />}</span>
+                    <span>{stat.label}</span>
+                    <ArrowUpOutlined className="hg-preview-stat-arrow" />
+                  </div>
+                  <strong>{stat.value}</strong>
+                </div>
+              ))}
+            </div>
 
-              {/* Tables */}
-              <Col xs={24}>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1 }}
-                >
-                  <Row gutter={[12, 12]}>
-                    <Col xs={24} md={12}>
-                      <Card size="small" bordered={false} style={{ background: isDark ? "#111827" : "#f9fafb" }}>
-                        <Space direction="vertical" size={10} style={{ width: "100%" }}>
-                          <Text className="dashboard-table-title">Your Jobs</Text>
-                          <div className="dashboard-table">
-                            <div className="dashboard-table-row dashboard-table-header">
-                              <span>Role</span>
-                              <span>Status</span>
-                              <span>Candidates</span>
-                            </div>
-                            {dashboardJobs.map((job) => (
-                              <div key={job.role} className="dashboard-table-row">
-                                <span>{job.role}</span>
-                                <span className={`dashboard-status dashboard-status-${job.tone}`}>
-                                  {job.status}
-                                </span>
-                                <span>{job.candidates}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </Space>
-                      </Card>
-                    </Col>
-                    <Col xs={24} md={12}>
-                      <Card size="small" bordered={false} style={{ background: isDark ? "#111827" : "#f9fafb" }}>
-                        <Space direction="vertical" size={10} style={{ width: "100%" }}>
-                          <Text className="dashboard-table-title">Top Applications</Text>
-                          <div className="dashboard-table">
-                            <div className="dashboard-table-row dashboard-table-header">
-                              <span>Candidate</span>
-                              <span>Role</span>
-                              <span>Stage</span>
-                            </div>
-                            {dashboardApplications.map((applicant) => (
-                              <div key={applicant.name} className="dashboard-table-row">
-                                <span>{applicant.name}</span>
-                                <span>{applicant.role}</span>
-                                <span className="dashboard-status dashboard-status-info">
-                                  {applicant.stage}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </Space>
-                      </Card>
-                    </Col>
-                  </Row>
-                </motion.div>
-              </Col>
-            </Row>
+            <div className="hg-preview-panels">
+              <div className="hg-preview-card hg-preview-table-card">
+                <div className="hg-preview-card-heading">
+                  <strong>{preview.tableTitle}</strong>
+                  <span>View all →</span>
+                </div>
+                <div className="hg-preview-table">
+                  <div className="hg-preview-table-row is-header">
+                    {preview.columns.map((column) => <span key={column}>{column}</span>)}
+                  </div>
+                  {preview.rows.map((row) => (
+                    <div className="hg-preview-table-row" key={row[0]}>
+                      <span><strong>{row[0]}</strong><small>{previewRole === "candidate" ? "HireGenix partner" : "Mid-level · Engineering"}</small></span>
+                      <span><em>{row[1]}</em></span>
+                      <span><em>{row[2]}</em></span>
+                      <span>{row[3]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="hg-preview-card hg-preview-side-card">
+                <div className="hg-preview-card-heading">
+                  <strong>{preview.sideTitle}</strong>
+                  <CalendarOutlined />
+                </div>
+                <div className="hg-preview-activity">
+                  {preview.sideRows.map((item) => (
+                    <div key={item}>
+                      <Avatar size={30}>{previewRole === "company" ? item.split(" ").map((part) => part[0]).slice(0, 2).join("") : <CalendarOutlined />}</Avatar>
+                      <span><strong>{item.split(" · ")[0]}</strong><small>{item.split(" · ")[1]}</small></span>
+                      <CheckCircleOutlined />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-        </motion.div>
-      </Card>
+        </div>
+      </div>
     </motion.div>
   );
-};
+}
 
 export default function Home() {
   const router = useRouter();
@@ -422,20 +414,17 @@ export default function Home() {
 
   const themeConfig = useMemo(
     () => ({
-      algorithm:
-        themeMode === "dark"
-          ? antdTheme.darkAlgorithm
-          : antdTheme.defaultAlgorithm,
+      algorithm: themeMode === "dark" ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
       token: {
         colorPrimary: themeMode === "dark" ? "#60a5fa" : "#1677ff",
+        borderRadius: 14,
+        fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
       },
     }),
     [themeMode]
   );
 
-  const toggleTheme = () => {
-    dispatch(setThemeMode(themeMode === "dark" ? "light" : "dark"));
-  };
+  const toggleTheme = () => dispatch(setThemeMode(themeMode === "dark" ? "light" : "dark"));
 
   const scrollToSection = (sectionId: string) => {
     setMobileMenuOpen(false);
@@ -444,57 +433,39 @@ export default function Home() {
 
   return (
     <ConfigProvider theme={themeConfig}>
-      <Layout className="landing-page-shell" style={{ minHeight: "100vh", background: "var(--background)" }}>
-        <Header className="landing-header">
-          <div className="landing-header-inner">
-            <Space size="middle" className="landing-brand">
-              <Avatar
-                shape="square"
-                size={36}
-                className="landing-logo"
-                icon={<CloudOutlined />}
-              />
-              <Title level={4} style={{ margin: 0, color: "var(--text-primary)" }}>
-                HireGenix
-              </Title>
-              <Tag color="blue" className="landing-brand-tag">Enterprise AI Hiring</Tag>
-            </Space>
-            <nav className="landing-desktop-nav" aria-label="Landing page navigation">
+      <Layout className="hg-shell" data-theme={themeMode}>
+        <div className="hg-grid-bg" />
+        <div className="hg-glow hg-glow-one" />
+        <div className="hg-glow hg-glow-two" />
+
+        <Header className="hg-header">
+          <div className="hg-header-inner">
+            <button className="hg-brand" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+              <span className="hg-logo"><CloudOutlined /></span>
+              <span>HireGenix</span>
+            </button>
+
+            <nav className="hg-nav" aria-label="Landing navigation">
               {navItems.map((item) => (
-                <Button key={item.key} type="text" onClick={() => scrollToSection(item.key)}>
+                <button key={item.key} onClick={() => scrollToSection(item.key)}>
                   {item.label}
-                </Button>
+                </button>
               ))}
             </nav>
-            <Space size="small" className="landing-header-actions">
-              <Button
-                className="landing-theme-button"
-                icon={themeMode === "dark" ? <BulbOutlined /> : <MoonOutlined />}
-                onClick={toggleTheme}
-              >
-                <span className="landing-action-label">
-                  {themeMode === "dark" ? "Light" : "Dark"}
-                </span>
+
+            <Space size={8} className="hg-header-actions">
+              <Button className="hg-desktop-header-action" icon={themeMode === "dark" ? <BulbOutlined /> : <MoonOutlined />} onClick={toggleTheme}>
+                {themeMode === "dark" ? "Light" : "Dark"}
               </Button>
-              {isAuthed ? (
-                <Button type="primary" icon={<AppstoreOutlined />} onClick={() => router.push(dashboardPath)}>
-                  <span className="landing-action-label">Dashboard</span>
-                </Button>
-              ) : (
-                <Button
-                  type="primary"
-                  icon={<LoginOutlined />}
-                  onClick={() => router.push("/auth")}
-                >
-                  <span className="landing-action-label">Login</span>
-                </Button>
-              )}
               <Button
-                className="landing-mobile-menu-button"
-                icon={<MenuOutlined />}
-                aria-label="Open navigation menu"
-                onClick={() => setMobileMenuOpen(true)}
-              />
+                className="hg-desktop-header-action"
+                type="primary"
+                icon={isAuthed ? <AppstoreOutlined /> : <LoginOutlined />}
+                onClick={() => router.push(isAuthed ? dashboardPath : "/auth")}
+              >
+                {isAuthed ? "Dashboard" : "Login"}
+              </Button>
+              <Button className="hg-menu-button" icon={<MenuOutlined />} onClick={() => setMobileMenuOpen(true)} />
             </Space>
           </div>
         </Header>
@@ -502,371 +473,211 @@ export default function Home() {
         <Drawer
           title="HireGenix"
           placement="right"
-          width={Math.min(320, typeof window === "undefined" ? 320 : window.innerWidth)}
+          width={320}
           open={mobileMenuOpen}
           onClose={() => setMobileMenuOpen(false)}
-          className="landing-mobile-drawer"
         >
-          <div className="landing-mobile-nav">
+          <Space direction="vertical" size={12} style={{ width: "100%" }}>
             {navItems.map((item) => (
               <Button key={item.key} type="text" block onClick={() => scrollToSection(item.key)}>
                 {item.label}
               </Button>
             ))}
             <Divider />
-            <Button
-              block
-              icon={themeMode === "dark" ? <BulbOutlined /> : <MoonOutlined />}
-              onClick={toggleTheme}
-            >
+            <Button block onClick={toggleTheme}>
               Switch to {themeMode === "dark" ? "light" : "dark"} mode
             </Button>
-            <Button
-              block
-              type="primary"
-              icon={isAuthed ? <AppstoreOutlined /> : <LoginOutlined />}
-              onClick={() => {
-                setMobileMenuOpen(false);
-                router.push(isAuthed ? dashboardPath : "/auth");
-              }}
-            >
+            <Button block type="primary" onClick={() => router.push(isAuthed ? dashboardPath : "/auth")}>
               {isAuthed ? "Open dashboard" : "Login"}
             </Button>
-          </div>
+          </Space>
         </Drawer>
 
-        <Content className="landing-content">
-          <section className="landing-hero">
-            <Row gutter={[32, 32]} align="middle">
-              <Col xs={24}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.1 }}
-                >
-                  <Space direction="vertical" size="large" className="landing-hero-copy">
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.6, delay: 0.2 }}
-                    >
-                      <Tag color="blue">
-                        AI-powered talent intelligence
-                      </Tag>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.8, delay: 0.3 }}
-                    >
-                      <Title className="landing-title">
-                        Hire with certainty. Scale with confidence.
-                      </Title>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.8, delay: 0.4 }}
-                    >
-                      <Paragraph className="landing-subtitle">
-                        HireGenix unifies verified profiles, smart matching, and
-                        interview analytics into one enterprise-ready hiring
-                        platform for candidates and companies.
-                      </Paragraph>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.6, delay: 0.5 }}
-                    >
-                      <Space wrap className="landing-hero-actions">
-                        <Button type="primary" size="large" onClick={() => router.push("/auth")}>
-                          Launch platform
-                        </Button>
-                        <Button size="large" onClick={() => router.push("/auth/sign-up?role=company")}>
-                          Start hiring
-                        </Button>
-                        <Button size="large" onClick={() => router.push("/auth/sign-up?role=candidate")}>
-                          Find roles
-                        </Button>
-                      </Space>
-                    </motion.div>
-                    <Space size="large" wrap className="landing-metrics">
-                      {stats.map((stat, index) => (
-                        <motion.div
-                          key={stat.label}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
-                          className="landing-metric"
-                        >
-                          <Text className="landing-metric-label">{stat.label}</Text>
-                          <div className="landing-metric-value">
-                            {stat.value}
-                            <span>{stat.suffix}</span>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </Space>
-                  </Space>
-                </motion.div>
-              </Col>
-              <Col xs={24}>
-                <DashboardSnapshot themeMode={themeMode} />
-              </Col>
+        <Content className="hg-content">
+          <section className="hg-hero">
+            <motion.div
+              className="hg-hero-copy"
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              transition={{ duration: 0.65 }}
+            >
+              <Tag className="hg-pill" color="blue">
+                AI-native hiring platform for modern teams
+              </Tag>
+              <Title className="hg-title">
+                Hire better candidates with AI-powered interviews and talent intelligence.
+              </Title>
+              <Paragraph className="hg-subtitle">
+                HireGenix brings job matching, verified profiles, structured interviews, and hiring analytics into one clean workflow for companies and candidates.
+              </Paragraph>
+              <Space size={12} wrap className="hg-hero-actions">
+                <Button type="primary" size="large" onClick={() => router.push("/auth/sign-up?role=company")}>
+                  Start hiring
+                </Button>
+                <Button size="large" onClick={() => router.push("/auth/sign-up?role=candidate")}>
+                  Find roles
+                </Button>
+              </Space>
+            </motion.div>
+
+            <ProductPreview />
+
+            <Row gutter={[16, 16]} className="hg-stats">
+              {stats.map((stat) => (
+                <Col xs={12} md={6} key={stat.label}>
+                  <Card bordered={false} className="hg-stat-card">
+                    <strong>{stat.value}</strong>
+                    <span>{stat.label}</span>
+                  </Card>
+                </Col>
+              ))}
             </Row>
           </section>
 
-          <section className="landing-section" id="social">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true, amount: 0.3 }}
-            >
-              <Row gutter={[24, 24]} align="middle">
-                <Col xs={24}>
-                  <Title level={3} className="landing-section-title">
-                    Trusted by hiring leaders
-                  </Title>
-                  <Paragraph className="landing-section-subtitle">
-                    Companies use HireGenix to streamline hiring at scale.
-                  </Paragraph>
-                </Col>
-                <Col xs={24}>
-                  <Row gutter={[16, 16]}>
-                    {["NovaLabs", "PeakHire", "Apex Talent", "CloudBridge", "CoreStack", "VantaX"].map(
-                      (name, index) => (
-                        <Col xs={12} md={8} key={name}>
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.5, delay: index * 0.05 }}
-                            viewport={{ once: true, amount: 0.3 }}
-                          >
-                            <Card className="landing-logo-card" bordered={false}>
-                              <Space>
-                                <Avatar icon={<GlobalOutlined />} />
-                                <Text>{name}</Text>
-                              </Space>
-                            </Card>
-                          </motion.div>
-                        </Col>
-                      )
-                    )}
-                  </Row>
-                </Col>
-              </Row>
-            </motion.div>
+          <section className="hg-section hg-logo-strip">
+            <Text>Built for recruiting teams, startups, campus hiring, and talent operations</Text>
+            <div>
+              {["NovaLabs", "CloudBridge", "CoreStack", "PeakHire", "Apex Talent"].map((name) => (
+                <span key={name}><GlobalOutlined /> {name}</span>
+              ))}
+            </div>
           </section>
 
-          <section className="landing-section" id="features">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true, amount: 0.3 }}
-            >
-              <Row gutter={[24, 24]}>
-                <Col xs={24}>
-                  <Title level={2} className="landing-section-title">
-                    AI-first features built for hiring teams
-                  </Title>
-                  <Paragraph className="landing-section-subtitle">
-                    Everything you need to align recruiters, hiring managers, and
-                    candidates in one intelligent workflow.
-                  </Paragraph>
+          <section className="hg-section" id="features">
+            <div className="hg-section-heading">
+              <Tag color="blue">Features</Tag>
+              <Title level={2}>Everything required to move from applicants to confident decisions.</Title>
+              <Paragraph>
+                The page should not just look pretty. It should explain the product fast. These sections make the value obvious.
+              </Paragraph>
+            </div>
+
+            <Row gutter={[16, 16]}>
+              {features.map((feature, index) => (
+                <Col xs={24} md={12} lg={8} key={feature.title}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 18 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45, delay: index * 0.04 }}
+                    viewport={{ once: true, amount: 0.2 }}
+                  >
+                    <Card bordered={false} className="hg-feature-card">
+                      <Avatar size={46} icon={feature.icon} />
+                      <Title level={4}>{feature.title}</Title>
+                      <Paragraph>{feature.description}</Paragraph>
+                    </Card>
+                  </motion.div>
                 </Col>
-                <Col xs={24}>
-                  <Row gutter={[16, 16]}>
-                    {features.map((feature, index) => (
-                      <Col xs={24} md={12} key={feature.title}>
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.5, delay: index * 0.1 }}
-                          viewport={{ once: true, amount: 0.3 }}
-                        >
-                          <Card className="landing-feature-card" bordered={false}>
-                            <Space direction="vertical" size="middle">
-                              <Avatar size={48} icon={feature.icon} className="landing-feature-icon" />
-                              <Title level={4} style={{ margin: 0 }}>
-                                {feature.title}
-                              </Title>
-                              <Paragraph style={{ margin: 0 }}>
-                                {feature.description}
-                              </Paragraph>
-                            </Space>
-                          </Card>
-                        </motion.div>
-                      </Col>
-                    ))}
-                  </Row>
-                </Col>
-              </Row>
-            </motion.div>
+              ))}
+            </Row>
           </section>
 
-          <section className="landing-section" id="workflow">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true, amount: 0.3 }}
-            >
-              <Row gutter={[24, 24]} align="middle">
-                <Col xs={24}>
-                  <Card className="landing-workflow-card" bordered={false}>
-                    <Title level={2} style={{ marginTop: 0 }}>
-                      Workflow that scales with your hiring volume
-                    </Title>
-                    <Paragraph>
-                      From sourcing to offer, HireGenix guides every step with AI
-                      insight and collaboration.
-                    </Paragraph>
-                    <Steps
-                      direction="vertical"
-                      items={workflow.map((step, index) => ({
-                        title: step.title,
-                        description: step.description,
-                        icon: <CheckCircleOutlined />,
-                        status: index < 2 ? "finish" : "process",
-                      }))}
-                    />
-                  </Card>
+          <section className="hg-section" id="platform">
+            <div className="hg-section-heading">
+              <Tag color="blue">One connected platform</Tag>
+              <Title level={2}>Purpose-built experiences for both sides of hiring.</Title>
+              <Paragraph>
+                Candidates and companies work from focused dashboards while sharing one reliable hiring workflow.
+              </Paragraph>
+            </div>
+            <Row gutter={[18, 18]} align="stretch">
+              {platformCards.map((card, index) => (
+                <Col xs={24} md={12} key={card.title}>
+                  <motion.div
+                    className="hg-platform-motion"
+                    initial={{ opacity: 0, x: index === 0 ? -24 : 24 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.55, ease: "easeOut" }}
+                    viewport={{ once: true, amount: 0.25 }}
+                  >
+                    <Card bordered={false} className="hg-platform-card">
+                      <div className="hg-platform-card-top">
+                        <Avatar size={48} shape="circle" icon={card.icon} />
+                        <Text>{card.eyebrow}</Text>
+                      </div>
+                      <Title level={3}>{card.title}</Title>
+                      <Paragraph>{card.description}</Paragraph>
+                      <div className="hg-check-list">
+                        {card.points.map((point) => (
+                          <span key={point}><CheckCircleOutlined /> {point}</span>
+                        ))}
+                      </div>
+                    </Card>
+                  </motion.div>
                 </Col>
-                <Col xs={24}>
-                  <Row gutter={[16, 16]}>
-                    {["Candidate Experience", "Recruiter Console", "Company Insights", "Interview Studio"].map(
-                      (label, index) => (
-                        <Col xs={24} md={12} key={label}>
-                          <motion.div
-                            initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.5, delay: index * 0.1 }}
-                            viewport={{ once: true, amount: 0.3 }}
-                          >
-                            <Card className="landing-tile-card" bordered={false}>
-                              <Space direction="vertical" size={10}>
-                                <Avatar icon={<UserOutlined />} className="landing-tile-icon" />
-                                <Text strong>{label}</Text>
-                                <Text className="landing-tile-text">
-                                  Unified views, consistent data, and real-time
-                                  updates for every team.
-                                </Text>
-                              </Space>
-                            </Card>
-                          </motion.div>
-                        </Col>
-                      )
-                    )}
-                  </Row>
-                </Col>
-              </Row>
-            </motion.div>
+              ))}
+            </Row>
           </section>
 
-          <section className="landing-section landing-reviews" id="reviews">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true, amount: 0.3 }}
-            >
-              <Row gutter={[24, 24]}>
-                <Col xs={24}>
-                  <Title level={2} className="landing-section-title">
-                    Teams love the clarity
-                  </Title>
-                  <Paragraph className="landing-section-subtitle">
-                    Real feedback from recruiters and hiring managers using HireGenix daily.
-                  </Paragraph>
-                </Col>
-                <Col xs={24}>
-                  <div className="reviews-marquee">
-                    <div className="reviews-track">
-                      {reviewLoop.map((review, index) => (
-                        <Card key={`${review.name}-${index}`} className="review-card" bordered={false}>
-                          <Space direction="vertical" size={10}>
-                            <Paragraph className="review-quote">“{review.quote}”</Paragraph>
-                            <Space size={10}>
-                              <Avatar size={32} icon={<UserOutlined />} />
-                              <div>
-                                <Text className="review-name">{review.name}</Text>
-                                <div className="review-role">{review.role}</div>
-                              </div>
-                            </Space>
-                          </Space>
-                        </Card>
-                      ))}
+          <section className="hg-section" id="workflow">
+            <div className="hg-workflow-card">
+              <div className="hg-section-heading hg-left-heading">
+                <Tag color="blue">Workflow</Tag>
+                <Title level={2}>One connected path from profile to final decision.</Title>
+                <Paragraph>
+                  Every step passes structured context into the next, keeping candidates and hiring teams aligned.
+                </Paragraph>
+              </div>
+              <motion.div
+                className="hg-workflow-map"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.18 }}
+              >
+                <motion.div
+                  className="hg-workflow-line"
+                  variants={{ hidden: { scaleY: 0 }, visible: { scaleY: 1 } }}
+                  transition={{ duration: 1.25, ease: "easeInOut" }}
+                />
+                {workflow.map((item, index) => (
+                  <motion.div
+                    className={`hg-workflow-node ${index % 2 === 0 ? "is-left" : "is-right"}`}
+                    key={item.title}
+                    variants={{
+                      hidden: { opacity: 0, x: index % 2 === 0 ? -32 : 32, y: 12 },
+                      visible: { opacity: 1, x: 0, y: 0 },
+                    }}
+                    transition={{ duration: 0.5, delay: 0.12 + index * 0.1, ease: "easeOut" }}
+                  >
+                    <div className="hg-workflow-node-card">
+                      <div className="hg-workflow-node-head">
+                        <span className="hg-workflow-icon">{item.icon}</span>
+                        <span className="hg-workflow-number">{String(index + 1).padStart(2, "0")}</span>
+                      </div>
+                      <Title level={4}>{item.title}</Title>
+                      <Paragraph>{item.description}</Paragraph>
                     </div>
-                  </div>
-                </Col>
-              </Row>
-            </motion.div>
+                    <motion.span
+                      className="hg-workflow-dot"
+                      animate={{ boxShadow: ["0 0 0 0 rgba(22,119,255,.45)", "0 0 0 9px rgba(22,119,255,0)"] }}
+                      transition={{ duration: 2, repeat: Infinity, delay: index * 0.18 }}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
           </section>
 
-          <section className="landing-section" id="faq">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true, amount: 0.3 }}
-            >
-              <Row gutter={[24, 24]}>
-                <Col xs={24}>
-                  <Title level={2} className="landing-section-title">
-                    Answers for your team
-                  </Title>
-                  <Paragraph className="landing-section-subtitle">
-                    Everything you need to know about onboarding, security, and
-                    scaling your hiring workflow.
-                  </Paragraph>
-                </Col>
-                <Col xs={24}>
-                  <Collapse items={faqItems} bordered={false} className="landing-faq" />
-                </Col>
-              </Row>
-            </motion.div>
+          <section className="hg-section" id="faq">
+            <div className="hg-section-heading">
+              <Tag color="blue">FAQ</Tag>
+              <Title level={2}>Clear answers for serious users.</Title>
+            </div>
+            <Collapse bordered={false} items={faqItems} className="hg-faq" />
           </section>
         </Content>
 
-        <Footer className="landing-footer" id="footer">
-          <Row gutter={[24, 24]}>
-            <Col xs={24} md={10}>
-              <Space direction="vertical" size="small">
-                <Title level={4} style={{ marginBottom: 0 }}>
-                  HireGenix
-                </Title>
-                <Paragraph style={{ margin: 0 }}>
-                  Enterprise-grade hiring intelligence for modern teams.
-                </Paragraph>
-                <Space>
-                  <Tag color="blue">AI Interviews</Tag>
-                  <Tag color="gold">Verified Profiles</Tag>
-                </Space>
-              </Space>
-            </Col>
-            <Col xs={24} md={7}>
-              <Space direction="vertical" size="small">
-                <Text strong>Platform</Text>
-                <Button type="link" className="landing-footer-link" onClick={() => router.push("/auth")}>Sign in</Button>
-                <Button type="link" className="landing-footer-link" onClick={() => router.push("/auth/sign-up?role=company")}>Company signup</Button>
-                <Button type="link" className="landing-footer-link" onClick={() => router.push("/auth/sign-up?role=candidate")}>Candidate signup</Button>
-              </Space>
-            </Col>
-            <Col xs={24} md={7}>
-              <Space direction="vertical" size="small">
-                <Text strong>Contact</Text>
-                <Text>hello@hiregenix.ai</Text>
-                <Text>Karachi, Pakistan</Text>
-              </Space>
-            </Col>
-          </Row>
-          <Divider style={{ margin: "24px 0" }} />
-          <Text className="landing-footer-copy">
-            HireGenix © {new Date().getFullYear()} · Built for smart hiring
-          </Text>
+        <Footer className="hg-footer" id="footer">
+          <div>
+            <Title level={4}>HireGenix</Title>
+            <Paragraph>AI hiring intelligence for companies and candidates.</Paragraph>
+          </div>
+          <nav className="hg-footer-links" aria-label="Account links">
+            <Link href="/auth">Login</Link>
+            <Link href="/auth/sign-up?role=company">Company signup</Link>
+            <Link href="/auth/sign-up?role=candidate">Candidate signup</Link>
+          </nav>
         </Footer>
       </Layout>
     </ConfigProvider>
