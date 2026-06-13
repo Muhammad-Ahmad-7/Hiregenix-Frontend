@@ -1,3 +1,3 @@
 export const INFO = {
-  CompanyName: "HiregenX",
+  CompanyName: "Hiregenix",
 };
