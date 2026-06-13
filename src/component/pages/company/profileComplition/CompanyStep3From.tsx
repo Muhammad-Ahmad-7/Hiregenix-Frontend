@@ -4,7 +4,6 @@ import { LabelSelect } from "../../../common";
 import UiButton from "../../../common/CustomButton";
 import LeftArrow from "@/icons/LeftArrow";
 import LabelTextArea from "../../../common/LabelTextArea";
-import type { SelectProps } from "antd";
 import { skillsOptions } from "@/constants/job";
 
 // Define proper types for form values
