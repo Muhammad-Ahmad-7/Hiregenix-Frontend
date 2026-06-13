@@ -19,13 +19,13 @@ import {
 } from "antd";
 import {
   AppstoreOutlined,
+  ArrowRightOutlined,
   ArrowUpOutlined,
   BarChartOutlined,
   BarsOutlined,
   BulbOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
-  CloudOutlined,
   FileTextOutlined,
   GlobalOutlined,
   LoginOutlined,
@@ -40,6 +40,7 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
@@ -301,7 +302,7 @@ function ProductPreview() {
       transition={{ duration: 0.75, delay: 0.25 }}
     >
       <div className="hg-window-bar">
-        <div className="hg-window-dots"><span /><span /><span /></div>
+        <div className="hg-window-dots" aria-hidden="true"><span /><span /><span /></div>
         <Text>hiregenix.dev/{preview.path}</Text>
         <div className="hg-preview-switch" aria-label="Dashboard preview">
           {(Object.keys(dashboardData) as Array<keyof typeof dashboardData>).map((role) => (
@@ -319,7 +320,9 @@ function ProductPreview() {
 
       <div className="hg-dashboard-frame">
         <aside className="hg-preview-sidebar">
-          <div className="hg-preview-sidebar-title">HG</div>
+          <div className="hg-preview-sidebar-title">
+            <Image src="/logo/logo.png" alt="HireGenix" width={28} height={28} />
+          </div>
           <div className="hg-preview-menu">
             {preview.menu.map((item, index) => (
               <div className={index === 0 ? "is-active" : ""} key={item} title={item}>
@@ -441,7 +444,9 @@ export default function Home() {
         <Header className="hg-header">
           <div className="hg-header-inner">
             <button className="hg-brand" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-              <span className="hg-logo"><CloudOutlined /></span>
+              <span className="hg-logo">
+                <Image src="/logo/logo.png" alt="" width={36} height={36} priority />
+              </span>
               <span>HireGenix</span>
             </button>
 
@@ -573,41 +578,97 @@ export default function Home() {
             </Row>
           </section>
 
-          <section className="hg-section" id="platform">
-            <div className="hg-section-heading">
-              <Tag color="blue">One connected platform</Tag>
-              <Title level={2}>Purpose-built experiences for both sides of hiring.</Title>
+          <section className="hg-section hg-platform-section" id="platform">
+            <div className="hg-platform-heading">
+              <div>
+                <Tag color="blue">One connected platform</Tag>
+                <Title level={2}>Two focused workspaces.<br />One hiring system.</Title>
+              </div>
               <Paragraph>
-                Candidates and companies work from focused dashboards while sharing one reliable hiring workflow.
+                Purpose-built experiences for candidates and hiring teams, connected by the same structured data, decisions, and momentum.
               </Paragraph>
             </div>
-            <Row gutter={[18, 18]} align="stretch">
-              {platformCards.map((card, index) => (
-                <Col xs={24} md={12} key={card.title}>
-                  <motion.div
-                    className="hg-platform-motion"
-                    initial={{ opacity: 0, x: index === 0 ? -24 : 24 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.55, ease: "easeOut" }}
-                    viewport={{ once: true, amount: 0.25 }}
+
+            <div className="hg-platform-frame">
+              <div className="hg-platform-frame-bar">
+                <div className="hg-platform-frame-brand">
+                  <Image src="/logo/logo.png" alt="" width={22} height={22} />
+                  <span>HireGenix Platform</span>
+                </div>
+                <div className="hg-platform-frame-meta">
+                  <span><i /> All systems operational</span>
+                  <span>Unified talent graph</span>
+                </div>
+              </div>
+
+              <div className="hg-platform-grid">
+                {platformCards.map((card, index) => (
+                  <motion.article
+                    className={`hg-platform-panel ${index === 0 ? "is-company" : "is-candidate"}`}
+                    key={card.title}
+                    initial={{ opacity: 0, y: 28 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.55, delay: index * 0.12, ease: "easeOut" }}
+                    viewport={{ once: true, amount: 0.2 }}
                   >
-                    <Card bordered={false} className="hg-platform-card">
+                    <div className="hg-platform-panel-copy">
                       <div className="hg-platform-card-top">
-                        <Avatar size={48} shape="circle" icon={card.icon} />
+                        <span className="hg-platform-index">0{index + 1}</span>
+                        <Avatar size={36} shape="square" icon={card.icon} />
                         <Text>{card.eyebrow}</Text>
                       </div>
                       <Title level={3}>{card.title}</Title>
                       <Paragraph>{card.description}</Paragraph>
-                      <div className="hg-check-list">
-                        {card.points.map((point) => (
-                          <span key={point}><CheckCircleOutlined /> {point}</span>
-                        ))}
+                      <button type="button" onClick={() => router.push(`/auth/sign-up?role=${index === 0 ? "company" : "candidate"}`)}>
+                        Explore workspace <ArrowRightOutlined />
+                      </button>
+                    </div>
+
+                    <div className="hg-platform-ui" aria-hidden="true">
+                      <div className="hg-platform-ui-bar">
+                        <div><span /><span /><span /></div>
+                        <small>{index === 0 ? "Hiring overview" : "Career overview"}</small>
+                        <b>Live</b>
                       </div>
-                    </Card>
-                  </motion.div>
-                </Col>
-              ))}
-            </Row>
+                      <div className="hg-platform-ui-body">
+                        <div className="hg-platform-mini-nav">
+                          <span className="is-active">{card.icon}</span>
+                          <span><BarChartOutlined /></span>
+                          <span><FileTextOutlined /></span>
+                          <span><MessageOutlined /></span>
+                        </div>
+                        <div className="hg-platform-ui-content">
+                          <div className="hg-platform-metrics">
+                            <div><small>{index === 0 ? "Active roles" : "Profile score"}</small><strong>{index === 0 ? "12" : "94%"}</strong><em>+8.2%</em></div>
+                            <div><small>{index === 0 ? "Candidates" : "Role matches"}</small><strong>{index === 0 ? "248" : "36"}</strong><em>+12</em></div>
+                            <div><small>{index === 0 ? "Interviews" : "Applications"}</small><strong>{index === 0 ? "31" : "08"}</strong><em>Live</em></div>
+                          </div>
+                          <div className="hg-platform-queue">
+                            <div className="hg-platform-queue-head">
+                              <strong>{index === 0 ? "Hiring pipeline" : "Your next actions"}</strong>
+                              <span>Updated now</span>
+                            </div>
+                            {card.points.slice(0, 4).map((point, pointIndex) => (
+                              <div className="hg-platform-queue-row" key={point}>
+                                <span className="hg-platform-row-icon"><CheckCircleOutlined /></span>
+                                <span>{point}</span>
+                                <small>0{pointIndex + 1}</small>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="hg-platform-capabilities">
+                      {card.points.map((point) => (
+                        <span key={point}><CheckCircleOutlined /> {point}</span>
+                      ))}
+                    </div>
+                  </motion.article>
+                ))}
+              </div>
+            </div>
           </section>
 
           <section className="hg-section" id="workflow">
@@ -669,15 +730,24 @@ export default function Home() {
         </Content>
 
         <Footer className="hg-footer" id="footer">
-          <div>
-            <Title level={4}>HireGenix</Title>
-            <Paragraph>AI hiring intelligence for companies and candidates.</Paragraph>
+          <div className="hg-footer-main">
+            <div className="hg-footer-brand">
+              <div className="hg-footer-brand-title">
+                <Image src="/logo/logo.png" alt="" width={36} height={36} />
+                <Title level={4}>HireGenix</Title>
+              </div>
+              <Paragraph>AI hiring intelligence for companies and candidates.</Paragraph>
+            </div>
+            <nav className="hg-footer-links" aria-label="Account links">
+              <Link href="/auth">Login</Link>
+              <Link href="/auth/sign-up?role=company">Company signup</Link>
+              <Link href="/auth/sign-up?role=candidate">Candidate signup</Link>
+            </nav>
           </div>
-          <nav className="hg-footer-links" aria-label="Account links">
-            <Link href="/auth">Login</Link>
-            <Link href="/auth/sign-up?role=company">Company signup</Link>
-            <Link href="/auth/sign-up?role=candidate">Candidate signup</Link>
-          </nav>
+          <div className="hg-footer-legal">
+            <span>&copy; {new Date().getFullYear()} HireGenix. All rights reserved.</span>
+            <span>Designed and built by the HireGenix team.</span>
+          </div>
         </Footer>
       </Layout>
     </ConfigProvider>

@@ -8,7 +8,14 @@ export default function LoginHeader() {
   return (
     <Row className="auth-header h-20 px-6 flex items-center">
       <Col span={12} className="!flex items-center gap-2">
-        <Image width={36} height={36} src={"/logo/logo.png"} alt="Logo" />
+        <Image
+          width={40}
+          height={40}
+          src="/logo/logo.png"
+          alt="HireGenix logo"
+          preview={false}
+          className="auth-brand-logo"
+        />
         <Text className="font-semibold">{INFO.CompanyName}</Text>
       </Col>
       <Col span={12} className="!flex !justify-end">

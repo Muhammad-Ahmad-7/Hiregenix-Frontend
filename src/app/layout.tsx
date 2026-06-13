@@ -47,6 +47,10 @@ import { ReduxProviders } from "./ReduxProvider";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 const RootLayout = ({ children }: React.PropsWithChildren) => (
   <html lang="en">
+    <head>
+      <link rel="icon" type="image/png" href="/logo/logo.png" />
+      <link rel="apple-touch-icon" href="/logo/logo.png" />
+    </head>
     <body>
       <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
         <ReduxProviders>
