@@ -29,3 +29,9 @@ export const updateCompanyProfileApi = async (body: CompleteCompanyProfile) => {
     showToaster: true,
   });
 };
+export const updateCompanyLogoApi = async (body: { logoUrl: string }) => {
+  return safeApiCall<{ company: CompanyResponse }>({
+    apiCall: () => api.patch(`/company/update-profile`, body),
+    showToaster: true,
+  });
+}
