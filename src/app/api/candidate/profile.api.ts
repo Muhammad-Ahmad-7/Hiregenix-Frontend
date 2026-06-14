@@ -27,7 +27,7 @@ export const completeProfileApi = async (body: CompleteCandidateProfile) => {
   });
 };
 // /candidate/update-profile
-export const updateProfileApi = async (body: CompleteCandidateProfile) => {
+export const updateProfileApi = async (body: { profilePictureUrl: string }) => {
   return safeApiCall<{ candidate: CandidateProfileResponse }>({
     apiCall: () => api.patch("/candidate/update-profile", body),
     showToaster: true,

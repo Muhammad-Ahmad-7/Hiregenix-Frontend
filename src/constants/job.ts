@@ -278,3 +278,18 @@ export const pakistanCities = [
     { label: "Skardu", value: "Skardu" },
     { label: "Gilgit", value: "Gilgit" }
 ];
+
+export const genderOptions = [
+    {
+        value: "male",
+        label: "Male",
+    },
+    {
+        value: "female",
+        label: "Female",
+    },
+    {
+        value: "other",
+        label: "Other",
+    },
+];

@@ -50,7 +50,6 @@ import {
 import { uploadFileApi } from "@/app/api/auth.api";
 import {
   CandidateProfileResponse,
-  CompleteCandidateProfile,
 } from "@/constants/Interfaces/Types/Profile.interface";
 import { CandidateResume } from "@/constants/Interfaces/Types/Resume.interface";
 import { RootState } from "@/redux/store";
@@ -400,19 +399,8 @@ export default function ProfileDashboard() {
         return;
       }
 
-      const updatedProfile: CompleteCandidateProfile = {
-        fullName: profile.fullName,
-        dateOfBirth: profile.dateOfBirth,
-        gender: profile.gender,
-        country: profile.country,
-        city: profile.city,
-        contactNumber: profile.contactNumber,
+      const updatedProfile: { profilePictureUrl: string } = {
         profilePictureUrl,
-        githubUrl: profile.githubUrl,
-        linkedinUrl: profile.linkedinUrl,
-        portfolioUrl: profile.portfolioUrl,
-        bio: profile.bio,
-        tagline: profile.tagline,
       };
 
       await updateProfileApi(updatedProfile);
@@ -492,6 +480,9 @@ export default function ProfileDashboard() {
         githubUrl: profile?.githubUrl || resumeData?.parsedData.github || "",
         linkedinUrl: profile?.linkedinUrl || resumeData?.parsedData.linkedin || "",
         portfolioUrl: profile?.portfolioUrl || resumeData?.parsedData.portfolio || "",
+        dateOfBirth: profile?.dateOfBirth ? profile.dateOfBirth : null,
+        gender: profile?.gender || "",
+        contactNumber: profile?.contactNumber || "",
       } as Partial<CandidateProfileResponse>);
     }
     setIsEditModalOpen(true);
@@ -501,8 +492,6 @@ export default function ProfileDashboard() {
     try {
       setProfileEditing(true);
       const valuesWithUserType: CandidateProfileResponse & { userType: "candidate", profilePictureUrl: string } = { ...values, userType: "candidate", profilePictureUrl: userProfile?.profilePictureUrl || "" };
-      console.log("Values of editing modal data", valuesWithUserType);
-      console.log("Profile data", userProfile);
       dispatch(setProfile(valuesWithUserType));
       await updateProfileApi(values);
       setUserProfile((prev) => ({ ...prev, ...values }));
@@ -1206,6 +1195,15 @@ export default function ProfileDashboard() {
           <Form.Item label="Tagline" name="tagline" rules={[{ required: true, message: "Please enter your tagline" }]}>
             <Input placeholder="e.g., Full Stack Developer | AI Enthusiast" />
           </Form.Item>
+          <Form.Item label="Phone" name="contactNumber" rules={[{ required: true, message: "Please enter your phone number" }]}>
+            <Input placeholder="e.g., +92 234 567 8900" />
+          </Form.Item>
+          <LabelSelect
+            label="Gender"
+            name="gender"
+            required
+            options={genderOptions}
+          />
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="City" name="city" rules={[{ required: true }]}><Input placeholder="Your city" /></Form.Item>
@@ -1217,15 +1215,21 @@ export default function ProfileDashboard() {
           <Form.Item label="Bio" name="bio" rules={[{ required: true }]}>
             <TextArea rows={4} placeholder="Tell us about yourself..." maxLength={500} showCount />
           </Form.Item>
-          <Form.Item label="GitHub URL" name="githubUrl" rules={[{ type: "url" }]}>
+          <Form.Item label="GitHub URL" name="githubUrl" rules={[{ type: "url", validator: gitHubUrlValidator }, { required: true, message: "GitHub URL is required" }]}>
             <Input placeholder="https://github.com/yourusername" prefix={<GithubFilled />} />
           </Form.Item>
-          <Form.Item label="LinkedIn URL" name="linkedinUrl" rules={[{ type: "url" }]}>
+          <Form.Item label="LinkedIn URL" name="linkedinUrl" rules={[{ type: "url", validator: linkedInUrlValidator }, { required: true, message: "LinkedIn URL is required" }]}>
             <Input placeholder="https://linkedin.com/in/yourusername" prefix={<LinkedinFilled />} />
           </Form.Item>
-          <Form.Item label="Portfolio URL" name="portfolioUrl" rules={[{ type: "url" }]}>
+          <Form.Item label="Portfolio URL" name="portfolioUrl" rules={[{ type: "url", validator: portfolioUrlValidator }, { required: true, message: "Portfolio URL is required" }]}>
             <Input placeholder="https://yourportfolio.com" prefix={<GlobalOutlined />} />
           </Form.Item>
+          {/* <LabelDatePicker
+            label="Date Of Birth"
+            placeholder="D.O.B"
+            name="dateOfBirth"
+            required
+          /> */}
           <div style={{ textAlign: "right", marginTop: 16 }}>
             <Button onClick={() => setIsEditModalOpen(false)} style={{ marginRight: 8 }}>Cancel</Button>
             <Button loading={profileEditing} type="primary" htmlType="submit">Save Changes</Button>
@@ -1243,7 +1247,7 @@ export default function ProfileDashboard() {
         confirmLoading={isEditModalLoading}
         cancelButtonProps={{ disabled: isEditModalLoading }}
         width={520}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={sectionForm} layout="vertical" className="mt-4">
           {renderSectionForm()}
@@ -1257,6 +1261,9 @@ import ReactMarkdown from "react-markdown";
 import ProfileSkeleton from "@/component/Skeletons/ProfileSkeleton";
 import toast from "react-hot-toast";
 import { getTask } from "@/app/api/candidate/task.api";
+import { gitHubUrlValidator, linkedInUrlValidator, portfolioUrlValidator } from "@/utils/urlValidator";
+import { LabelSelect } from "@/component/common";
+import { genderOptions } from "@/constants/job";
 
 const AIResponseViewer = ({ aiResult }: { aiResult: string }) => (
   <div className="ai-response-container">
