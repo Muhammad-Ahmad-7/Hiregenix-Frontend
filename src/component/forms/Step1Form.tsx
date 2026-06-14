@@ -15,7 +15,7 @@ import { AxiosError } from "axios";
 import type { UploadProps } from "antd";
 import { Dayjs } from "dayjs";
 import toast from "react-hot-toast";
-import { pakistanCities } from "@/constants/job";
+import { genderOptions, pakistanCities } from "@/constants/job";
 
 const { Text } = Typography;
 
@@ -57,21 +57,6 @@ export default function Step1Form({ onNext, initialValues }: Step1FormProps) {
     null
   );
   const [uploading, setUploading] = useState(false);
-
-  const genderOptions = [
-    {
-      value: "male",
-      label: "Male",
-    },
-    {
-      value: "female",
-      label: "Female",
-    },
-    {
-      value: "other",
-      label: "Other",
-    },
-  ];
 
   const countryOptions = [
     { label: "Pakistan", value: "Pakistan" },

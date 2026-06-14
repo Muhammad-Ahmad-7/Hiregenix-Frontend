@@ -34,6 +34,7 @@ import { RootState } from "@/redux/store";
 import {
   updateCompanyProfileApi,
   getCompanyProfileApi,
+  updateCompanyLogoApi,
 } from "@/app/api/company/profile.api";
 import { setProfile } from "@/redux/slices/userSlice";
 import {
@@ -212,6 +213,8 @@ export default function CompanyProfile() {
         return;
       }
 
+      await updateCompanyLogoApi({ logoUrl })
+
       dispatch(
         setProfile({
           ...profile,
@@ -315,7 +318,7 @@ export default function CompanyProfile() {
                     </div>
                     <div>
                       {" "}
-                      <Tooltip title={"Edit Profile"} placement="top">
+                      <Tooltip title={"Edit Profile Make sure to first upload your logo and knowledge base"} placement="top">
                         <Button
                           type="text"
                           icon={<EditOutlined />}
@@ -639,8 +642,7 @@ export default function CompanyProfile() {
           <Form.Item
             label={
               <span>
-                Tech Stack{" "}
-                <span style={{ color: "rgba(0,0,0,.45)" }}>(up to 10)</span>
+                Tech Stack
               </span>
             }
             name="techStack"
