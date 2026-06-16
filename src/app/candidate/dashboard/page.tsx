@@ -188,7 +188,7 @@ export default function Dashboard() {
           <StatsCard
             arrow={{ shown: true, href: "/candidate/interview-section" }}
             icon={<StarFilled className="!text-white" />}
-            title="Active Jobs"
+            title="Active Applications"
             number={candidateStats?.userActiveJobsCount || 0}
             badgeText="In progress"
             badgeColor="orange"
