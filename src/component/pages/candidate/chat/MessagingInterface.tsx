@@ -891,12 +891,12 @@ const MessagingInterface = () => {
                             status={chat.lastMessage?.status ?? "000"}
                           />
                         )}{" "}
-                        {isImageUrl(chat.lastMessage?.text) ? (
+                        {isImageUrl(chat.lastMessage?.text ?? "") ? (
                           <>
                             <FileImageOutlined style={{ fontSize: 18 }} />
                             Image
                           </>
-                        ) : isDocumentUrl(chat.lastMessage?.text) ? (
+                        ) : isDocumentUrl(chat.lastMessage?.text ?? "") ? (
                           <>
                             <FileTextOutlined style={{ fontSize: 18 }} />
                             Document

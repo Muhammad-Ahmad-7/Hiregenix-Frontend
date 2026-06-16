@@ -15,7 +15,7 @@ export interface IChat {
   _id: string;
   participant: IChatParticipant;
   participantType: Role;
-  lastMessage: IMessage;
+  lastMessage?: IMessage | null;
   lastMessageAt: Date | string | null; // ISO UTC string
   unReadCount: number;
   onlineStatus?: "online" | "offline";

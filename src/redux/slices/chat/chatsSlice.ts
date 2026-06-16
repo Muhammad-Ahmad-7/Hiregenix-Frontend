@@ -51,10 +51,8 @@ const chatSlice = createSlice({
       state,
       action: PayloadAction<{ status: MessageStatus; chatId: string }>,
     ) {
-      console.log("bsyar:", action.payload);
       const chat = state.chats?.find((c) => action.payload.chatId === c._id);
-      if (chat) {
-        console.log("chatbhimilgai");
+      if (chat?.lastMessage) {
         chat.lastMessage.status = action.payload.status;
       }
     },
@@ -71,20 +69,13 @@ const chatSlice = createSlice({
       const chat = state.chats?.find((c) => c._id === message.chat);
 
       if (chat) {
-        console.log("heloooooooo:", message);
-
-        // Update last message details
-        chat.lastMessage.text = message.text;
-        chat.lastMessage.sender = message.sender;
-        // chat.lastMessage.status = message.status;
+        chat.lastMessage = message;
         chat.lastMessageAt = message.updatedAt;
         chat.updatedAt = message.updatedAt;
 
         // ✅ ONLY increment unread count if message is from OTHER user
         if (userId != null && sender !== userId) {
-          console.log("unReadCount before:", chat.unReadCount);
           chat.unReadCount = (chat.unReadCount || 0) + 1;
-          console.log("unReadCount after:", chat.unReadCount);
         }
       }
     });

@@ -24,6 +24,7 @@ import {
   InputNumber,
   Popconfirm,
   Progress,
+  Tooltip,
 } from "antd";
 import {
   EditOutlined,
@@ -851,7 +852,10 @@ export default function ProfileDashboard() {
               </Text>
             </div>
           </div>
-          <EditOutlined className="cursor-pointer text-lg hover:text-blue-500 transition-colors" onClick={handleEditClick} />
+          <Tooltip title="Edit profile but first upload your profile picture.">
+            {/* <EditOutlined disabled={true} className="cursor-pointer text-lg hover:text-blue-500 transition-colors" onClick={handleEditClick} /> */}
+            <Button type="text" icon={<EditOutlined />} onClick={handleEditClick} disabled={profile?.userType === "candidate" && !profile?.profilePictureUrl} className="!px-0" />
+          </Tooltip>
         </div>
 
         <Divider className="!my-3" />
