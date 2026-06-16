@@ -63,7 +63,7 @@ export default function Step2Form({
         <Col span={24}>
           <LabelInput
             name="linkedinUrl"
-            label="Linkdin Url"
+            label="LinkedIn Url"
             itemProps={{ tooltip: "(optional)" }}
             placeholder="e.g : linkedin.com/in/ad-dev07"
             rules={[
