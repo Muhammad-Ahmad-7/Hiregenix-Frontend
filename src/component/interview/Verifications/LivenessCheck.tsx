@@ -28,13 +28,17 @@ const LivenessCheck: React.FC<Props> = ({ onPassed, interviewId }) => {
     const { streamRef, ready, start, stop } = useCamera(videoRef);
     const { startRecording, stopRecording } = useMediaRecorder(streamRef);
 
-    // metricsRef gives us a non-stale snapshot inside callbacks
-    const { aiMetrics, metricsRef, isAiReady } = useInterviewAI(videoRef);
-
     const [state, setState] = useState<LivenessState>("idle");
     const [countdown, setCountdown] = useState(3);
     // const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
     const [errorMsg, setErrorMsg] = useState("");
+    const isLivenessDetectionActive = state === "recording";
+
+    // metricsRef gives us a non-stale snapshot inside callbacks
+    const { aiMetrics, metricsRef, isAiReady, resetAiMetrics } = useInterviewAI(
+        videoRef,
+        isLivenessDetectionActive,
+    );
 
     // ── Camera lifecycle ──────────────────────────────────────────────────────
     useEffect(() => {
@@ -104,12 +108,15 @@ const LivenessCheck: React.FC<Props> = ({ onPassed, interviewId }) => {
     };
 
     const handleBegin = () => {
+        resetAiMetrics();
+        setErrorMsg("");
         setCountdown(3);
         setState("countdown");
     };
 
     const handleRetry = () => {
         setErrorMsg("");
+        resetAiMetrics();
         // setVideoBlob(null);
         setState("idle");
     };
@@ -170,7 +177,7 @@ const LivenessCheck: React.FC<Props> = ({ onPassed, interviewId }) => {
 
                         {/* Progress pills */}
                         <div className="absolute bottom-4 right-4 flex flex-col gap-1 items-end">
-                            <Pill done={aiMetrics.blinkCount >= 2} label={`Blink (${aiMetrics.blinkCount}/2)`} />
+                            <Pill done={aiMetrics.blinkCount >= 2} label={`Blink (${aiMetrics.blinkCount > 2 ? 2 : aiMetrics.blinkCount}/2)`} />
                             <Pill done={aiMetrics.headLeft} label="Head right" />
                             <Pill done={aiMetrics.headRight} label="Head left" />
                         </div>
