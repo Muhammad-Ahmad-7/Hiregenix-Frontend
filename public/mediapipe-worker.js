@@ -17,6 +17,15 @@ let eyesClosed = false; // tracks rising-edge for blink
 let lastBlinkLeft = 0;
 let lastBlinkRight = 0;
 
+function resetLivenessState() {
+    blinkCount = 0;
+    headLeft = false;
+    headRight = false;
+    eyesClosed = false;
+    lastBlinkLeft = 0;
+    lastBlinkRight = 0;
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
     try {
@@ -72,6 +81,11 @@ function detectHeadTurn(landmarks) {
 // ── Message handler ───────────────────────────────────────────────────────────
 self.onmessage = async (event) => {
     const { type, image, timestamp } = event.data;
+
+    if (type === "RESET_LIVENESS") {
+        resetLivenessState();
+        return;
+    }
 
     if (type !== "PROCESS_FRAME" || !faceLandmarker) return;
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface AiMetrics {
     faceVisible: boolean;
@@ -28,13 +28,27 @@ const DEFAULT_METRICS: AiMetrics = {
     status: "CHECKING",
 };
 
-export const useInterviewAI = (videoRef: React.RefObject<HTMLVideoElement>) => {
+export const useInterviewAI = (
+    videoRef: React.RefObject<HTMLVideoElement>,
+    enabled = true,
+) => {
     const workerRef = useRef<Worker | null>(null);
-    const isReadyRef = useRef(false);          // ← ref so rAF loop always sees latest
-    const metricsRef = useRef<AiMetrics>(DEFAULT_METRICS); // ← ref for stale-closure safety
+    const isReadyRef = useRef(false);
+    const enabledRef = useRef(enabled);
+    const metricsRef = useRef<AiMetrics>(DEFAULT_METRICS);
 
     const [isReady, setIsReady] = useState(false);
     const [aiMetrics, setAiMetrics] = useState<AiMetrics>(DEFAULT_METRICS);
+
+    useEffect(() => {
+        enabledRef.current = enabled;
+    }, [enabled]);
+
+    const resetAiMetrics = useCallback(() => {
+        metricsRef.current = DEFAULT_METRICS;
+        setAiMetrics(DEFAULT_METRICS);
+        workerRef.current?.postMessage({ type: "RESET_LIVENESS" });
+    }, []);
 
     useEffect(() => {
         const worker = new Worker("/mediapipe-worker.js");
@@ -50,7 +64,6 @@ export const useInterviewAI = (videoRef: React.RefObject<HTMLVideoElement>) => {
                 metricsRef.current = e.data.metrics;
                 setAiMetrics(e.data.metrics);
 
-                // ── Temporary debug — remove once blink detection is confirmed ──
                 console.debug(
                     `[AI] blinks: ${e.data.metrics.blinkCount}`,
                     `| eyeL: ${e.data.metrics.blinkScoreLeft.toFixed(2)}`,
@@ -61,7 +74,7 @@ export const useInterviewAI = (videoRef: React.RefObject<HTMLVideoElement>) => {
             }
         };
 
-        const THROTTLE_MS = 100; // slightly tighter for smoother detection
+        const THROTTLE_MS = 100;
         let lastProcessedTime = 0;
         let animationId: number;
 
@@ -70,7 +83,8 @@ export const useInterviewAI = (videoRef: React.RefObject<HTMLVideoElement>) => {
 
             if (
                 video &&
-                isReadyRef.current &&                        // ← always fresh via ref
+                isReadyRef.current &&
+                enabledRef.current &&
                 video.readyState >= 2 &&
                 video.videoWidth > 0 &&
                 !video.paused &&
@@ -99,7 +113,7 @@ export const useInterviewAI = (videoRef: React.RefObject<HTMLVideoElement>) => {
             cancelAnimationFrame(animationId);
             worker.terminate();
         };
-    }, [videoRef]); // ← isReady removed from deps — no more worker restarts
+    }, [videoRef]);
 
-    return { aiMetrics, metricsRef, isAiReady: isReady };
+    return { aiMetrics, metricsRef, isAiReady: isReady, resetAiMetrics };
 };
