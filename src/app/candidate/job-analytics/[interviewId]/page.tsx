@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
     Alert,
     Button,
@@ -81,6 +81,8 @@ export default function CandidateInterviewReportPage({
     params: { interviewId: string };
 }) {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const isEvaluationOnly = searchParams.get("status")?.toLowerCase() === "ended";
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<ReportResponse | null>(null);
@@ -141,10 +143,12 @@ export default function CandidateInterviewReportPage({
                                     <ThunderboltOutlined /> Interview Analytics
                                 </div>
                                 <Title level={2} className="!mb-2">
-                                    AI Interview Report
+                                    {isEvaluationOnly ? "Interview Question Review" : "AI Interview Report"}
                                 </Title>
                                 <Text className="candidate-report-muted block max-w-2xl text-sm md:text-base">
-                                    Review the overall evaluation first, then explore each answer with video and detailed AI insights.
+                                    {isEvaluationOnly
+                                        ? "We are currently evaluating your answered questions. Question insights may appear here gradually as processing finishes."
+                                        : "Review the overall evaluation first, then explore each answer with video and detailed AI insights."}
                                 </Text>
                             </div>
                         </div>
@@ -171,7 +175,15 @@ export default function CandidateInterviewReportPage({
                     />
                 ) : data ? (
                     <div className="flex flex-col gap-6">
-                        {data.report ? (
+                        {isEvaluationOnly ? (
+                            <Alert
+                                type="info"
+                                showIcon
+                                message="Evaluation in progress"
+                                description="We are currently evaluating your answered questions. Question insights may appear gradually as processing finishes."
+                                className="candidate-report-alert"
+                            />
+                        ) : data.report ? (
                             <Card
                                 className="candidate-report-card rounded-[24px] border-0"
                                 title={

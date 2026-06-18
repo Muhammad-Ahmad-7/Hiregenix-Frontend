@@ -300,20 +300,30 @@ const JobApplicationsTable = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: unknown, record: ReturnType<typeof getTableData>[number]) => (
-        <div className="flex gap-2 flex-wrap">
-          {record.report ? (
+      render: (_: unknown, record: ReturnType<typeof getTableData>[number]) => {
+        const isEnded = record.status?.toLowerCase() === "ended";
+        const canViewReport = Boolean(record.report) || isEnded;
+
+        return (
+          <div className="flex max-w-[220px] flex-col gap-1">
+            {isEnded && (
+              <span className="text-xs leading-5 text-gray-500">
+                We are currently evaluating your questions.
+              </span>
+            )}
+            {canViewReport ? (
             <Link
-              href={`/candidate/job-analytics/${record.key}`}
+              href={`/candidate/job-analytics/${record.key}${isEnded ? "?status=ended" : ""}`}
               className="text-purple-600 hover:text-purple-700 text-sm whitespace-nowrap inline-flex items-center gap-1"
             >
               <EyeFilled /> View Report
             </Link>
-          ) : (
-            <span className="text-gray-400 text-sm">No Actions</span>
-          )}
-        </div>
-      ),
+            ) : (
+              <span className="text-gray-400 text-sm">No Actions</span>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
