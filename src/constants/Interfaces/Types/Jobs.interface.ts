@@ -144,7 +144,7 @@ export interface ScheduledInterview {
   job: JobPosting;
   type: "live" | "recorded";
   scheduledDate: string; // ISO string
-  status: "scheduled" | "completed" | "cancelled";
+  status: "scheduled" | "completed" | "cancelled" | "ended" | "rejected" | "hired";
   createdAt: string;
   updatedAt: string;
   report: {
