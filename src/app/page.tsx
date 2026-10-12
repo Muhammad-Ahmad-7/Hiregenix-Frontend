@@ -38,6 +38,7 @@ import {
   TeamOutlined,
   ThunderboltOutlined,
   UserOutlined,
+  PlayCircleOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -441,6 +442,22 @@ export default function Home() {
         <div className="hg-glow hg-glow-one" />
         <div className="hg-glow hg-glow-two" />
 
+        <aside className="hg-announcement" aria-label="Project status announcement">
+          <div className="hg-announcement-viewport">
+            <div className="hg-announcement-track">
+              {[0, 1].map((copyIndex) => (
+                <span className="hg-announcement-copy" key={copyIndex} aria-hidden={copyIndex === 1}>
+                  <strong>Portfolio project:</strong> HireGenix was built as a Final Year Project at COMSATS University Islamabad, Lahore Campus.
+                  <span className="hg-announcement-separator" aria-hidden="true">&bull;</span>
+                  Previously deployed on DigitalOcean using free trial credits. The project is no longer actively maintained, so some features or services may not work as expected.
+                  <span className="hg-announcement-separator" aria-hidden="true">&bull;</span>
+                  Explore the landing page to learn about its features, architecture, and capabilities.
+                </span>
+              ))}
+            </div>
+          </div>
+        </aside>
+
         <Header className="hg-header">
           <div className="hg-header-inner">
             <button className="hg-brand" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
@@ -522,6 +539,15 @@ export default function Home() {
                 </Button>
                 <Button size="large" onClick={() => router.push("/auth/sign-up?role=candidate")}>
                   Find roles
+                </Button>
+                <Button
+                  size="large"
+                  icon={<PlayCircleOutlined />}
+                  href="https://drive.google.com/file/d/1iRk4M-M1ApKzZuPlleSmMyGVLZAqy9Yj/view?usp=sharing"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Watch Project Walkthrough
                 </Button>
               </Space>
             </motion.div>
